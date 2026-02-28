@@ -41,7 +41,9 @@
             <ul class="list-group">
                 {% for match in matches %}
                 <li class="list-group-item">
-                    {{ match[1] }} vs {{ match[2] }} ({{ match[3] }})
+                    <a href="/match/{{ match[0] }}">
+                        {{ match[1] }} vs {{ match[2] }} ({{ match[3] }})
+                    </a>
                 </li>
                 {% endfor %}
             </ul>
