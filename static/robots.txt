@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://www.mossan-store.com/sitemap.xml
