@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect
 import sqlite3
+from flask import Response
 
 app = Flask(__name__)
 
@@ -217,6 +218,26 @@ def attendance_month():
         name=name,
         attendance_dict=attendance_dict
     )
+
+@app.route("/sitemap.xml")
+def sitemap():
+    sitemap_xml = """<?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      <url>
+        <loc>https://mossan-store.com/</loc>
+      </url>
+    </urlset>
+    """
+    return Response(sitemap_xml, mimetype="application/xml")
+
+
+@app.route("/robots.txt")
+def robots():
+    robots_txt = """User-agent: *
+Allow: /
+Sitemap: https://mossan-store.com/sitemap.xml
+"""
+    return Response(robots_txt, mimetype="text/plain")
 
 # ==========================
 if __name__ == "__main__":
