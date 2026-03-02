@@ -222,22 +222,20 @@ def attendance_month():
 @app.route("/sitemap.xml")
 def sitemap():
     sitemap_xml = """<?xml version="1.0" encoding="UTF-8"?>
-    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-      <url>
-        <loc>https://mossan-store.com/</loc>
-      </url>
-    </urlset>
-    """
-    return Response(sitemap_xml, mimetype="application/xml")
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://mossan-store.com/</loc>
+  </url>
+</urlset>"""
+    return Response(sitemap_xml, content_type="application/xml; charset=utf-8")
 
 
 @app.route("/robots.txt")
 def robots():
     robots_txt = """User-agent: *
 Allow: /
-Sitemap: https://mossan-store.com/sitemap.xml
-"""
-    return Response(robots_txt, mimetype="text/plain")
+Sitemap: https://mossan-store.com/sitemap.xml"""
+    return Response(robots_txt, content_type="text/plain; charset=utf-8")
 
 # ==========================
 if __name__ == "__main__":
