@@ -47,10 +47,11 @@
 <tr>
 <th>日付</th>
 <th>時間</th>
-<th>イベント内容</th>
+<th>内容</th>
 <th>場所</th>
 <th>参加</th>
 <th>不参加</th>
+<th>未定</th>
 </tr>
 </thead>
 
@@ -68,13 +69,7 @@
 <input type="hidden" name="name" value="{{ name }}">
 <input type="hidden" name="match_id" value="{{ match['id'] }}">
 <input type="hidden" name="status" value="参加">
-<button class="btn btn-sm
-{% if attendance_dict.get(match['id']) == '参加' %}
-btn-success
-{% else %}
-btn-outline-success
-{% endif %}
-">
+<button class="btn btn-sm {% if attendance_dict.get(match['id']) == '参加' %}btn-success{% else %}btn-outline-success{% endif %}">
 参加
 </button>
 </form>
@@ -85,14 +80,19 @@ btn-outline-success
 <input type="hidden" name="name" value="{{ name }}">
 <input type="hidden" name="match_id" value="{{ match['id'] }}">
 <input type="hidden" name="status" value="不参加">
-<button class="btn btn-sm
-{% if attendance_dict.get(match['id']) == '不参加' %}
-btn-danger
-{% else %}
-btn-outline-danger
-{% endif %}
-">
+<button class="btn btn-sm {% if attendance_dict.get(match['id']) == '不参加' %}btn-danger{% else %}btn-outline-danger{% endif %}">
 不参加
+</button>
+</form>
+</td>
+
+<td>
+<form method="POST">
+<input type="hidden" name="name" value="{{ name }}">
+<input type="hidden" name="match_id" value="{{ match['id'] }}">
+<input type="hidden" name="status" value="未定">
+<button class="btn btn-sm {% if attendance_dict.get(match['id']) == '未定' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+未定
 </button>
 </form>
 </td>

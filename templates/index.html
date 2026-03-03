@@ -5,12 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>サッカー出欠管理アプリ | Mossan Store</title>
-<meta name="description" content="チームの出欠を簡単に管理できる無料Webアプリ。スマホ対応・登録不要で今すぐ使えます。">
+<meta name="description" content="チームの出欠を簡単に管理できるWebアプリ。スマホ対応でイベント登録と出欠管理が可能です。">
 
 <link rel="canonical" href="https://mossan-store.com/">
 <meta name="robots" content="index, follow">
 
-<!-- OGP（SNS用） -->
 <meta property="og:title" content="サッカー出欠管理アプリ | Mossan Store">
 <meta property="og:description" content="サッカーチームの出欠管理を簡単に。無料で使えるWebアプリです。">
 <meta property="og:url" content="https://mossan-store.com/">
@@ -63,7 +62,7 @@
 </div>
 
 <div class="col-md-3">
-<input type="text" name="opponent" class="form-control" placeholder="イベント内容" required>
+<input type="text" name="opponent" class="form-control" placeholder="内容" required>
 </div>
 
 <div class="col-md-2">
@@ -83,7 +82,6 @@
 
 <h5 class="mb-3">イベント一覧</h5>
 
-<!-- 月タブ -->
 <ul class="nav nav-tabs mb-3">
 {% for month in months %}
 <li class="nav-item">
@@ -107,52 +105,65 @@
 <table class="table table-bordered text-center align-middle">
 <thead class="table-light">
 <tr>
+<th>-</th>
+<th>内容</th>
 <th>日付</th>
 <th>時間</th>
-<th>イベント内容</th>
+<th>出欠</th>
 <th>場所</th>
-
-{% for member in members %}
-<th>{{ member }}</th>
-{% endfor %}
-
-<th>編集</th>
-<th>削除</th>
+<th>-</th>
+<th>メンバー</th>
 </tr>
 </thead>
 
 <tbody>
 {% for e in month_data.get(month, []) %}
 <tr>
-<td>{{ e["date"] }}</td>
-<td>{{ e["start_time"] }} 〜 {{ e["end_time"] }}</td>
-<td>{{ e["opponent"] }}</td>
-<td>{{ e["place"] }}</td>
-
-{% for member in members %}
-<td>
-{% if attendance_dict.get((e["id"], member)) == "参加" %}
-○
-{% elif attendance_dict.get((e["id"], member)) == "不参加" %}
-✖
-{% else %}
--
-{% endif %}
-</td>
-{% endfor %}
-
-<td>
+<td class="text-nowrap">
+<a href="/duplicate/{{ e['id'] }}" class="btn btn-sm btn-secondary">複製</a>
 <a href="/edit/{{ e['id'] }}" class="btn btn-sm btn-warning">編集</a>
-</td>
-
-<td>
 <a href="/delete/{{ e['id'] }}"
    class="btn btn-sm btn-danger"
    onclick="return confirm('削除しますか？');">
 削除
 </a>
 </td>
-
+<td>{{ e["opponent"] }}</td>
+<td>{{ e["date"] }}</td>
+<td>{{ e["start_time"] }} 〜 {{ e["end_time"] }}</td>
+<td class="text-start">
+{% set ns = namespace(join_count=0, absent_count=0, undecided_count=0) %}
+{% for member in members %}
+{% set status = attendance_dict.get((e["id"], member), "") %}
+{% if status == "参加" %}
+{% set ns.join_count = ns.join_count + 1 %}
+{% elif status == "不参加" %}
+{% set ns.absent_count = ns.absent_count + 1 %}
+{% elif status == "未定" %}
+{% set ns.undecided_count = ns.undecided_count + 1 %}
+{% endif %}
+{% endfor %}
+参加 {{ ns.join_count }} / 不参加 {{ ns.absent_count }} / 未定 {{ ns.undecided_count }}
+</td>
+<td>{{ e["place"] }}</td>
+<td>#{{ e["id"] }}</td>
+<td class="text-start">
+{% for member in members %}
+{% set status = attendance_dict.get((e["id"], member), "") %}
+<div>
+{{ member }}:
+{% if status == "参加" %}
+○
+{% elif status == "不参加" %}
+×
+{% elif status == "未定" %}
+△
+{% else %}
+-
+{% endif %}
+</div>
+{% endfor %}
+</td>
 </tr>
 {% endfor %}
 </tbody>

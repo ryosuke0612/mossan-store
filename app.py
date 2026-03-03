@@ -57,6 +57,17 @@ def build_time_from_form(prefix):
             return ""
     return request.form.get(prefix, "")
 
+
+def normalize_status(value):
+    status_map = {
+        "参加": "参加",
+        "不参加": "不参加",
+        "未定": "未定",
+        "蜿ょ刈": "参加",
+        "荳榊盾蜉": "不参加"
+    }
+    return status_map.get(value, value)
+
 # ==========================
 # トップページ（月タブ完全対応版）
 # ==========================
@@ -92,7 +103,7 @@ def index():
 
     attendance_dict = {}
     for row in attendance_rows:
-        attendance_dict[(row["match_id"], row["name"])] = row["status"]
+        attendance_dict[(row["match_id"], row["name"])] = normalize_status(row["status"])
 
     conn.close()
 
@@ -151,6 +162,23 @@ def delete_match(id):
 # ==========================
 # イベント編集
 # ==========================
+@app.route("/duplicate/<int:id>")
+def duplicate_match(id):
+
+    conn = sqlite3.connect("schedule.db")
+    c = conn.cursor()
+
+    c.execute("""
+    INSERT INTO matches (date, start_time, end_time, opponent, place)
+    SELECT date, start_time, end_time, opponent, place
+    FROM matches
+    WHERE id=?
+    """, (id,))
+
+    conn.commit()
+    conn.close()
+    return redirect("/")
+
 @app.route("/edit/<int:id>", methods=["GET", "POST"])
 def edit_match(id):
 
@@ -209,7 +237,7 @@ def attendance_month():
     if request.method == "POST":
         name = request.form["name"]
         match_id = request.form["match_id"]
-        status = request.form["status"]
+        status = normalize_status(request.form["status"])
 
         c.execute("""
         INSERT INTO attendance (match_id, name, status)
@@ -236,7 +264,10 @@ def attendance_month():
             SELECT match_id, status FROM attendance
             WHERE name=?
             """, (name,))
-            attendance_dict = {row["match_id"]: row["status"] for row in c.fetchall()}
+            attendance_dict = {
+                row["match_id"]: normalize_status(row["status"])
+                for row in c.fetchall()
+            }
 
     conn.close()
 
