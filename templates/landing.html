@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MossanStore | 出欠管理アプリ</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+
+<style>
+body{
+    margin:0;
+    font-family:'Noto Sans JP',sans-serif;
+    background:#111;
+    color:white;
+}
+
+/* ===== ヘッダー ===== */
+header{
+    background:black;
+    padding:15px 6%;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-bottom:3px solid red;
+}
+
+.logo-area{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.logo-area img{
+    height:50px;
+}
+
+.logo-text{
+    font-family:'Anton', sans-serif;
+    font-size:30px;
+    letter-spacing:2px;
+}
+
+nav a{
+    color:white;
+    text-decoration:none;
+    margin-left:30px;
+    font-weight:bold;
+    font-size:18px;
+    transition:0.3s;
+}
+
+nav a:hover{
+    color:red;
+}
+
+/* ===== ヒーロー ===== */
+.hero{
+    padding:100px 8%;
+    background:linear-gradient(to right,#000,#1a0000,#000);
+}
+
+.hero-container{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:60px;
+}
+
+.hero-text{
+    flex:1;
+}
+
+.hero-text h1{
+    font-family:'Anton',sans-serif;
+    font-size:64px;
+    margin-bottom:30px;
+    letter-spacing:3px;
+}
+
+.hero-text p{
+    font-size:22px;
+    line-height:1.9;
+    font-weight:700;
+}
+
+.cta-btn{
+    display:inline-block;
+    margin-top:40px;
+    padding:18px 45px;
+    font-size:22px;
+    background:red;
+    color:white;
+    text-decoration:none;
+    font-weight:900;
+    border-radius:50px;
+    transition:0.3s;
+}
+
+.cta-btn:hover{
+    background:orange;
+    transform:scale(1.1);
+}
+
+.hero-image{
+    flex:1;
+    text-align:right;
+}
+
+.hero-image img{
+    width:100%;
+    max-width:650px;
+    filter: drop-shadow(0 0 30px rgba(255,0,0,0.6));
+}
+
+/* ===== 特徴セクション ===== */
+.section{
+    padding:100px 8%;
+    text-align:center;
+}
+
+.section h2{
+    font-family:'Anton',sans-serif;
+    font-size:48px;
+    margin-bottom:60px;
+    letter-spacing:2px;
+    color:red;
+}
+
+.features{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:50px;
+}
+
+.feature-box{
+    background:#1a1a1a;
+    padding:50px;
+    border:2px solid red;
+    border-radius:15px;
+    transition:0.3s;
+}
+
+.feature-box:hover{
+    transform:translateY(-10px);
+    background:#2a0000;
+}
+
+.feature-box h3{
+    font-size:30px;
+    margin-bottom:20px;
+}
+
+.feature-box p{
+    font-size:20px;
+    line-height:1.8;
+}
+
+/* ===== ラストメッセージ ===== */
+.last{
+    padding:120px 8%;
+    background:black;
+    text-align:center;
+}
+
+.last h2{
+    font-family:'Anton',sans-serif;
+    font-size:60px;
+    margin-bottom:40px;
+}
+
+/* ===== フッター ===== */
+footer{
+    background:#000;
+    padding:30px;
+    text-align:center;
+    border-top:3px solid red;
+    font-size:14px;
+}
+
+/* ===== スマホ対応 ===== */
+@media(max-width:768px){
+
+    nav{
+        display:none;
+    }
+
+    .hero-container{
+        flex-direction:column;
+        text-align:center;
+    }
+
+    .hero-text h1{
+        font-size:40px;
+    }
+
+    .hero-text p{
+        font-size:18px;
+    }
+
+    .hero-image{
+        text-align:center;
+        margin-top:40px;
+    }
+
+    .section h2{
+        font-size:36px;
+    }
+
+    .feature-box h3{
+        font-size:24px;
+    }
+
+    .feature-box p{
+        font-size:16px;
+    }
+
+    .last h2{
+        font-size:38px;
+    }
+}
+</style>
+</head>
+
+<body id="top">
+
+<header>
+    <div class="logo-area">
+        <img src="{{ url_for('static', filename='images/gorilla-logo.png') }}" alt="ゴリラロゴ">
+        <div class="logo-text">mossanstore</div>
+    </div>
+
+    <nav>
+        <a href="#top">トップ</a>
+        <a href="#features">アプリ紹介</a>
+        <a href="/app">ログイン</a>
+        <a href="#contact">お問い合わせ</a>
+    </nav>
+</header>
+
+<section class="hero">
+    <div class="hero-container">
+
+        <div class="hero-text">
+            <h1>本気のチームに、<br>本気の管理を。</h1>
+
+            <p>
+                試合も、練習も、イベントも。<br>
+                出欠確認に時間を奪われていませんか？<br><br>
+
+                MossanStoreの出欠管理アプリは、
+                スポーツチーム専用に設計された
+                圧倒的スピードと直感操作を実現した管理システム。<br><br>
+
+                管理のストレスをゼロにし、
+                チームの結束力と責任感を高める。<br>
+                本気で勝ちたいチームのための本気のツール。
+            </p>
+
+            <a href="/app" class="cta-btn">今すぐアプリを見る</a>
+        </div>
+
+        <div class="hero-image">
+            <img src="{{ url_for('static', filename='images/gorilla-full.png') }}" alt="ゴリラ後ろ姿">
+        </div>
+
+    </div>
+</section>
+
+<section class="section" id="features">
+    <h2>なぜ選ばれているのか？</h2>
+
+    <div class="features">
+
+        <div class="feature-box">
+            <h3>🔥 ワンタップ出欠管理</h3>
+            <p>
+                面倒な操作は一切なし。<br>
+                参加・不参加を瞬時に登録。<br>
+                管理者の負担を徹底的に削減。
+            </p>
+        </div>
+
+        <div class="feature-box">
+            <h3>💪 チーム意識の向上</h3>
+            <p>
+                誰が参加するのかが即時共有。<br>
+                メンバーの責任感が自然と高まる設計。
+            </p>
+        </div>
+
+        <div class="feature-box">
+            <h3>📱 スマホ完全対応</h3>
+            <p>
+                グラウンドでも移動中でも即確認。<br>
+                どこにいてもチームを動かせる。
+            </p>
+        </div>
+
+        <div class="feature-box">
+            <h3>⚡ 無駄を排除した設計</h3>
+            <p>
+                必要な機能だけを搭載。<br>
+                迷わない、止まらない、戦えるUI。
+            </p>
+        </div>
+
+    </div>
+</section>
+
+<section class="last">
+    <h2>管理するな。<br>チームを進化させろ。</h2>
+    <a href="/app" class="cta-btn">ログインして始める</a>
+</section>
+
+<footer id="contact">
+    © 2026 MossanStore All Rights Reserved.
+</footer>
+
+</body>
+</html>
