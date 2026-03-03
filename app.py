@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect
 import sqlite3
 from flask import Response
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -36,6 +37,25 @@ def init_db():
     conn.close()
 
 init_db()
+
+
+def is_valid_10min_time(value):
+    try:
+        dt = datetime.strptime(value, "%H:%M")
+    except (TypeError, ValueError):
+        return False
+    return dt.minute % 10 == 0
+
+
+def build_time_from_form(prefix):
+    hour = request.form.get(f"{prefix}_hour")
+    minute = request.form.get(f"{prefix}_minute")
+    if hour is not None and minute is not None:
+        try:
+            return f"{int(hour):02d}:{int(minute):02d}"
+        except ValueError:
+            return ""
+    return request.form.get(prefix, "")
 
 # ==========================
 # トップページ（月タブ完全対応版）
@@ -89,6 +109,10 @@ def index():
 # ==========================
 @app.route("/add", methods=["POST"])
 def add_match():
+    start_time = build_time_from_form("start_time")
+    end_time = build_time_from_form("end_time")
+    if not is_valid_10min_time(start_time) or not is_valid_10min_time(end_time):
+        return "start_time/end_time must be in 10-minute increments.", 400
 
     conn = sqlite3.connect("schedule.db")
     c = conn.cursor()
@@ -98,8 +122,8 @@ def add_match():
     VALUES (?, ?, ?, ?, ?)
     """, (
         request.form["date"],
-        request.form["start_time"],
-        request.form["end_time"],
+        start_time,
+        end_time,
         request.form["opponent"],
         request.form["place"]
     ))
@@ -135,14 +159,20 @@ def edit_match(id):
     c = conn.cursor()
 
     if request.method == "POST":
+        start_time = build_time_from_form("start_time")
+        end_time = build_time_from_form("end_time")
+        if not is_valid_10min_time(start_time) or not is_valid_10min_time(end_time):
+            conn.close()
+            return "start_time/end_time must be in 10-minute increments.", 400
+
         c.execute("""
         UPDATE matches
         SET date=?, start_time=?, end_time=?, opponent=?, place=?
         WHERE id=?
         """, (
             request.form["date"],
-            request.form["start_time"],
-            request.form["end_time"],
+            start_time,
+            end_time,
             request.form["opponent"],
             request.form["place"],
             id

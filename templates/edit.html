@@ -29,21 +29,47 @@
 <div class="row mb-3">
 <label class="col-sm-2 col-form-label">開始時間</label>
 <div class="col-sm-4">
-<input type="time" name="start_time" class="form-control"
-       value="{{ match['start_time'] }}" required>
+{% set current_start = match['start_time'] %}
+{% set start_hour = current_start[0:2] | int if current_start and current_start|length >= 5 else 12 %}
+{% set start_minute = current_start[3:5] | int if current_start and current_start|length >= 5 else 0 %}
+<div class="input-group">
+<select name="start_time_hour" class="form-select" required>
+{% for h in range(24) %}
+<option value="{{ h }}" {% if h == start_hour %}selected{% endif %}>{{ "%02d"|format(h) }}時</option>
+{% endfor %}
+</select>
+<select name="start_time_minute" class="form-select" required>
+{% for m in range(0, 60, 10) %}
+<option value="{{ m }}" {% if m == start_minute %}selected{% endif %}>{{ "%02d"|format(m) }}分</option>
+{% endfor %}
+</select>
+</div>
 </div>
 </div>
 
 <div class="row mb-3">
 <label class="col-sm-2 col-form-label">終了時間</label>
 <div class="col-sm-4">
-<input type="time" name="end_time" class="form-control"
-       value="{{ match['end_time'] }}" required>
+{% set current_end = match['end_time'] %}
+{% set end_hour = current_end[0:2] | int if current_end and current_end|length >= 5 else 12 %}
+{% set end_minute = current_end[3:5] | int if current_end and current_end|length >= 5 else 0 %}
+<div class="input-group">
+<select name="end_time_hour" class="form-select" required>
+{% for h in range(24) %}
+<option value="{{ h }}" {% if h == end_hour %}selected{% endif %}>{{ "%02d"|format(h) }}時</option>
+{% endfor %}
+</select>
+<select name="end_time_minute" class="form-select" required>
+{% for m in range(0, 60, 10) %}
+<option value="{{ m }}" {% if m == end_minute %}selected{% endif %}>{{ "%02d"|format(m) }}分</option>
+{% endfor %}
+</select>
+</div>
 </div>
 </div>
 
 <div class="row mb-3">
-<label class="col-sm-2 col-form-label">対戦相手</label>
+<label class="col-sm-2 col-form-label">イベント内容</label>
 <div class="col-sm-6">
 <input type="text" name="opponent" class="form-control"
        value="{{ match['opponent'] }}" required>
