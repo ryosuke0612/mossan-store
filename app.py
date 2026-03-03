@@ -179,6 +179,45 @@ def duplicate_match(id):
     conn.close()
     return redirect("/")
 
+
+@app.route("/matches/action", methods=["POST"])
+def bulk_match_action():
+    action = request.form.get("action", "")
+    selected_ids_raw = request.form.getlist("selected_ids")
+
+    if not selected_ids_raw:
+        return redirect("/")
+
+    try:
+        selected_ids = [int(match_id) for match_id in selected_ids_raw]
+    except ValueError:
+        return redirect("/")
+
+    if action == "edit":
+        return redirect(f"/edit/{selected_ids[0]}")
+
+    conn = sqlite3.connect("schedule.db")
+    c = conn.cursor()
+
+    if action == "duplicate":
+        c.executemany("""
+        INSERT INTO matches (date, start_time, end_time, opponent, place)
+        SELECT date, start_time, end_time, opponent, place
+        FROM matches
+        WHERE id=?
+        """, [(match_id,) for match_id in selected_ids])
+    elif action == "delete":
+        placeholders = ",".join("?" for _ in selected_ids)
+        c.execute(f"DELETE FROM attendance WHERE match_id IN ({placeholders})", selected_ids)
+        c.execute(f"DELETE FROM matches WHERE id IN ({placeholders})", selected_ids)
+    else:
+        conn.close()
+        return redirect("/")
+
+    conn.commit()
+    conn.close()
+    return redirect("/")
+
 @app.route("/edit/<int:id>", methods=["GET", "POST"])
 def edit_match(id):
 

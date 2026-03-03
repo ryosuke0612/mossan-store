@@ -26,7 +26,6 @@
 <h5>イベント追加</h5>
 <form method="POST" action="/add">
 <div class="row g-2">
-
 <div class="col-md-2">
 <input type="date" name="date" class="form-control" required>
 </div>
@@ -72,22 +71,25 @@
 <div class="col-md-1">
 <button class="btn btn-success w-100">追加</button>
 </div>
-
 </div>
 </form>
 
 <hr class="my-4">
 
-<a href="/attendance/month" class="btn btn-primary mb-3">月別出欠登録へ</a>
+<form method="POST" action="/matches/action">
+<div class="d-flex flex-wrap gap-2 mb-3">
+<a id="attendance-month-link" href="/attendance/month" class="btn btn-primary">月別出欠登録へ</a>
+<button type="submit" name="action" value="duplicate" class="btn btn-secondary">複製</button>
+<button type="submit" name="action" value="edit" class="btn btn-warning">編集</button>
+<button type="submit" name="action" value="delete" class="btn btn-danger" onclick="return confirm('選択したイベントを削除しますか？');">削除</button>
+</div>
 
 <h5 class="mb-3">イベント一覧</h5>
 
 <ul class="nav nav-tabs mb-3">
 {% for month in months %}
 <li class="nav-item">
-<button class="nav-link {% if loop.first %}active{% endif %}"
-        data-bs-toggle="tab"
-        data-bs-target="#tab{{ loop.index }}">
+<button class="nav-link {% if loop.first %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#tab{{ loop.index }}" type="button" data-month="{{ month }}">
 {{ month }}
 </button>
 </li>
@@ -95,13 +97,10 @@
 </ul>
 
 <div class="tab-content">
-
 {% for month in months %}
-<div class="tab-pane fade {% if loop.first %}show active{% endif %}"
-     id="tab{{ loop.index }}">
-
+<div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="tab{{ loop.index }}">
 {% if month_data.get(month) and month_data[month]|length > 0 %}
-
+<div class="table-responsive">
 <table class="table table-bordered text-center align-middle">
 <thead class="table-light">
 <tr>
@@ -112,21 +111,16 @@
 <th>出欠</th>
 <th>場所</th>
 <th>-</th>
-<th>メンバー</th>
+{% for member in members %}
+<th>{{ member }}</th>
+{% endfor %}
 </tr>
 </thead>
-
 <tbody>
 {% for e in month_data.get(month, []) %}
 <tr>
-<td class="text-nowrap">
-<a href="/duplicate/{{ e['id'] }}" class="btn btn-sm btn-secondary">複製</a>
-<a href="/edit/{{ e['id'] }}" class="btn btn-sm btn-warning">編集</a>
-<a href="/delete/{{ e['id'] }}"
-   class="btn btn-sm btn-danger"
-   onclick="return confirm('削除しますか？');">
-削除
-</a>
+<td>
+<input class="form-check-input" type="checkbox" name="selected_ids" value="{{ e['id'] }}">
 </td>
 <td>{{ e["opponent"] }}</td>
 <td>{{ e["date"] }}</td>
@@ -147,11 +141,9 @@
 </td>
 <td>{{ e["place"] }}</td>
 <td>#{{ e["id"] }}</td>
-<td class="text-start">
 {% for member in members %}
 {% set status = attendance_dict.get((e["id"], member), "") %}
-<div>
-{{ member }}:
+<td>
 {% if status == "参加" %}
 ○
 {% elif status == "不参加" %}
@@ -161,27 +153,43 @@
 {% else %}
 -
 {% endif %}
-</div>
-{% endfor %}
 </td>
+{% endfor %}
 </tr>
 {% endfor %}
 </tbody>
 </table>
-
-{% else %}
-<div class="alert alert-secondary">
-この月のイベントはありません。
 </div>
+{% else %}
+<div class="alert alert-secondary">この月のイベントはありません。</div>
 {% endif %}
-
 </div>
 {% endfor %}
-
 </div>
+</form>
 
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(() => {
+  const monthLink = document.getElementById("attendance-month-link");
+  if (!monthLink) return;
+
+  const updateMonthLink = () => {
+    const activeTab = document.querySelector(".nav-tabs .nav-link.active");
+    if (!activeTab) return;
+    const month = activeTab.dataset.month;
+    if (!month) return;
+    monthLink.href = `/attendance/month?month=${encodeURIComponent(month)}`;
+  };
+
+  document.querySelectorAll(".nav-tabs .nav-link").forEach((tab) => {
+    tab.addEventListener("shown.bs.tab", updateMonthLink);
+  });
+
+  updateMonthLink();
+})();
+</script>
 </body>
 </html>
