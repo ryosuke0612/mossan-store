@@ -1,0 +1,208 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Mossan Store{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0f0f;
+  --bg-soft: #171717;
+  --line: #ff2b2b;
+  --line-soft: rgba(255, 43, 43, 0.25);
+  --text: #f5f5f5;
+  --muted: #b8b8b8;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: radial-gradient(circle at 10% 0%, #290000 0%, var(--bg) 45%);
+  color: var(--text);
+  font-family: 'Noto Sans JP', sans-serif;
+}
+a { color: inherit; }
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.92);
+  border-bottom: 3px solid var(--line);
+  backdrop-filter: blur(4px);
+}
+.header-inner {
+  width: min(1120px, 92%);
+  margin: 0 auto;
+  padding: 14px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+}
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.logo-area img { width: 44px; height: 44px; object-fit: contain; }
+.logo-text {
+  font-family: 'Anton', sans-serif;
+  font-size: 28px;
+  letter-spacing: 2px;
+}
+.top-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+}
+.top-nav a {
+  text-decoration: none;
+  font-weight: 700;
+  color: var(--text);
+  border-bottom: 2px solid transparent;
+  padding-bottom: 2px;
+}
+.top-nav a:hover { color: #ff8a8a; border-bottom-color: #ff8a8a; }
+.user-chip {
+  color: var(--muted);
+  font-size: 14px;
+  margin-right: 6px;
+}
+.page-wrap {
+  width: min(1120px, 92%);
+  margin: 34px auto 70px;
+}
+.page-title {
+  font-family: 'Anton', sans-serif;
+  letter-spacing: 1px;
+  font-size: clamp(30px, 5vw, 48px);
+  margin: 0 0 20px;
+}
+.panel {
+  background: linear-gradient(180deg, #1a1a1a 0%, #131313 100%);
+  border: 1px solid var(--line-soft);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+.panel + .panel { margin-top: 16px; }
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.field { margin-bottom: 14px; }
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+input, select, button {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #2d2d2d;
+  background: #0d0d0d;
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 15px;
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: #ff7878;
+  box-shadow: 0 0 0 2px rgba(255, 43, 43, 0.25);
+}
+.btn-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.btn {
+  width: auto;
+  display: inline-block;
+  text-decoration: none;
+  border: 1px solid #ff4b4b;
+  background: #ff2b2b;
+  color: white;
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.btn:hover { background: #ff5353; }
+.btn.secondary { background: transparent; border-color: #666; }
+.btn.secondary:hover { border-color: #999; }
+.btn.warning { background: #c77900; border-color: #c77900; }
+.btn.danger { background: #a22626; border-color: #a22626; }
+.notice {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid;
+  margin-bottom: 12px;
+}
+.notice.error { background: rgba(180, 35, 35, 0.2); border-color: #c53f3f; }
+.notice.success { background: rgba(41, 146, 73, 0.2); border-color: #2f9a50; }
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+th, td {
+  border: 1px solid #2f2f2f;
+  padding: 8px;
+  font-size: 14px;
+  vertical-align: top;
+}
+th { background: #1b1b1b; color: #ffcbcb; }
+.site-footer {
+  border-top: 3px solid var(--line);
+  background: #000;
+  text-align: center;
+  color: #bdbdbd;
+  padding: 22px;
+  font-size: 13px;
+}
+@media (max-width: 900px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .top-nav { gap: 10px; }
+}
+</style>
+{% block head_extra %}{% endblock %}
+</head>
+<body>
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo-area" href="/">
+      <img src="{{ url_for('static', filename='images/gorilla-logo.png') }}" alt="logo">
+      <span class="logo-text">MOSSAN STORE</span>
+    </a>
+    <nav class="top-nav">
+      <a href="/">ホーム</a>
+      <a href="/app">イベント管理</a>
+      <a href="/attendance/month">月別出欠</a>
+      <a href="/payment">決済</a>
+      {% if session.get('user_id') %}
+      <span class="user-chip">{{ session.get('username') }}</span>
+      <a href="/logout">ログアウト</a>
+      {% else %}
+      <a href="/login">ログイン</a>
+      <a href="/register">新規登録</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>
+<main class="page-wrap">
+{% block content %}{% endblock %}
+</main>
+<footer class="site-footer">&copy; 2026 Mossan Store All Rights Reserved.</footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>

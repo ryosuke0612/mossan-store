@@ -1,0 +1,64 @@
+﻿{% extends "base.html" %}
+
+{% block title %}決済 | Mossan Store{% endblock %}
+
+{% block content %}
+<h1 class="page-title">決済ページ</h1>
+
+{% if success_message %}
+<div class="notice success">{{ success_message }}</div>
+{% endif %}
+{% if error_message %}
+<div class="notice error">{{ error_message }}</div>
+{% endif %}
+
+<div class="grid-2">
+  <section class="panel">
+    <h2 style="margin-top:0;">プランを選択</h2>
+    <form method="POST" action="/payment">
+      <div class="field">
+        <label>プラン</label>
+        <select name="plan_name" required>
+          <option value="">選択してください</option>
+          {% for plan_name, amount in plan_prices.items() %}
+          <option value="{{ plan_name }}">{{ plan_name }}（{{ "{:,}".format(amount) }}円）</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn">決済する</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2 style="margin-top:0;">最近の決済履歴</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>日時</th>
+            <th>プラン</th>
+            <th>金額</th>
+            <th>状態</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if recent_payments %}
+          {% for p in recent_payments %}
+          <tr>
+            <td>{{ p["created_at"] }}</td>
+            <td>{{ p["plan_name"] }}</td>
+            <td>{{ "{:,}".format(p["amount"]) }}円</td>
+            <td>{{ p["status"] }}</td>
+          </tr>
+          {% endfor %}
+          {% else %}
+          <tr>
+            <td colspan="4">まだ決済履歴はありません。</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

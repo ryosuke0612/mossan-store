@@ -1,116 +1,86 @@
-﻿<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>月別出欠登録</title>
+﻿{% extends "base.html" %}
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
+{% block title %}月別出欠登録 | Mossan Store{% endblock %}
 
-<body class="bg-light">
-<div class="container py-4">
+{% block content %}
+<h1 class="page-title">月別出欠登録</h1>
 
-<h3 class="mb-3">月別出欠登録</h3>
-
-<form method="GET" class="mb-3">
-<div class="row g-2">
-    <div class="col-md-4">
-        <input type="text" name="name" class="form-control"
-               placeholder="名前"
-               value="{{ name if name }}">
+<section class="panel">
+  <form method="GET" class="grid-3" style="align-items:end;">
+    <div class="field" style="margin:0;">
+      <label>名前</label>
+      <input type="text" name="name" value="{{ name or '' }}" placeholder="名前を入力">
     </div>
-
-    <div class="col-md-4">
-        <select name="month" class="form-select">
-            {% for m in months %}
-            <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>
-                {{ m }}
-            </option>
-            {% endfor %}
-        </select>
+    <div class="field" style="margin:0;">
+      <label>月</label>
+      <select name="month">
+        {% for m in months %}
+        <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
     </div>
-
-    <div class="col-md-2">
-        <button class="btn btn-primary w-100">表示</button>
+    <div class="field" style="margin:0;">
+      <label>&nbsp;</label>
+      <button class="btn" type="submit">表示</button>
     </div>
-</div>
-</form>
+  </form>
+</section>
 
 {% if name %}
-
-<div class="card shadow-sm">
-<div class="card-body">
-
-<table class="table table-bordered text-center align-middle">
-<thead class="table-light">
-<tr>
-<th>日付</th>
-<th>時間</th>
-<th>内容</th>
-<th>場所</th>
-<th>参加</th>
-<th>不参加</th>
-<th>未定</th>
-</tr>
-</thead>
-
-<tbody>
-{% for match in matches %}
-<tr>
-
-<td>{{ match["date"] }}</td>
-<td>{{ match["start_time"] }} 〜 {{ match["end_time"] }}</td>
-<td>{{ match["opponent"] }}</td>
-<td>{{ match["place"] }}</td>
-
-<td>
-<form method="POST">
-<input type="hidden" name="name" value="{{ name }}">
-<input type="hidden" name="match_id" value="{{ match['id'] }}">
-<input type="hidden" name="status" value="参加">
-<button class="btn btn-sm {% if attendance_dict.get(match['id']) == '参加' %}btn-success{% else %}btn-outline-success{% endif %}">
-参加
-</button>
-</form>
-</td>
-
-<td>
-<form method="POST">
-<input type="hidden" name="name" value="{{ name }}">
-<input type="hidden" name="match_id" value="{{ match['id'] }}">
-<input type="hidden" name="status" value="不参加">
-<button class="btn btn-sm {% if attendance_dict.get(match['id']) == '不参加' %}btn-danger{% else %}btn-outline-danger{% endif %}">
-不参加
-</button>
-</form>
-</td>
-
-<td>
-<form method="POST">
-<input type="hidden" name="name" value="{{ name }}">
-<input type="hidden" name="match_id" value="{{ match['id'] }}">
-<input type="hidden" name="status" value="未定">
-<button class="btn btn-sm {% if attendance_dict.get(match['id']) == '未定' %}btn-warning{% else %}btn-outline-warning{% endif %}">
-未定
-</button>
-</form>
-</td>
-
-</tr>
-{% endfor %}
-</tbody>
-</table>
-
-</div>
-</div>
-
+<section class="panel">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>日付</th>
+          <th>時間</th>
+          <th>内容</th>
+          <th>場所</th>
+          <th>参加</th>
+          <th>不参加</th>
+          <th>未定</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for match in matches %}
+        <tr>
+          <td>{{ match["date"] }}</td>
+          <td>{{ match["start_time"] }} 〜 {{ match["end_time"] }}</td>
+          <td>{{ match["opponent"] }}</td>
+          <td>{{ match["place"] }}</td>
+          <td>
+            <form method="POST">
+              <input type="hidden" name="name" value="{{ name }}">
+              <input type="hidden" name="match_id" value="{{ match['id'] }}">
+              <input type="hidden" name="status" value="参加">
+              <button class="btn {% if attendance_dict.get(match['id']) == '参加' %}{% else %}secondary{% endif %}">参加</button>
+            </form>
+          </td>
+          <td>
+            <form method="POST">
+              <input type="hidden" name="name" value="{{ name }}">
+              <input type="hidden" name="match_id" value="{{ match['id'] }}">
+              <input type="hidden" name="status" value="不参加">
+              <button class="btn danger {% if attendance_dict.get(match['id']) == '不参加' %}{% else %}secondary{% endif %}">不参加</button>
+            </form>
+          </td>
+          <td>
+            <form method="POST">
+              <input type="hidden" name="name" value="{{ name }}">
+              <input type="hidden" name="match_id" value="{{ match['id'] }}">
+              <input type="hidden" name="status" value="未定">
+              <button class="btn warning {% if attendance_dict.get(match['id']) == '未定' %}{% else %}secondary{% endif %}">未定</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
 {% endif %}
 
-<div class="mt-4 text-center">
-<a href="/app" class="btn btn-secondary">戻る</a>
+<div class="btn-row" style="margin-top:16px;">
+  <a href="/app" class="btn secondary">戻る</a>
 </div>
-
-</div>
-</body>
-</html>
+{% endblock %}

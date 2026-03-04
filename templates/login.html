@@ -1,0 +1,28 @@
+﻿{% extends "base.html" %}
+
+{% block title %}ログイン | Mossan Store{% endblock %}
+
+{% block content %}
+<h1 class="page-title">ログイン</h1>
+<div class="panel" style="max-width:520px;">
+  {% if error_message %}
+  <div class="notice error">{{ error_message }}</div>
+  {% endif %}
+
+  <form method="POST" action="/login">
+    <input type="hidden" name="next" value="{{ next_url }}">
+    <div class="field">
+      <label>ユーザー名またはメールアドレス</label>
+      <input type="text" name="username_or_email" required>
+    </div>
+    <div class="field">
+      <label>パスワード</label>
+      <input type="password" name="password" required>
+    </div>
+    <div class="btn-row">
+      <button class="btn" type="submit">ログイン</button>
+      <a class="btn secondary" href="/register">新規登録</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
