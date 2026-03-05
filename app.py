@@ -356,9 +356,12 @@ def index():
     )
 
 
-@app.route("/add", methods=["POST"])
+@app.route("/add", methods=["GET", "POST"])
 @login_required
 def add_match():
+    if request.method == "GET":
+        return render_template("add.html")
+
     start_time = build_time_from_form("start_time")
     end_time = build_time_from_form("end_time")
     if not is_valid_10min_time(start_time) or not is_valid_10min_time(end_time):

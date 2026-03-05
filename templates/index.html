@@ -27,6 +27,34 @@
 .month-pane { display: none; }
 .month-pane.active { display: block; }
 .inline-check { width: auto; }
+.events-table .col-select {
+  width: 70px;
+  min-width: 70px;
+}
+.events-table .col-event {
+  width: 260px;
+  min-width: 260px;
+}
+.events-table .col-summary {
+  width: 190px;
+  min-width: 190px;
+}
+.events-table .event-lines,
+.events-table .summary-lines {
+  line-height: 1.4;
+  white-space: normal;
+}
+.action-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.action-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 </style>
 {% endblock %}
 
@@ -34,65 +62,17 @@
 <h1 class="page-title">イベント管理</h1>
 
 <section class="panel">
-  <h2 style="margin-top:0;">イベント追加</h2>
-  <form method="POST" action="/add">
-    <div class="grid-3">
-      <div class="field">
-        <label>日付</label>
-        <input type="date" name="date" required>
-      </div>
-      <div class="field">
-        <label>開始時間</label>
-        <div class="grid-2">
-          <select name="start_time_hour" required>
-            {% for h in range(24) %}
-            <option value="{{ h }}" {% if h == 12 %}selected{% endif %}>{{ "%02d"|format(h) }}時</option>
-            {% endfor %}
-          </select>
-          <select name="start_time_minute" required>
-            {% for m in range(0, 60, 10) %}
-            <option value="{{ m }}" {% if m == 0 %}selected{% endif %}>{{ "%02d"|format(m) }}分</option>
-            {% endfor %}
-          </select>
-        </div>
-      </div>
-      <div class="field">
-        <label>終了時間</label>
-        <div class="grid-2">
-          <select name="end_time_hour" required>
-            {% for h in range(24) %}
-            <option value="{{ h }}" {% if h == 12 %}selected{% endif %}>{{ "%02d"|format(h) }}時</option>
-            {% endfor %}
-          </select>
-          <select name="end_time_minute" required>
-            {% for m in range(0, 60, 10) %}
-            <option value="{{ m }}" {% if m == 0 %}selected{% endif %}>{{ "%02d"|format(m) }}分</option>
-            {% endfor %}
-          </select>
-        </div>
-      </div>
-      <div class="field">
-        <label>内容</label>
-        <input type="text" name="opponent" required>
-      </div>
-      <div class="field">
-        <label>場所</label>
-        <input type="text" name="place" required>
-      </div>
-      <div class="field" style="display:flex; align-items:flex-end;">
-        <button class="btn" type="submit">追加</button>
-      </div>
-    </div>
-  </form>
-</section>
-
-<section class="panel">
   <form method="POST" action="/matches/action">
-    <div class="btn-row" style="margin-bottom:12px; flex-wrap:nowrap;">
-      <button type="submit" name="action" value="duplicate" class="btn secondary">複製</button>
-      <button type="submit" name="action" value="edit" class="btn warning">編集</button>
-      <button type="submit" name="action" value="delete" class="btn danger" onclick="return confirm('選択したイベントを削除しますか？');">削除</button>
-      <a id="attendance-month-link" href="/attendance/month" class="btn secondary">出欠登録</a>
+    <div class="action-rows">
+      <div class="action-row">
+        <a href="/add" class="btn">イベント登録</a>
+        <a id="attendance-month-link" href="/attendance/month" class="btn secondary">新規出欠登録</a>
+      </div>
+      <div class="action-row">
+        <button type="submit" name="action" value="duplicate" class="btn secondary">複製</button>
+        <button type="submit" name="action" value="edit" class="btn warning">編集</button>
+        <button type="submit" name="action" value="delete" class="btn danger" onclick="return confirm('選択したイベントを削除しますか？');">削除</button>
+      </div>
     </div>
 
     {% if months %}
@@ -106,12 +86,12 @@
     <div class="month-pane {% if loop.first %}active{% endif %}" data-pane="{{ month }}">
       {% if month_data.get(month) and month_data[month]|length > 0 %}
       <div class="table-wrap">
-        <table>
+        <table class="events-table">
           <thead>
             <tr>
-              <th>選択</th>
-              <th>日程/イベント内容</th>
-              <th>出欠集計</th>
+              <th class="col-select">選択</th>
+              <th class="col-event">日程/イベント内容</th>
+              <th class="col-summary">出欠集計</th>
               {% for member in members %}
               <th>{{ member }}</th>
               {% endfor %}
@@ -120,12 +100,12 @@
           <tbody>
             {% for e in month_data.get(month, []) %}
             <tr>
-              <td><input class="inline-check" type="checkbox" name="selected_ids" value="{{ e['id'] }}"></td>
-              <td>
+              <td class="col-select"><input class="inline-check" type="checkbox" name="selected_ids" value="{{ e['id'] }}"></td>
+              <td class="col-event event-lines">
                 <div>{{ e["date_label"] }} {{ e["start_time"] }} 〜 {{ e["end_time"] }}</div>
                 <div>{{ e["opponent"] }} @{{ e["place"] }}</div>
               </td>
-              <td>
+              <td class="col-summary summary-lines">
                 {% set ns = namespace(join_count=0, absent_count=0, undecided_count=0) %}
                 {% for member in members %}
                 {% set status = attendance_dict.get((e["id"], member), "") %}
@@ -137,7 +117,8 @@
                 {% set ns.undecided_count = ns.undecided_count + 1 %}
                 {% endif %}
                 {% endfor %}
-                参加 {{ ns.join_count }} / 不参加 {{ ns.absent_count }} / 未定 {{ ns.undecided_count }}
+                <div>参加 {{ ns.join_count }} / 不参加 {{ ns.absent_count }}</div>
+                <div>未定 {{ ns.undecided_count }}</div>
               </td>
               {% for member in members %}
               {% set status = attendance_dict.get((e["id"], member), "") %}

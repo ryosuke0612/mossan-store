@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}イベント登録 | Mossan Store{% endblock %}
+
+{% block content %}
+<h1 class="page-title">イベント登録</h1>
+<div class="panel" style="max-width:860px;">
+  <form method="POST" action="/add">
+    <div class="grid-2">
+      <div class="field">
+        <label>日付</label>
+        <input type="date" name="date" required>
+      </div>
+      <div></div>
+      <div class="field">
+        <label>開始時間</label>
+        <div class="grid-2">
+          <select name="start_time_hour" required>
+            {% for h in range(24) %}
+            <option value="{{ h }}" {% if h == 12 %}selected{% endif %}>{{ "%02d"|format(h) }}時</option>
+            {% endfor %}
+          </select>
+          <select name="start_time_minute" required>
+            {% for m in range(0, 60, 10) %}
+            <option value="{{ m }}" {% if m == 0 %}selected{% endif %}>{{ "%02d"|format(m) }}分</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>終了時間</label>
+        <div class="grid-2">
+          <select name="end_time_hour" required>
+            {% for h in range(24) %}
+            <option value="{{ h }}" {% if h == 12 %}selected{% endif %}>{{ "%02d"|format(h) }}時</option>
+            {% endfor %}
+          </select>
+          <select name="end_time_minute" required>
+            {% for m in range(0, 60, 10) %}
+            <option value="{{ m }}" {% if m == 0 %}selected{% endif %}>{{ "%02d"|format(m) }}分</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>イベント内容</label>
+        <input type="text" name="opponent" required>
+      </div>
+      <div class="field">
+        <label>場所</label>
+        <input type="text" name="place" required>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <a href="/app" class="btn secondary">戻る</a>
+      <button class="btn" type="submit">登録する</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
