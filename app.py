@@ -160,6 +160,15 @@ def normalize_status(value):
     return status_map.get(value, value)
 
 
+def format_date_mmdd_with_weekday(date_text):
+    try:
+        date_obj = datetime.strptime(date_text, "%Y-%m-%d")
+    except (TypeError, ValueError):
+        return date_text
+    weekdays = ["月", "火", "水", "木", "金", "土", "日"]
+    return f"{date_obj.strftime('%m月%d日')}（{weekdays[date_obj.weekday()]}）"
+
+
 @app.route("/")
 def landing():
     return render_template("landing.html")
@@ -315,10 +324,15 @@ def index():
 
     c.execute("SELECT * FROM matches ORDER BY date, start_time")
     all_matches = c.fetchall()
+    all_matches_with_labels = []
+    for match in all_matches:
+        match_data = dict(match)
+        match_data["date_label"] = format_date_mmdd_with_weekday(match["date"])
+        all_matches_with_labels.append(match_data)
 
     month_data = {}
     for month in months:
-        month_data[month] = [m for m in all_matches if m["date"].startswith(month)]
+        month_data[month] = [m for m in all_matches_with_labels if m["date"].startswith(month)]
 
     c.execute("SELECT DISTINCT name FROM attendance ORDER BY name")
     members = [row["name"] for row in c.fetchall()]

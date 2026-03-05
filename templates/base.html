@@ -20,11 +20,15 @@ body {
   background: radial-gradient(circle at 10% 0%, #290000 0%, var(--bg) 45%);
   color: var(--text);
   font-family: 'Noto Sans JP', sans-serif;
+  padding-top: 82px;
+  padding-bottom: 68px;
 }
 a { color: inherit; }
 .site-header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  width: 100%;
   z-index: 20;
   background: rgba(0, 0, 0, 0.92);
   border-bottom: 3px solid var(--line);
@@ -159,10 +163,16 @@ th, td {
   border: 1px solid #2f2f2f;
   padding: 8px;
   font-size: 14px;
-  vertical-align: top;
+  vertical-align: middle;
+  text-align: center;
 }
 th { background: #1b1b1b; color: #ffcbcb; }
 .site-footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  z-index: 20;
   border-top: 3px solid var(--line);
   background: #000;
   text-align: center;
@@ -173,6 +183,7 @@ th { background: #1b1b1b; color: #ffcbcb; }
 @media (max-width: 900px) {
   .grid-2, .grid-3 { grid-template-columns: 1fr; }
   .top-nav { gap: 10px; }
+  body { padding-top: 126px; padding-bottom: 68px; }
 }
 </style>
 {% block head_extra %}{% endblock %}
