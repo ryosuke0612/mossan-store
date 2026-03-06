@@ -520,26 +520,31 @@ def attendance_month():
 
     selected_month = request.args.get("month")
     name = request.args.get("name")
+    error_message = ""
 
     if not selected_month and months:
         selected_month = months[0]
 
     if request.method == "POST":
-        name = request.form["name"]
+        selected_month = request.form.get("month") or selected_month
+        name = request.form.get("name", "").strip()
         match_id = request.form["match_id"]
         status = normalize_status(request.form["status"])
 
-        c.execute(
-            """
-        INSERT INTO attendance (match_id, name, status)
-        VALUES (?, ?, ?)
-        ON CONFLICT(match_id, name)
-        DO UPDATE SET status=excluded.status
-        """,
-            (match_id, name, status),
-        )
+        if not name:
+            error_message = "名前を入力してから出欠を登録してください。"
+        else:
+            c.execute(
+                """
+            INSERT INTO attendance (match_id, name, status)
+            VALUES (?, ?, ?)
+            ON CONFLICT(match_id, name)
+            DO UPDATE SET status=excluded.status
+            """,
+                (match_id, name, status),
+            )
 
-        conn.commit()
+            conn.commit()
 
     matches = []
     attendance_dict = {}
@@ -553,7 +558,11 @@ def attendance_month():
         """,
             (selected_month,),
         )
-        matches = c.fetchall()
+        matches = []
+        for row in c.fetchall():
+            match_data = dict(row)
+            match_data["date_label"] = format_date_mmdd_with_weekday(row["date"])
+            matches.append(match_data)
 
         if name:
             c.execute(
@@ -576,6 +585,7 @@ def attendance_month():
         matches=matches,
         name=name,
         attendance_dict=attendance_dict,
+        error_message=error_message,
     )
 
 
