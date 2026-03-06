@@ -1,6 +1,6 @@
 ﻿{% extends "base.html" %}
 
-{% block title %}イベント管理 | Mossan Store{% endblock %}
+{% block title %}Team {{ team_name or "Guest" }}! | Mossan Store{% endblock %}
 
 {% block head_extra %}
 <style>
@@ -59,7 +59,7 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="page-title">イベント管理</h1>
+<h1 class="page-title">Team {{ team_name or "Guest" }}!</h1>
 
 <section class="panel">
   <form method="POST" action="/matches/action">

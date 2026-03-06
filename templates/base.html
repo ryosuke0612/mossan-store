@@ -42,6 +42,7 @@ a { color: inherit; }
   justify-content: space-between;
   align-items: center;
   gap: 14px;
+  position: relative;
 }
 .logo-area {
   display: flex;
@@ -69,6 +70,26 @@ a { color: inherit; }
   padding-bottom: 2px;
 }
 .top-nav a:hover { color: #ff8a8a; border-bottom-color: #ff8a8a; }
+.menu-toggle {
+  display: none;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid #3a3a3a;
+  border-radius: 10px;
+  background: #111;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-direction: column;
+}
+.menu-toggle span {
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+  background: #f5f5f5;
+}
 .user-chip {
   color: var(--muted);
   font-size: 14px;
@@ -182,8 +203,44 @@ th { background: #1b1b1b; color: #ffcbcb; }
 }
 @media (max-width: 900px) {
   .grid-2, .grid-3 { grid-template-columns: 1fr; }
-  .top-nav { gap: 10px; }
-  body { padding-top: 126px; padding-bottom: 68px; }
+  .header-inner {
+    align-items: center;
+  }
+  .logo-text {
+    font-size: 22px;
+    letter-spacing: 1px;
+  }
+  .menu-toggle {
+    display: inline-flex;
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+  }
+  .top-nav {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: min(260px, 86vw);
+    padding: 12px;
+    background: #0d0d0d;
+    border: 1px solid #333;
+    border-radius: 12px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .top-nav.open {
+    display: flex;
+  }
+  .top-nav a {
+    width: 100%;
+    border-bottom: none;
+    padding: 6px 2px;
+  }
+  body { padding-top: 88px; padding-bottom: 68px; }
 }
 </style>
 {% block head_extra %}{% endblock %}
@@ -195,13 +252,16 @@ th { background: #1b1b1b; color: #ffcbcb; }
       <img src="{{ url_for('static', filename='images/gorilla-logo.png') }}" alt="logo">
       <span class="logo-text">MOSSAN STORE</span>
     </a>
-    <nav class="top-nav">
+    <button type="button" class="menu-toggle" aria-label="メニュー" aria-expanded="false" aria-controls="top-nav">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <nav class="top-nav" id="top-nav">
       <a href="/">ホーム</a>
       <a href="/app">イベント管理</a>
-      <a href="/attendance/month">月別出欠</a>
       <a href="/payment">決済</a>
       {% if session.get('user_id') %}
-      <span class="user-chip">{{ session.get('username') }}</span>
       <a href="/logout">ログアウト</a>
       {% else %}
       <a href="/login">ログイン</a>
@@ -214,6 +274,31 @@ th { background: #1b1b1b; color: #ffcbcb; }
 {% block content %}{% endblock %}
 </main>
 <footer class="site-footer">&copy; 2026 Mossan Store All Rights Reserved.</footer>
+<script>
+(() => {
+  const toggle = document.querySelector('.menu-toggle');
+  const nav = document.getElementById('top-nav');
+  if (!toggle || !nav) return;
+
+  const closeNav = () => {
+    nav.classList.remove('open');
+    toggle.setAttribute('aria-expanded', 'false');
+  };
+
+  toggle.addEventListener('click', () => {
+    const isOpen = nav.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  });
+
+  nav.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', closeNav);
+  });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 900) closeNav();
+  });
+})();
+</script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

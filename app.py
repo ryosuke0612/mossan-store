@@ -179,22 +179,22 @@ def register():
     error_message = ""
 
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
+        team_name = request.form.get("team_name", "").strip()
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
 
-        if not username or not email or not password:
-            error_message = "ユーザー名・メールアドレス・パスワードは必須です。"
+        if not team_name or not email or not password:
+            error_message = "チーム名・メールアドレス・パスワードは必須です。"
         elif len(password) < 6:
             error_message = "パスワードは6文字以上で入力してください。"
         else:
             conn = get_db_connection()
             c = conn.cursor()
-            c.execute("SELECT id FROM users WHERE username=? OR email=?", (username, email))
+            c.execute("SELECT id FROM users WHERE username=? OR email=?", (team_name, email))
             exists = c.fetchone()
 
             if exists:
-                error_message = "同じユーザー名またはメールアドレスが既に登録されています。"
+                error_message = "同じチーム名またはメールアドレスが既に登録されています。"
             else:
                 c.execute(
                     """
@@ -202,7 +202,7 @@ def register():
                     VALUES (?, ?, ?, ?)
                     """,
                     (
-                        username,
+                        team_name,
                         email,
                         generate_password_hash(password),
                         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -223,20 +223,21 @@ def login():
     next_url = request.args.get("next") or request.form.get("next") or "/app"
 
     if request.method == "POST":
-        username_or_email = request.form.get("username_or_email", "").strip()
+        team_or_email = request.form.get("team_or_email", "").strip()
         password = request.form.get("password", "")
 
         conn = get_db_connection()
         c = conn.cursor()
         c.execute(
             "SELECT id, username, password_hash FROM users WHERE username=? OR email=?",
-            (username_or_email, username_or_email.lower()),
+            (team_or_email, team_or_email.lower()),
         )
         user = c.fetchone()
         conn.close()
 
         if user and check_password_hash(user["password_hash"], password):
             session["user_id"] = user["id"]
+            session["team_name"] = user["username"]
             session["username"] = user["username"]
             return redirect(next_url)
 
@@ -309,7 +310,7 @@ def payment():
         error_message=error_message,
         success_message=success_message,
         recent_payments=recent_payments,
-        username=session.get("username", ""),
+        team_name=session.get("team_name") or session.get("username", ""),
     )
 
 
@@ -352,7 +353,7 @@ def index():
         month_data=month_data,
         members=members,
         attendance_dict=attendance_dict,
-        username=session.get("username", ""),
+        team_name=session.get("team_name") or session.get("username", ""),
     )
 
 
