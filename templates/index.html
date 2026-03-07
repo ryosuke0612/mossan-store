@@ -138,10 +138,11 @@
 
 <section class="panel">
   <form method="POST" action="/matches/action">
+    <input type="hidden" name="current_month" id="current-month-input" value="{{ active_month or '' }}">
     <div class="action-rows">
       <div class="action-row">
-        <a href="/add" class="btn">イベント登録</a>
-        <a id="attendance-month-link" href="/attendance/month" class="btn secondary">新規出欠登録</a>
+        <a id="add-link" href="/add{% if active_month %}?month={{ active_month }}{% endif %}" class="btn">イベント登録</a>
+        <a id="attendance-month-link" href="/attendance/month{% if active_month %}?month={{ active_month }}{% endif %}" class="btn secondary">新規出欠登録</a>
       </div>
       <div class="action-row">
         <button type="submit" name="action" value="attendance_check" class="btn bulk-action-btn bulk-check" disabled>出欠確認</button>
@@ -259,14 +260,21 @@
   const tabs = document.querySelectorAll('.month-tab');
   const panes = document.querySelectorAll('.month-pane');
   const monthLink = document.getElementById('attendance-month-link');
+  const addLink = document.getElementById('add-link');
+  const currentMonthInput = document.getElementById('current-month-input');
   const selectedBoxes = document.querySelectorAll('input[name="selected_ids"]');
   const bulkActionButtons = document.querySelectorAll('.bulk-action-btn');
+  const initialMonth = '{{ active_month|default("", true) }}';
 
   const activate = (month) => {
     tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.month === month));
     panes.forEach((pane) => pane.classList.toggle('active', pane.dataset.pane === month));
+    if (currentMonthInput) currentMonthInput.value = month;
     if (monthLink) {
       monthLink.href = `/attendance/month?month=${encodeURIComponent(month)}`;
+    }
+    if (addLink) {
+      addLink.href = `/add?month=${encodeURIComponent(month)}`;
     }
   };
 
@@ -279,7 +287,10 @@
 
   selectedBoxes.forEach((box) => box.addEventListener('change', updateBulkButtons));
   tabs.forEach((tab) => tab.addEventListener('click', () => activate(tab.dataset.month)));
-  if (tabs.length) activate(tabs[0].dataset.month);
+  if (tabs.length) {
+    const target = Array.from(tabs).find((tab) => tab.dataset.month === initialMonth);
+    activate((target || tabs[0]).dataset.month);
+  }
   updateBulkButtons();
 })();
 </script>

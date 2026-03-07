@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}イベント登録 | Mossan Store{% endblock %}
 
@@ -30,6 +30,7 @@
 <h1 class="page-title">イベント登録</h1>
 <div class="panel" style="max-width:860px;">
   <form method="POST" action="/add" class="event-form">
+    <input type="hidden" name="return_month" value="{{ current_month or '' }}">
     <div class="grid-2">
       <div class="field">
         <label>日付</label>
@@ -77,7 +78,7 @@
     </div>
 
     <div class="btn-row">
-      <a href="/app" class="btn secondary">戻る</a>
+      <a href="/app{% if current_month %}?month={{ current_month }}{% endif %}" class="btn secondary">戻る</a>
       <button class="btn" type="submit">登録する</button>
     </div>
   </form>

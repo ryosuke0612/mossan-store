@@ -176,6 +176,6 @@
 {% endif %}
 
 <div class="btn-row" style="margin-top:16px;">
-  <a href="/app" class="btn secondary">戻る</a>
+  <a href="/app{% if selected_month %}?month={{ selected_month }}{% endif %}" class="btn secondary">戻る</a>
 </div>
 {% endblock %}

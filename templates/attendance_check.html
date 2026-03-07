@@ -38,7 +38,7 @@
 <h1 class="page-title">出欠確認</h1>
 
 <section class="panel">
-  <div>{{ match["date_label"] }} {{ match["start_time"] }}〜{{ match["end_time"] }}</div>
+  <div>{{ match["date_label"] }} {{ match["start_time"] }}?{{ match["end_time"] }}</div>
   <div>{{ match["opponent"] }}@{{ match["place"] }}</div>
 </section>
 
@@ -47,9 +47,9 @@
     <table class="check-table">
       <thead>
         <tr>
-          <th>○</th>
-          <th>×</th>
-          <th>△</th>
+          <th>参加</th>
+          <th>不参加</th>
+          <th>未定</th>
         </tr>
       </thead>
       <tbody>
@@ -97,3 +97,4 @@
   <a href="/app" class="btn secondary">戻る</a>
 </div>
 {% endblock %}
+
