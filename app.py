@@ -335,8 +335,24 @@ def index():
     for month in months:
         month_data[month] = [m for m in all_matches_with_labels if m["date"].startswith(month)]
 
-    c.execute("SELECT DISTINCT name FROM attendance ORDER BY name")
-    members = [row["name"] for row in c.fetchall()]
+    c.execute(
+        """
+        SELECT
+            substr(m.date,1,7) as month,
+            a.name,
+            MIN(a.id) as first_attendance_id
+        FROM attendance a
+        JOIN matches m ON m.id = a.match_id
+        GROUP BY substr(m.date,1,7), a.name
+        ORDER BY month, first_attendance_id
+        """
+    )
+    month_member_rows = c.fetchall()
+    members_by_month = {month: [] for month in months}
+    for row in month_member_rows:
+        month = row["month"]
+        if month in members_by_month:
+            members_by_month[month].append(row["name"])
 
     c.execute("SELECT match_id, name, status FROM attendance")
     attendance_rows = c.fetchall()
@@ -351,7 +367,7 @@ def index():
         "index.html",
         months=months,
         month_data=month_data,
-        members=members,
+        members_by_month=members_by_month,
         attendance_dict=attendance_dict,
         team_name=session.get("team_name") or session.get("username", ""),
     )
@@ -586,7 +602,37 @@ def attendance_month():
         name=name,
         attendance_dict=attendance_dict,
         error_message=error_message,
+        edit_mode=bool(name),
     )
+
+
+@app.route("/attendance/member/delete", methods=["POST"])
+@login_required
+def delete_member_attendance_by_month():
+    month = request.args.get("month", "").strip()
+    name = request.args.get("name", "").strip()
+
+    if not month or not name:
+        return redirect("/app")
+
+    conn = sqlite3.connect("schedule.db")
+    c = conn.cursor()
+    c.execute(
+        """
+        DELETE FROM attendance
+        WHERE name=?
+          AND match_id IN (
+              SELECT id
+              FROM matches
+              WHERE substr(date,1,7)=?
+          )
+        """,
+        (name, month),
+    )
+    conn.commit()
+    conn.close()
+
+    return redirect("/app")
 
 
 @app.route("/sitemap.xml")
