@@ -457,6 +457,8 @@ def bulk_match_action():
 
     if action == "edit":
         return redirect(f"/edit/{selected_ids[0]}")
+    if action == "attendance_check":
+        return redirect(f"/attendance/check/{selected_ids[0]}")
 
     conn = sqlite3.connect("schedule.db")
     c = conn.cursor()
@@ -482,6 +484,49 @@ def bulk_match_action():
     conn.commit()
     conn.close()
     return redirect("/app")
+
+
+@app.route("/attendance/check/<int:match_id>")
+@login_required
+def attendance_check(match_id):
+    conn = sqlite3.connect("schedule.db")
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM matches WHERE id=?", (match_id,))
+    match = c.fetchone()
+    if not match:
+        conn.close()
+        return redirect("/app")
+
+    c.execute(
+        """
+        SELECT name, status
+        FROM attendance
+        WHERE match_id=?
+        ORDER BY id
+        """,
+        (match_id,),
+    )
+    rows = c.fetchall()
+    conn.close()
+
+    grouped_members = {"参加": [], "不参加": [], "未定": []}
+    for row in rows:
+        status = normalize_status(row["status"])
+        if status in grouped_members:
+            grouped_members[status].append(row["name"])
+
+    match_data = dict(match)
+    match_data["date_label"] = format_date_mmdd_with_weekday(match["date"])
+
+    return render_template(
+        "attendance_check.html",
+        match=match_data,
+        join_members=grouped_members["参加"],
+        absent_members=grouped_members["不参加"],
+        undecided_members=grouped_members["未定"],
+    )
 
 
 @app.route("/edit/<int:id>", methods=["GET", "POST"])
