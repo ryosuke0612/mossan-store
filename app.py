@@ -285,6 +285,26 @@ def attendance_description():
     return render_template("landing.html")
 
 
+@app.route("/apps")
+def apps_list():
+    return render_template("apps.html")
+
+
+@app.route("/apps/shift")
+def shift_app():
+    return render_template("shift.html")
+
+
+@app.route("/apps/qrcode")
+def qrcode_app():
+    return render_template("qrcode.html")
+
+
+@app.route("/apps/noticeboard")
+def noticeboard_app():
+    return render_template("noticeboard.html")
+
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     error_message = ""

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Mossan Store | アプリ一覧{% endblock %}
+
+{% block content %}
+<h1 class="page-title">アプリ一覧</h1>
+
+<section class="panel">
+  <h2 style="margin-top:0;">現在提供中</h2>
+  <div class="grid-2">
+    <article class="panel">
+      <h3 style="margin-top:0;">Attendance アプリ</h3>
+      <p>イベント作成・出欠記録・月別管理をまとめて行える出欠管理アプリです。</p>
+      <div class="btn-row">
+        <a href="{{ url_for('attendance_description') }}" class="btn">紹介ページ</a>
+        <a href="{{ url_for('index') }}" class="btn secondary">アプリを開く</a>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="panel">
+  <h2 style="margin-top:0;">追加予定アプリ（サンプル）</h2>
+  <div class="grid-3">
+    <article class="panel">
+      <h3 style="margin-top:0;">バイトのシフト管理</h3>
+      <p>スタッフごとの希望提出、確定シフト表示、欠員チェックを想定しています。</p>
+      <a href="{{ url_for('shift_app') }}" class="btn">サンプルを見る</a>
+    </article>
+
+    <article class="panel">
+      <h3 style="margin-top:0;">QRコード作成</h3>
+      <p>URLやテキストを入力して、用途別にQRコードを生成できる想定です。</p>
+      <a href="{{ url_for('qrcode_app') }}" class="btn">サンプルを見る</a>
+    </article>
+
+    <article class="panel">
+      <h3 style="margin-top:0;">地域の掲示板</h3>
+      <p>地域イベント告知、募集投稿、コメントでの情報共有を想定しています。</p>
+      <a href="{{ url_for('noticeboard_app') }}" class="btn">サンプルを見る</a>
+    </article>
+  </div>
+</section>
+{% endblock %}
