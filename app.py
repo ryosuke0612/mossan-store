@@ -280,7 +280,7 @@ def home():
     return render_template("home.html")
 
 
-@app.route("/apps/attendance")
+@app.route("/apps/attendance/app/description")
 def attendance_description():
     return render_template("landing.html")
 
@@ -320,7 +320,7 @@ def blog_pta_attendance():
     return render_template("blog_pta_attendance.html")
 
 
-@app.route("/register", methods=["GET", "POST"])
+@app.route("/apps/attendance/app/register", methods=["GET", "POST"])
 def register():
     error_message = ""
 
@@ -363,7 +363,7 @@ def register():
     return render_template("register.html", error_message=error_message)
 
 
-@app.route("/login", methods=["GET", "POST"])
+@app.route("/apps/attendance/app/login", methods=["GET", "POST"])
 def login():
     error_message = ""
     next_url = request.args.get("next") or request.form.get("next") or url_for("index")
@@ -392,13 +392,13 @@ def login():
     return render_template("login.html", error_message=error_message, next_url=next_url)
 
 
-@app.route("/logout")
+@app.route("/apps/attendance/app/logout")
 def logout():
     session.clear()
     return redirect(url_for("home"))
 
 
-@app.route("/payment", methods=["GET", "POST"])
+@app.route("/apps/attendance/app/payment", methods=["GET", "POST"])
 @login_required
 def payment():
     plan_prices = {
@@ -460,7 +460,7 @@ def payment():
     )
 
 
-@app.route("/team", methods=["GET", "POST"])
+@app.route("/apps/attendance/app/team", methods=["GET", "POST"])
 @login_required
 def team_page():
     error_message = ""
@@ -1133,7 +1133,7 @@ def sitemap():
     <loc>https://mossan-store.com/apps</loc>
   </url>
   <url>
-    <loc>https://mossan-store.com/apps/attendance</loc>
+    <loc>https://mossan-store.com/apps/attendance/app/description</loc>
   </url>
   <url>
     <loc>https://mossan-store.com/blog</loc>
