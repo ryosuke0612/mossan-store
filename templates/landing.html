@@ -1,322 +1,203 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MossanStore | 出欠管理アプリ</title>
+﻿{% extends "base.html" %}
 
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+{% block title %}MossanStore | 出欠管理アプリ{% endblock %}
 
+{% block head_extra %}
 <style>
-body{
-    margin:0;
-    font-family:'Noto Sans JP',sans-serif;
-    background:#111;
-    color:white;
+body {
+  padding-top: 0;
+  padding-bottom: 0;
 }
-
-/* ===== ヘッダー ===== */
-header{
-    background:black;
-    padding:15px 6%;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    border-bottom:3px solid red;
+.page-wrap {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
 }
-
-.logo-area{
-    display:flex;
-    align-items:center;
-    gap:12px;
+.hero {
+  padding: 154px 8% 72px;
+  background: linear-gradient(to right, #000, #1a0000, #000);
 }
-
-.logo-area img{
-    height:50px;
+.hero-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 56px;
 }
-
-.logo-text{
-    font-family:'Anton', sans-serif;
-    font-size:30px;
-    letter-spacing:2px;
+.hero-text {
+  flex: 1;
 }
-
-nav a{
-    color:white;
-    text-decoration:none;
-    margin-left:30px;
-    font-weight:bold;
-    font-size:18px;
-    transition:0.3s;
+.hero-text h1 {
+  font-family: 'Anton', sans-serif;
+  font-size: clamp(38px, 6vw, 64px);
+  margin: 0 0 24px;
+  letter-spacing: 3px;
 }
-
-nav a:hover{
-    color:red;
+.hero-text p {
+  font-size: clamp(16px, 2.2vw, 22px);
+  line-height: 1.9;
+  font-weight: 700;
+  margin: 0;
 }
-
-/* ===== ヒーロー ===== */
-.hero{
-    padding:100px 8%;
-    background:linear-gradient(to right,#000,#1a0000,#000);
+.cta-btn {
+  display: inline-block;
+  margin-top: 34px;
+  padding: 14px 32px;
+  font-size: 20px;
+  background: #ff2b2b;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 900;
+  border-radius: 50px;
+  transition: 0.2s;
 }
-
-.hero-container{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:60px;
+.cta-btn:hover {
+  background: #ff8f00;
+  transform: scale(1.05);
 }
-
-.hero-text{
-    flex:1;
+.hero-image {
+  flex: 1;
+  text-align: right;
 }
-
-.hero-text h1{
-    font-family:'Anton',sans-serif;
-    font-size:64px;
-    margin-bottom:30px;
-    letter-spacing:3px;
+.hero-image img {
+  width: 100%;
+  max-width: 650px;
+  filter: drop-shadow(0 0 30px rgba(255, 0, 0, 0.6));
 }
-
-.hero-text p{
-    font-size:22px;
-    line-height:1.9;
-    font-weight:700;
+.section {
+  padding: 86px 8%;
+  text-align: center;
 }
-
-.cta-btn{
-    display:inline-block;
-    margin-top:40px;
-    padding:18px 45px;
-    font-size:22px;
-    background:red;
-    color:white;
-    text-decoration:none;
-    font-weight:900;
-    border-radius:50px;
-    transition:0.3s;
+.section h2 {
+  font-family: 'Anton', sans-serif;
+  font-size: clamp(34px, 5vw, 48px);
+  margin: 0 0 46px;
+  letter-spacing: 2px;
+  color: #ff2b2b;
 }
-
-.cta-btn:hover{
-    background:orange;
-    transform:scale(1.1);
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 26px;
 }
-
-.hero-image{
-    flex:1;
-    text-align:right;
+.feature-box {
+  background: #1a1a1a;
+  padding: 34px;
+  border: 2px solid #ff2b2b;
+  border-radius: 15px;
+  transition: 0.2s;
 }
-
-.hero-image img{
-    width:100%;
-    max-width:650px;
-    filter: drop-shadow(0 0 30px rgba(255,0,0,0.6));
+.feature-box:hover {
+  transform: translateY(-8px);
+  background: #2a0000;
 }
-
-/* ===== 特徴セクション ===== */
-.section{
-    padding:100px 8%;
-    text-align:center;
+.feature-box h3 {
+  font-size: 28px;
+  margin: 0 0 14px;
 }
-
-.section h2{
-    font-family:'Anton',sans-serif;
-    font-size:48px;
-    margin-bottom:60px;
-    letter-spacing:2px;
-    color:red;
+.feature-box p {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.8;
 }
-
-.features{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
-    gap:50px;
+.last {
+  padding: 92px 8%;
+  background: #000;
+  text-align: center;
 }
-
-.feature-box{
-    background:#1a1a1a;
-    padding:50px;
-    border:2px solid red;
-    border-radius:15px;
-    transition:0.3s;
+.last h2 {
+  font-family: 'Anton', sans-serif;
+  font-size: clamp(34px, 6vw, 60px);
+  margin: 0 0 24px;
 }
-
-.feature-box:hover{
-    transform:translateY(-10px);
-    background:#2a0000;
-}
-
-.feature-box h3{
-    font-size:30px;
-    margin-bottom:20px;
-}
-
-.feature-box p{
-    font-size:20px;
-    line-height:1.8;
-}
-
-/* ===== ラストメッセージ ===== */
-.last{
-    padding:120px 8%;
-    background:black;
-    text-align:center;
-}
-
-.last h2{
-    font-family:'Anton',sans-serif;
-    font-size:60px;
-    margin-bottom:40px;
-}
-
-/* ===== フッター ===== */
-footer{
-    background:#000;
-    padding:30px;
-    text-align:center;
-    border-top:3px solid red;
-    font-size:14px;
-}
-
-/* ===== スマホ対応 ===== */
-@media(max-width:768px){
-
-    nav{
-        display:none;
-    }
-
-    .hero-container{
-        flex-direction:column;
-        text-align:center;
-    }
-
-    .hero-text h1{
-        font-size:40px;
-    }
-
-    .hero-text p{
-        font-size:18px;
-    }
-
-    .hero-image{
-        text-align:center;
-        margin-top:40px;
-    }
-
-    .section h2{
-        font-size:36px;
-    }
-
-    .feature-box h3{
-        font-size:24px;
-    }
-
-    .feature-box p{
-        font-size:16px;
-    }
-
-    .last h2{
-        font-size:38px;
-    }
+@media (max-width: 900px) {
+  .hero {
+    padding: 134px 6% 46px;
+  }
+  .hero-container {
+    flex-direction: column;
+    text-align: center;
+    gap: 26px;
+  }
+  .hero-image {
+    text-align: center;
+  }
+  .section {
+    padding: 56px 6%;
+  }
+  .feature-box h3 {
+    font-size: 24px;
+  }
+  .feature-box p {
+    font-size: 16px;
+  }
+  .last {
+    padding: 64px 6%;
+  }
 }
 </style>
-</head>
+{% endblock %}
 
-<body id="top">
-
-<header>
-    <div class="logo-area">
-        <img src="{{ url_for('static', filename='images/gorilla-logo.png') }}" alt="ゴリラロゴ">
-        <div class="logo-text">mossanstore</div>
-    </div>
-
-    <nav>
-        <a href="#top">トップ</a>
-        <a href="#features">アプリ紹介</a>
-        <a href="{{ url_for('index') }}">ログイン</a>
-        <a href="#contact">お問い合わせ</a>
-    </nav>
-</header>
-
+{% block content %}
 <section class="hero">
-    <div class="hero-container">
-
-        <div class="hero-text">
-            <h1>本気のチームに、<br>本気の管理を。</h1>
-
-            <p>
-                試合も、練習も、イベントも。<br>
-                出欠確認に時間を奪われていませんか？<br><br>
-
-                MossanStoreの出欠管理アプリは、
-                スポーツチーム専用に設計された
-                圧倒的スピードと直感操作を実現した管理システム。<br><br>
-
-                管理のストレスをゼロにし、
-                チームの結束力と責任感を高める。<br>
-                本気で勝ちたいチームのための本気のツール。
-            </p>
-
-            <a href="{{ url_for('index') }}" class="cta-btn">今すぐアプリを見る</a>
-        </div>
-
-        <div class="hero-image">
-            <img src="{{ url_for('static', filename='images/gorilla-full.png') }}" alt="ゴリラ後ろ姿">
-        </div>
-
+  <div class="hero-container">
+    <div class="hero-text">
+      <h1>本気のチームに、<br>本気の管理を。</h1>
+      <p>
+        試合も、練習も、イベントも。<br>
+        出欠確認に時間を奪われていませんか？<br><br>
+        MossanStoreの出欠管理アプリは、
+        スポーツチーム専用に設計された
+        圧倒的スピードと直感操作を実現した管理システム。<br><br>
+        管理のストレスをゼロにし、
+        チームの結束力と責任感を高める。<br>
+        本気で勝ちたいチームのための本気のツール。
+      </p>
+      <a href="{{ url_for('index') }}" class="cta-btn">今すぐアプリを見る</a>
     </div>
+    <div class="hero-image">
+      <img src="{{ url_for('static', filename='images/gorilla-full.png') }}" alt="ゴリラ後ろ姿">
+    </div>
+  </div>
 </section>
 
 <section class="section" id="features">
-    <h2>なぜ選ばれているのか？</h2>
-
-    <div class="features">
-
-        <div class="feature-box">
-            <h3>🔥 ワンタップ出欠管理</h3>
-            <p>
-                面倒な操作は一切なし。<br>
-                参加・不参加を瞬時に登録。<br>
-                管理者の負担を徹底的に削減。
-            </p>
-        </div>
-
-        <div class="feature-box">
-            <h3>💪 チーム意識の向上</h3>
-            <p>
-                誰が参加するのかが即時共有。<br>
-                メンバーの責任感が自然と高まる設計。
-            </p>
-        </div>
-
-        <div class="feature-box">
-            <h3>📱 スマホ完全対応</h3>
-            <p>
-                グラウンドでも移動中でも即確認。<br>
-                どこにいてもチームを動かせる。
-            </p>
-        </div>
-
-        <div class="feature-box">
-            <h3>⚡ 無駄を排除した設計</h3>
-            <p>
-                必要な機能だけを搭載。<br>
-                迷わない、止まらない、戦えるUI。
-            </p>
-        </div>
-
+  <h2>なぜ選ばれているのか？</h2>
+  <div class="features">
+    <div class="feature-box">
+      <h3>🔥 ワンタップ出欠管理</h3>
+      <p>
+        面倒な操作は一切なし。<br>
+        参加・不参加を瞬時に登録。<br>
+        管理者の負担を徹底的に削減。
+      </p>
     </div>
+    <div class="feature-box">
+      <h3>💪 チーム意識の向上</h3>
+      <p>
+        誰が参加するのかが即時共有。<br>
+        メンバーの責任感が自然と高まる設計。
+      </p>
+    </div>
+    <div class="feature-box">
+      <h3>📱 スマホ完全対応</h3>
+      <p>
+        グラウンドでも移動中でも即確認。<br>
+        どこにいてもチームを動かせる。
+      </p>
+    </div>
+    <div class="feature-box">
+      <h3>⚡ 無駄を排除した設計</h3>
+      <p>
+        必要な機能だけを搭載。<br>
+        迷わない、止まらない、戦えるUI。
+      </p>
+    </div>
+  </div>
 </section>
 
 <section class="last">
-    <h2>管理するな。<br>チームを進化させろ。</h2>
-    <a href="{{ url_for('index') }}" class="cta-btn">ログインして始める</a>
+  <h2>管理するな。<br>チームを進化させろ。</h2>
+  <a href="{{ url_for('index') }}" class="cta-btn">ログインして始める</a>
 </section>
-
-<footer id="contact">
-    © 2026 MossanStore All Rights Reserved.
-</footer>
-
-</body>
-</html>
-
+{% endblock %}
