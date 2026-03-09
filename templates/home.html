@@ -8,18 +8,19 @@
 <section class="panel">
   <h2 style="margin-top:0;">サービス概要</h2>
   <p>
-    Mossan Store は、チーム運営に必要なアプリをまとめて使えるサービスです。
-    現在は Attendance アプリを提供しており、イベント管理と出欠管理を一つの画面で効率化できます。
+    Mossan Store は、チームや地域運営に役立つ実用アプリを提供するサービスです。
+    現在はスポーツイベント向けの出欠管理アプリを中心に運用できます。
   </p>
   <p style="margin-bottom:0;">
-    今後はシフト管理や掲示板など、日々の運営を支えるアプリを順次追加していきます。
+    今後はシフト管理や掲示板など、運営に必要なアプリを順次追加していきます。
   </p>
 </section>
 
 <section class="panel">
-  <h2 style="margin-top:0;">利用可能アプリ</h2>
+  <h2 style="margin-top:0;">利用可能ページ</h2>
   <div class="btn-row">
-    <a href="{{ url_for('apps_list') }}" class="btn">アプリ一覧を見る</a>
+    <a href="{{ url_for('apps_list') }}" class="btn">アプリ一覧</a>
+    <a href="{{ url_for('blog_index') }}" class="btn secondary">出欠管理ブログ</a>
     <a href="{{ url_for('attendance_description') }}" class="btn secondary">Attendance 紹介</a>
     <a href="{{ url_for('index') }}" class="btn secondary">Attendance を開く</a>
   </div>

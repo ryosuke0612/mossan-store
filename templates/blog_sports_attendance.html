@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}スポーツイベントでの出欠管理の困りごと | Mossan Store{% endblock %}
+{% block head_extra %}
+<meta name="description" content="スポーツイベントの出欠管理で起きる課題と、連絡漏れや集計ミスを減らす実践的な解決策を解説します。">
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">スポーツイベントでの出欠管理の困りごと</h1>
+
+<section class="panel">
+  <h2 style="margin-top:0;">よくある困りごと</h2>
+  <ul>
+    <li>練習・試合ごとに連絡手段が違い、返信の取りこぼしが発生する</li>
+    <li>直前の欠席連絡が把握できず、当日の配置が混乱する</li>
+    <li>過去の出欠履歴が残らず、参加傾向を振り返れない</li>
+  </ul>
+</section>
+
+<section class="panel">
+  <h2 style="margin-top:0;">解決策</h2>
+  <p>
+    出欠登録の窓口を1つに統一し、イベント単位で参加・不参加・未定を管理することで、
+    連絡漏れや集計ミスを減らせます。さらに、月単位で履歴を残しておくと、
+    参加率の把握や次回運営の準備にも役立ちます。
+  </p>
+  <div class="btn-row">
+    <a href="{{ url_for('index') }}" class="btn">出欠管理アプリを開く</a>
+    <a href="{{ url_for('attendance_description') }}" class="btn secondary">Attendance紹介を見る</a>
+    <a href="{{ url_for('blog_index') }}" class="btn secondary">記事一覧に戻る</a>
+  </div>
+</section>
+{% endblock %}

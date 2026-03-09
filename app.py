@@ -305,6 +305,21 @@ def noticeboard_app():
     return render_template("noticeboard.html")
 
 
+@app.route("/blog")
+def blog_index():
+    return render_template("blog.html")
+
+
+@app.route("/blog/sports-attendance")
+def blog_sports_attendance():
+    return render_template("blog_sports_attendance.html")
+
+
+@app.route("/blog/pta-attendance")
+def blog_pta_attendance():
+    return render_template("blog_pta_attendance.html")
+
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     error_message = ""
@@ -1113,6 +1128,21 @@ def sitemap():
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://mossan-store.com/</loc>
+  </url>
+  <url>
+    <loc>https://mossan-store.com/apps</loc>
+  </url>
+  <url>
+    <loc>https://mossan-store.com/apps/attendance</loc>
+  </url>
+  <url>
+    <loc>https://mossan-store.com/blog</loc>
+  </url>
+  <url>
+    <loc>https://mossan-store.com/blog/sports-attendance</loc>
+  </url>
+  <url>
+    <loc>https://mossan-store.com/blog/pta-attendance</loc>
   </url>
 </urlset>"""
     return Response(sitemap_xml, content_type="application/xml; charset=utf-8")

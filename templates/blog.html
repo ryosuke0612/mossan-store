@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}出欠管理ブログ一覧 | Mossan Store{% endblock %}
+{% block head_extra %}
+<meta name="description" content="スポーツやPTAイベントの出欠管理で起こりやすい課題と、運営を効率化する解決策を紹介するブログ一覧です。">
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">出欠管理ブログ</h1>
+
+<section class="panel">
+  <h2 style="margin-top:0;">記事一覧</h2>
+  <p>スポーツイベントやPTAイベントでの出欠管理に関する困りごとと解決策をまとめています。</p>
+</section>
+
+<section class="panel">
+  <article class="panel">
+    <h2 style="margin-top:0;">スポーツイベントでの出欠管理の困りごと</h2>
+    <p>試合や練習ごとに返信方法がバラバラになり、集計漏れや連絡の行き違いが起きる課題を解説します。</p>
+    <div class="btn-row">
+      <a href="{{ url_for('blog_sports_attendance') }}" class="btn">記事を読む</a>
+    </div>
+  </article>
+
+  <article class="panel">
+    <h2 style="margin-top:0;">PTAイベントでの出欠管理の困りごと</h2>
+    <p>保護者ごとの連絡手段の違いや、役員間の情報共有遅れを減らすための運用ポイントを紹介します。</p>
+    <div class="btn-row">
+      <a href="{{ url_for('blog_pta_attendance') }}" class="btn">記事を読む</a>
+    </div>
+  </article>
+</section>
+{% endblock %}
