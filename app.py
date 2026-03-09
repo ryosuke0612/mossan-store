@@ -267,6 +267,109 @@ def build_attendance_csv_response(user_id, month="all"):
         mimetype="text/csv; charset=utf-8",
         headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
+
+
+def build_event_list_csv_response(user_id, month="all"):
+    conn = get_db_connection()
+    c = conn.cursor()
+
+    match_sql = """
+        SELECT id, date, start_time, end_time, opponent, place
+        FROM matches
+        WHERE user_id=?
+    """
+    match_params = [user_id]
+    if month and month != "all":
+        match_sql += " AND substr(date,1,7)=?"
+        match_params.append(month)
+    match_sql += " ORDER BY date, start_time"
+    c.execute(match_sql, match_params)
+    matches = c.fetchall()
+
+    member_sql = """
+        SELECT
+            a.name,
+            MIN(a.id) AS first_attendance_id
+        FROM attendance a
+        JOIN matches m ON m.id = a.match_id
+        WHERE m.user_id=?
+    """
+    member_params = [user_id]
+    if month and month != "all":
+        member_sql += " AND substr(m.date,1,7)=?"
+        member_params.append(month)
+    member_sql += """
+        GROUP BY a.name
+        ORDER BY first_attendance_id
+    """
+    c.execute(member_sql, member_params)
+    members = [row["name"] for row in c.fetchall()]
+
+    attendance_sql = """
+        SELECT a.match_id, a.name, a.status
+        FROM attendance a
+        JOIN matches m ON m.id = a.match_id
+        WHERE m.user_id=?
+    """
+    attendance_params = [user_id]
+    if month and month != "all":
+        attendance_sql += " AND substr(m.date,1,7)=?"
+        attendance_params.append(month)
+    c.execute(attendance_sql, attendance_params)
+    attendance_rows = c.fetchall()
+    conn.close()
+
+    attendance_dict = {}
+    for row in attendance_rows:
+        attendance_dict[(row["match_id"], row["name"])] = normalize_status(row["status"])
+
+    status_symbol_map = {"参加": "○", "不参加": "×", "未定": "△"}
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["日付", "時間", "内容", "場所", "参加", "不参加", "未定", *members])
+
+    for match in matches:
+        date_value = match["date"]
+        time_value = f"{match['start_time']}~{match['end_time']}"
+        content_value = match["opponent"]
+        place_value = match["place"]
+
+        join_count = 0
+        absent_count = 0
+        undecided_count = 0
+        member_cells = []
+
+        for member in members:
+            status = attendance_dict.get((match["id"], member), "")
+            if status == "参加":
+                join_count += 1
+            elif status == "不参加":
+                absent_count += 1
+            elif status == "未定":
+                undecided_count += 1
+            member_cells.append(status_symbol_map.get(status, "-"))
+
+        writer.writerow(
+            [
+                date_value,
+                time_value,
+                content_value,
+                place_value,
+                join_count,
+                absent_count,
+                undecided_count,
+                *member_cells,
+            ]
+        )
+
+    csv_text = "\ufeff" + output.getvalue()
+    filename_suffix = month if month and month != "all" else "all"
+    filename = f"event_list_export_{filename_suffix}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        csv_text,
+        mimetype="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
     for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
         try:
             return datetime.strptime(value, fmt)
@@ -754,6 +857,13 @@ def index():
         attendance_dict=attendance_dict,
         team_name=session.get("team_name") or session.get("username", ""),
     )
+
+
+@app.route("/apps/attendance/app/csv")
+@login_required
+def export_attendance_csv():
+    month = request.args.get("month", "all").strip() or "all"
+    return build_event_list_csv_response(session["user_id"], month)
 
 
 @app.route("/apps/attendance/app/add", methods=["GET", "POST"])

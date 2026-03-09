@@ -68,6 +68,14 @@
 .btn.bulk-duplicate { background: #15803d; border-color: #15803d; }
 .btn.bulk-edit { background: #4b5563; border-color: #4b5563; }
 .btn.bulk-delete { background: #b91c1c; border-color: #b91c1c; }
+.btn.csv-export-btn {
+  width: auto;
+  background: #15803d;
+  border-color: #15803d;
+}
+.csv-export-wrap {
+  margin-top: 12px;
+}
 .btn.bulk-action-btn:disabled {
   background: transparent !important;
   border-color: #3a3a3a !important;
@@ -241,6 +249,9 @@
             {% endfor %}
           </tbody>
         </table>
+      </div>
+      <div class="csv-export-wrap">
+        <a href="{{ url_for('export_attendance_csv') }}?month={{ month }}" class="btn csv-export-btn">CSV出力</a>
       </div>
       {% else %}
       <div class="notice">この月のイベントはありません。</div>
