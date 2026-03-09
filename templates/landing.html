@@ -26,6 +26,7 @@ body {
 }
 .hero-text {
   flex: 1;
+  margin-left: 3vw;
 }
 .hero-text h1 {
   font-family: 'Anton', sans-serif;
@@ -119,6 +120,9 @@ body {
     text-align: center;
     gap: 26px;
   }
+  .hero-text {
+    margin-left: 0;
+  }
   .hero-image {
     text-align: center;
   }
@@ -146,10 +150,9 @@ body {
       <p>
         試合も、練習も、イベントも。<br>
         出欠確認に時間を奪われていませんか？<br><br>
-        MossanStoreの出欠管理アプリは、
-        スポーツチーム専用に設計された
+        MossanStoreの出欠管理アプリは、<br>
         圧倒的スピードと直感操作を実現した管理システム。<br><br>
-        管理のストレスをゼロにし、
+        管理のストレスをゼロにし、<br>
         チームの結束力と責任感を高める。<br>
         本気で勝ちたいチームのための本気のツール。
       </p>
@@ -168,36 +171,38 @@ body {
       <h3>🔥 ワンタップ出欠管理</h3>
       <p>
         面倒な操作は一切なし。<br>
-        参加・不参加を瞬時に登録。<br>
-        管理者の負担を徹底的に削減。
+        出欠を瞬時に登録。<br>
+        登録の負担を徹底的に削減。
       </p>
     </div>
     <div class="feature-box">
       <h3>💪 チーム意識の向上</h3>
       <p>
         誰が参加するのかが即時共有。<br>
-        メンバーの責任感が自然と高まる設計。
+        メンバーの責任感が高まる設計。
       </p>
     </div>
     <div class="feature-box">
       <h3>📱 スマホ完全対応</h3>
       <p>
-        グラウンドでも移動中でも即確認。<br>
-        どこにいてもチームを動かせる。
+        外出中でも即確認。<br>
+        どこにいても<br>
+        チームを動かせる。
       </p>
     </div>
     <div class="feature-box">
       <h3>⚡ 無駄を排除した設計</h3>
       <p>
         必要な機能だけを搭載。<br>
-        迷わない、止まらない、戦えるUI。
+        迷わない、止まらない<br>
+        戦えるUI。
       </p>
     </div>
   </div>
 </section>
 
 <section class="last">
-  <h2>管理するな。<br>チームを進化させろ。</h2>
+  <h2>チームを進化させろ。</h2>
   <a href="{{ url_for('index') }}" class="cta-btn">ログインして始める</a>
 </section>
 {% endblock %}
