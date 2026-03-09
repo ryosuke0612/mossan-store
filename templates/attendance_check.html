@@ -38,7 +38,7 @@
 <h1 class="page-title">出欠確認</h1>
 
 <section class="panel">
-  <div>{{ match["date_label"] }} {{ match["start_time"] }}?{{ match["end_time"] }}</div>
+  <div>{{ match["date_label"] }} {{ match["start_time"] }}〜{{ match["end_time"] }}</div>
   <div>{{ match["opponent"] }}@{{ match["place"] }}</div>
 </section>
 
@@ -94,7 +94,6 @@
 </section>
 
 <div class="btn-row" style="margin-top:16px;">
-  <a href="/app" class="btn secondary">戻る</a>
+  <a href="{{ url_for('index') }}" class="btn secondary">戻る</a>
 </div>
 {% endblock %}
-

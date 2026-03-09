@@ -276,7 +276,12 @@ def build_attendance_csv_response(user_id, month="all"):
 
 
 @app.route("/")
-def landing():
+def home():
+    return render_template("home.html")
+
+
+@app.route("/apps/attendance")
+def attendance_description():
     return render_template("landing.html")
 
 
@@ -326,7 +331,7 @@ def register():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     error_message = ""
-    next_url = request.args.get("next") or request.form.get("next") or "/app"
+    next_url = request.args.get("next") or request.form.get("next") or url_for("index")
 
     if request.method == "POST":
         team_or_email = request.form.get("team_or_email", "").strip()
@@ -355,7 +360,7 @@ def login():
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("landing"))
+    return redirect(url_for("home"))
 
 
 @app.route("/payment", methods=["GET", "POST"])
@@ -444,7 +449,10 @@ def team_page():
         form_type = request.form.get("form_type", "profile")
         if form_type == "csv_export":
             conn.close()
-            return build_attendance_csv_response(session["user_id"], request.form.get("csv_month", "all"))
+            return build_attendance_csv_response(
+                session["user_id"],
+                request.form.get("csv_month", "all"),
+            )
 
         team_name = request.form.get("team_name", "").strip()
         email = request.form.get("email", "").strip().lower()
@@ -624,7 +632,7 @@ def team_page():
     )
 
 
-@app.route("/app")
+@app.route("/apps/attendance/app")
 @login_required
 def index():
     conn = get_db_connection()
@@ -713,7 +721,7 @@ def index():
     )
 
 
-@app.route("/add", methods=["GET", "POST"])
+@app.route("/apps/attendance/app/add", methods=["GET", "POST"])
 @login_required
 def add_match():
     current_month = request.args.get("month", "").strip()
@@ -751,7 +759,7 @@ def add_match():
     return redirect_to_app_with_month(return_month)
 
 
-@app.route("/delete/<int:id>")
+@app.route("/apps/attendance/app/delete/<int:id>")
 @login_required
 def delete_match(id):
     conn = sqlite3.connect("schedule.db")
@@ -762,10 +770,10 @@ def delete_match(id):
 
     conn.commit()
     conn.close()
-    return redirect("/app")
+    return redirect(url_for("index"))
 
 
-@app.route("/duplicate/<int:id>")
+@app.route("/apps/attendance/app/duplicate/<int:id>")
 @login_required
 def duplicate_match(id):
     conn = sqlite3.connect("schedule.db")
@@ -783,10 +791,10 @@ def duplicate_match(id):
 
     conn.commit()
     conn.close()
-    return redirect("/app")
+    return redirect(url_for("index"))
 
 
-@app.route("/matches/action", methods=["POST"])
+@app.route("/apps/attendance/app/matches/action", methods=["POST"])
 @login_required
 def bulk_match_action():
     action = request.form.get("action", "")
@@ -858,7 +866,7 @@ def bulk_match_action():
     return redirect_to_app_with_month(current_month)
 
 
-@app.route("/attendance/check/<int:match_id>")
+@app.route("/apps/attendance/app/attendance/check/<int:match_id>")
 @login_required
 def attendance_check(match_id):
     conn = sqlite3.connect("schedule.db")
@@ -869,7 +877,7 @@ def attendance_check(match_id):
     match = c.fetchone()
     if not match:
         conn.close()
-        return redirect("/app")
+        return redirect(url_for("index"))
 
     c.execute(
         """
@@ -901,7 +909,7 @@ def attendance_check(match_id):
     )
 
 
-@app.route("/edit/<int:id>", methods=["GET", "POST"])
+@app.route("/apps/attendance/app/edit/<int:id>", methods=["GET", "POST"])
 @login_required
 def edit_match(id):
     current_month = request.args.get("month", "").strip()
@@ -949,7 +957,7 @@ def edit_match(id):
     return render_template("edit.html", match=match, current_month=current_month)
 
 
-@app.route("/attendance/month", methods=["GET", "POST"])
+@app.route("/apps/attendance/app/attendance/month", methods=["GET", "POST"])
 @login_required
 def attendance_month():
     conn = sqlite3.connect("schedule.db")
@@ -1049,7 +1057,7 @@ def attendance_month():
     )
 
 
-@app.route("/attendance/member/delete", methods=["POST"])
+@app.route("/apps/attendance/app/attendance/member/delete", methods=["POST"])
 @login_required
 def delete_member_attendance_by_month():
     month = request.args.get("month", "").strip()

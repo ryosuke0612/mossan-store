@@ -233,7 +233,7 @@ footer{
     <nav>
         <a href="#top">トップ</a>
         <a href="#features">アプリ紹介</a>
-        <a href="/app">ログイン</a>
+        <a href="{{ url_for('index') }}">ログイン</a>
         <a href="#contact">お問い合わせ</a>
     </nav>
 </header>
@@ -257,7 +257,7 @@ footer{
                 本気で勝ちたいチームのための本気のツール。
             </p>
 
-            <a href="/app" class="cta-btn">今すぐアプリを見る</a>
+            <a href="{{ url_for('index') }}" class="cta-btn">今すぐアプリを見る</a>
         </div>
 
         <div class="hero-image">
@@ -310,7 +310,7 @@ footer{
 
 <section class="last">
     <h2>管理するな。<br>チームを進化させろ。</h2>
-    <a href="/app" class="cta-btn">ログインして始める</a>
+    <a href="{{ url_for('index') }}" class="cta-btn">ログインして始める</a>
 </section>
 
 <footer id="contact">
@@ -319,3 +319,4 @@ footer{
 
 </body>
 </html>
+

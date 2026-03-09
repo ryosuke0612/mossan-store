@@ -29,7 +29,7 @@
 {% block content %}
 <h1 class="page-title">イベント登録</h1>
 <div class="panel" style="max-width:860px;">
-  <form method="POST" action="/add" class="event-form">
+  <form method="POST" action="{{ url_for('add_match') }}" class="event-form">
     <input type="hidden" name="return_month" value="{{ current_month or '' }}">
     <div class="grid-2">
       <div class="field">
@@ -78,7 +78,7 @@
     </div>
 
     <div class="btn-row">
-      <a href="/app{% if current_month %}?month={{ current_month }}{% endif %}" class="btn secondary">戻る</a>
+      <a href="{{ url_for('index') }}{% if current_month %}?month={{ current_month }}{% endif %}" class="btn secondary">戻る</a>
       <button class="btn" type="submit">登録する</button>
     </div>
   </form>

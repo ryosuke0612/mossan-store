@@ -15,7 +15,7 @@
 <div class="grid-2">
   <section class="panel">
     <h2 style="margin-top:0;">プランを選択</h2>
-    <form method="POST" action="/payment">
+    <form method="POST" action="{{ url_for('payment') }}">
       <div class="field">
         <label>プラン</label>
         <select name="plan_name" required>

@@ -9,7 +9,7 @@
   <div class="notice error">{{ error_message }}</div>
   {% endif %}
 
-  <form method="POST" action="/login">
+  <form method="POST" action="{{ url_for('login') }}">
     <input type="hidden" name="next" value="{{ next_url }}">
     <div class="field">
       <label>チーム名またはメールアドレス</label>
@@ -21,7 +21,7 @@
     </div>
     <div class="btn-row">
       <button class="btn" type="submit">ログイン</button>
-      <a class="btn secondary" href="/register">新規登録</a>
+      <a class="btn secondary" href="{{ url_for('register') }}">新規登録</a>
     </div>
   </form>
 </div>

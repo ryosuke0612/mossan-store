@@ -88,7 +88,7 @@
     </div>
 
     <div class="btn-row">
-      <a href="/app{% if current_month %}?month={{ current_month }}{% endif %}" class="btn secondary">戻る</a>
+      <a href="{{ url_for('index') }}{% if current_month %}?month={{ current_month }}{% endif %}" class="btn secondary">戻る</a>
       <button class="btn" type="submit">更新する</button>
     </div>
   </form>

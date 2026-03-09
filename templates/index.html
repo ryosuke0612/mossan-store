@@ -137,12 +137,12 @@
 <h1 class="page-title">Team {{ team_name or "Guest" }}!</h1>
 
 <section class="panel">
-  <form method="POST" action="/matches/action">
+  <form method="POST" action="{{ url_for('bulk_match_action') }}">
     <input type="hidden" name="current_month" id="current-month-input" value="{{ active_month or '' }}">
     <div class="action-rows">
       <div class="action-row">
-        <a id="add-link" href="/add{% if active_month %}?month={{ active_month }}{% endif %}" class="btn">イベント登録</a>
-        <a id="attendance-month-link" href="/attendance/month{% if active_month %}?month={{ active_month }}{% endif %}" class="btn secondary">新規出欠登録</a>
+        <a id="add-link" href="{{ url_for('add_match') }}{% if active_month %}?month={{ active_month }}{% endif %}" class="btn">イベント登録</a>
+        <a id="attendance-month-link" href="{{ url_for('attendance_month') }}{% if active_month %}?month={{ active_month }}{% endif %}" class="btn secondary">新規出欠登録</a>
       </div>
       <div class="action-row">
         <button type="submit" name="action" value="attendance_check" class="btn bulk-action-btn bulk-check" disabled>出欠確認</button>
@@ -183,12 +183,12 @@
                 <div class="member-actions">
                   <a
                     class="btn secondary member-edit-btn"
-                    href="/attendance/month?month={{ month }}&name={{ member | urlencode }}"
+                    href="{{ url_for('attendance_month') }}?month={{ month }}&name={{ member | urlencode }}"
                   >編集</a>
                   <button
                     type="submit"
                     class="btn danger member-delete-btn"
-                    formaction="/attendance/member/delete?month={{ month }}&name={{ member | urlencode }}"
+                    formaction="{{ url_for('delete_member_attendance_by_month') }}?month={{ month }}&name={{ member | urlencode }}"
                     formmethod="post"
                     onclick="return confirm('このメンバーの{{ month }}の出欠登録を削除しますか？');"
                   >削除</button>
@@ -271,10 +271,10 @@
     panes.forEach((pane) => pane.classList.toggle('active', pane.dataset.pane === month));
     if (currentMonthInput) currentMonthInput.value = month;
     if (monthLink) {
-      monthLink.href = `/attendance/month?month=${encodeURIComponent(month)}`;
+      monthLink.href = `{{ url_for('attendance_month') }}?month=${encodeURIComponent(month)}`;
     }
     if (addLink) {
-      addLink.href = `/add?month=${encodeURIComponent(month)}`;
+      addLink.href = `{{ url_for('add_match') }}?month=${encodeURIComponent(month)}`;
     }
   };
 
