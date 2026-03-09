@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block header_nav_items %}
+<a href="{{ url_for('attendance_description') }}">アプリ紹介</a>
+<a href="{{ url_for('index') }}">イベント管理</a>
+<a href="{{ url_for('team_page') }}">チームページ</a>
+<a href="{{ url_for('payment') }}">決済</a>
+{% if session.get('user_id') %}
+<a href="{{ url_for('logout') }}">ログアウト</a>
+{% else %}
+<a href="{{ url_for('login') }}">ログイン</a>
+<a href="{{ url_for('register') }}">新規登録</a>
+{% endif %}
+{% endblock %}

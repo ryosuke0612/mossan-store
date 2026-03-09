@@ -258,6 +258,7 @@ th { background: #1b1b1b; color: #ffcbcb; }
       <span></span>
     </button>
     <nav class="top-nav" id="top-nav">
+      {% block header_nav_items %}
       <a href="{{ url_for('home') }}">ホーム</a>
       <a href="{{ url_for('apps_list') }}">アプリ一覧</a>
       <a href="{{ url_for('blog_index') }}">ブログ</a>
@@ -271,6 +272,7 @@ th { background: #1b1b1b; color: #ffcbcb; }
       <a href="{{ url_for('login') }}">ログイン</a>
       <a href="{{ url_for('register') }}">新規登録</a>
       {% endif %}
+      {% endblock %}
     </nav>
   </div>
 </header>
