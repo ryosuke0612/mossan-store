@@ -1,6 +1,6 @@
 {% extends "attendance_base.html" %}
 
-{% block title %}Team {{ team_name or "Guest" }}! | Mossan Store{% endblock %}
+{% block title %}{{ team_name or "Guest" }} | Mossan Store{% endblock %}
 
 {% block head_extra %}
 <style>
@@ -142,7 +142,7 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="page-title">Team {{ team_name or "Guest" }}!</h1>
+<h1 class="page-title">{{ team_name or "Guest" }}</h1>
 
 <section class="panel">
   <form method="POST" action="{{ url_for('bulk_match_action') }}">
