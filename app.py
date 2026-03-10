@@ -56,7 +56,6 @@ def init_db():
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
-        email TEXT NOT NULL UNIQUE,
         password_hash TEXT NOT NULL,
         created_at TEXT NOT NULL
     )
@@ -86,6 +85,31 @@ def init_db():
     attendance_columns = [row[1] for row in c.fetchall()]
     if "user_id" not in attendance_columns:
         c.execute("ALTER TABLE attendance ADD COLUMN user_id INTEGER NOT NULL DEFAULT 0")
+
+    c.execute("PRAGMA table_info(users)")
+    user_info = c.fetchall()
+    user_columns = [row[1] for row in user_info]
+    expected_user_columns = {"id", "username", "password_hash", "created_at"}
+    if set(user_columns) != expected_user_columns:
+        c.execute("ALTER TABLE users RENAME TO users_legacy")
+        c.execute(
+            """
+        CREATE TABLE users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+        """
+        )
+        c.execute(
+            """
+        INSERT INTO users (id, username, password_hash, created_at)
+        SELECT id, username, password_hash, created_at
+        FROM users_legacy
+        """
+        )
+        c.execute("DROP TABLE users_legacy")
 
     # Backfill attendance.user_id from related matches for legacy rows.
     c.execute(
@@ -365,30 +389,28 @@ def register():
 
     if request.method == "POST":
         team_name = request.form.get("team_name", "").strip()
-        email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
 
-        if not team_name or not email or not password:
-            error_message = "チーム名・メールアドレス・パスワードは必須です。"
+        if not team_name or not password:
+            error_message = "チーム名・パスワードは必須です。"
         elif len(password) < 6:
             error_message = "パスワードは6文字以上で入力してください。"
         else:
             conn = get_db_connection()
             c = conn.cursor()
-            c.execute("SELECT id FROM users WHERE username=? OR email=?", (team_name, email))
+            c.execute("SELECT id FROM users WHERE username=?", (team_name,))
             exists = c.fetchone()
 
             if exists:
-                error_message = "同じチーム名またはメールアドレスが既に登録されています。"
+                error_message = "同じチーム名が既に登録されています。"
             else:
                 c.execute(
                     """
-                    INSERT INTO users (username, email, password_hash, created_at)
-                    VALUES (?, ?, ?, ?)
+                    INSERT INTO users (username, password_hash, created_at)
+                    VALUES (?, ?, ?)
                     """,
                     (
                         team_name,
-                        email,
                         generate_password_hash(password),
                         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     ),
@@ -408,14 +430,14 @@ def login():
     next_url = request.args.get("next") or request.form.get("next") or url_for("index")
 
     if request.method == "POST":
-        team_or_email = request.form.get("team_or_email", "").strip()
+        team_name = request.form.get("team_name", "").strip()
         password = request.form.get("password", "")
 
         conn = get_db_connection()
         c = conn.cursor()
         c.execute(
-            "SELECT id, username, password_hash FROM users WHERE username=? OR email=?",
-            (team_or_email, team_or_email.lower()),
+            "SELECT id, username, password_hash FROM users WHERE username=?",
+            (team_name,),
         )
         user = c.fetchone()
         conn.close()

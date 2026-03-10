@@ -12,8 +12,8 @@
   <form method="POST" action="{{ url_for('login') }}">
     <input type="hidden" name="next" value="{{ next_url }}">
     <div class="field">
-      <label>チーム名またはメールアドレス</label>
-      <input type="text" name="team_or_email" required>
+      <label>チーム名</label>
+      <input type="text" name="team_name" required>
     </div>
     <div class="field">
       <label>パスワード</label>
