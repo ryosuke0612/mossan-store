@@ -229,6 +229,27 @@ def redirect_to_app_with_month(month=None):
     return redirect(url_for("index"))
 
 
+def authenticate_user(team_name, password):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        "SELECT id, username, password_hash FROM users WHERE username=?",
+        (team_name,),
+    )
+    user = c.fetchone()
+    conn.close()
+
+    if user and check_password_hash(user["password_hash"], password):
+        return user
+    return None
+
+
+def login_user(user):
+    session["user_id"] = user["id"]
+    session["team_name"] = user["username"]
+    session["username"] = user["username"]
+
+
 def build_event_list_csv_response(user_id, month="all"):
     conn = get_db_connection()
     c = conn.cursor()
@@ -429,23 +450,21 @@ def login():
     error_message = ""
     next_url = request.args.get("next") or request.form.get("next") or url_for("index")
 
+    auto_team_name = request.args.get("team_name", "").strip()
+    auto_password = request.args.get("password", "")
+    if request.method == "GET" and auto_team_name and auto_password:
+        user = authenticate_user(auto_team_name, auto_password)
+        if user:
+            login_user(user)
+            return redirect(next_url)
+        error_message = "自動ログイン用URLの情報が正しくありません。"
+
     if request.method == "POST":
         team_name = request.form.get("team_name", "").strip()
         password = request.form.get("password", "")
-
-        conn = get_db_connection()
-        c = conn.cursor()
-        c.execute(
-            "SELECT id, username, password_hash FROM users WHERE username=?",
-            (team_name,),
-        )
-        user = c.fetchone()
-        conn.close()
-
-        if user and check_password_hash(user["password_hash"], password):
-            session["user_id"] = user["id"]
-            session["team_name"] = user["username"]
-            session["username"] = user["username"]
+        user = authenticate_user(team_name, password)
+        if user:
+            login_user(user)
             return redirect(next_url)
 
         error_message = "ログイン情報が正しくありません。"
