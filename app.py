@@ -1395,10 +1395,42 @@ def init_db():
         init_db_sqlite()
 
 
+def bootstrap_admin_from_env():
+    email = os.environ.get("ADMIN_BOOTSTRAP_EMAIL", "").strip().lower()
+    password = os.environ.get("ADMIN_BOOTSTRAP_PASSWORD", "")
+    reset_password = os.environ.get("ADMIN_BOOTSTRAP_RESET_PASSWORD", "").strip() == "1"
+
+    if not email and not password:
+        return
+    if not email or not password:
+        app.logger.warning("Admin bootstrap skipped: both ADMIN_BOOTSTRAP_EMAIL and ADMIN_BOOTSTRAP_PASSWORD are required.")
+        return
+    if len(password) < 8:
+        app.logger.warning("Admin bootstrap skipped: ADMIN_BOOTSTRAP_PASSWORD must be at least 8 characters.")
+        return
+
+    existing_admin = portal_get_admin_by_email(email)
+    if existing_admin:
+        if reset_password:
+            existing_admin["password_hash"] = generate_password_hash(password)
+            portal_save_admin(existing_admin)
+            app.logger.info("Admin bootstrap updated password for existing admin: %s", email)
+        else:
+            app.logger.info("Admin bootstrap found existing admin: %s", email)
+        return
+
+    created = portal_create_admin(email, password)
+    if created:
+        app.logger.info("Admin bootstrap created admin: %s", email)
+    else:
+        app.logger.warning("Admin bootstrap could not create admin: %s", email)
+
+
 try:
     init_db()
     if PORTAL_JSON_MIGRATION_ENABLED:
         migrate_portal_json_to_db()
+    bootstrap_admin_from_env()
 except DatabaseError:
     app.logger.exception("Database initialization failed.")
     if RENDER_ENV:
