@@ -11,9 +11,65 @@ from pathlib import Path
 from flask import Flask, Response, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
+try:
+    import psycopg2
+    from psycopg2 import Error as PsycopgError
+    from psycopg2.extras import DictCursor
+except ImportError:
+    psycopg2 = None
+    PsycopgError = Exception
+    DictCursor = None
+
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 PORTAL_DATA_PATH = Path("portal_data.json")
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+USE_POSTGRES = DATABASE_URL.startswith(("postgresql://", "postgres://"))
+SQLITE_DB_PATH = os.environ.get("SQLITE_DB_PATH", "schedule.db")
+RENDER_ENV = os.environ.get("RENDER", "").strip().lower() == "true"
+PORTAL_JSON_MIGRATION_ENABLED = os.environ.get("PORTAL_JSON_MIGRATION_ENABLED", "").strip() == "1"
+DatabaseError = PsycopgError if USE_POSTGRES else sqlite3.Error
+
+if RENDER_ENV and not USE_POSTGRES:
+    raise RuntimeError("Render deployment requires DATABASE_URL (PostgreSQL).")
+
+
+def to_db_query(query):
+    if USE_POSTGRES:
+        return query.replace("?", "%s")
+    return query
+
+
+class DBCursor:
+    def __init__(self, cursor):
+        self._cursor = cursor
+
+    def execute(self, query, params=None):
+        sql = to_db_query(query)
+        if params is None:
+            return self._cursor.execute(sql)
+        return self._cursor.execute(sql, params)
+
+    def executemany(self, query, seq_of_params):
+        sql = to_db_query(query)
+        return self._cursor.executemany(sql, seq_of_params)
+
+    def __iter__(self):
+        return iter(self._cursor)
+
+    def __getattr__(self, name):
+        return getattr(self._cursor, name)
+
+
+class DBConnection:
+    def __init__(self, conn):
+        self._conn = conn
+
+    def cursor(self):
+        return DBCursor(self._conn.cursor())
+
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
 
 
 def generate_public_id():
@@ -32,78 +88,85 @@ def portal_now_text():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
-def load_portal_data():
-    if not PORTAL_DATA_PATH.exists():
-        return {
-            "admins": [],
-            "teams": [],
-            "members": [],
-            "events": [],
-            "attendance": [],
-            "counters": {
-                "admin_id": 1,
-                "team_id": 1,
-                "member_id": 1,
-                "event_id": 1,
-                "attendance_id": 1,
-            },
-        }
-    return json.loads(PORTAL_DATA_PATH.read_text(encoding="utf-8"))
+def row_to_dict(row):
+    if row is None:
+        return None
+    return dict(row)
 
 
-def save_portal_data(data):
-    PORTAL_DATA_PATH.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-
-
-def next_portal_id(data, counter_name):
-    value = data["counters"][counter_name]
-    data["counters"][counter_name] += 1
-    return value
+def rows_to_dict(rows):
+    return [dict(row) for row in rows]
 
 
 def portal_get_admin_by_email(email):
-    data = load_portal_data()
-    for admin in data["admins"]:
-        if admin["email"] == email:
-            return admin
-    return None
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        "SELECT id, email, password_hash, created_at FROM admins WHERE email=?",
+        (email,),
+    )
+    admin = row_to_dict(c.fetchone())
+    conn.close()
+    return admin
 
 
 def portal_get_admin(admin_id):
-    data = load_portal_data()
-    for admin in data["admins"]:
-        if admin["id"] == admin_id:
-            return admin
-    return None
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        "SELECT id, email, password_hash, created_at FROM admins WHERE id=?",
+        (admin_id,),
+    )
+    admin = row_to_dict(c.fetchone())
+    conn.close()
+    return admin
 
 
 def portal_find_or_create_admin(email):
-    data = load_portal_data()
-    for admin in data["admins"]:
-        if admin["email"] == email:
-            return admin
+    existing = portal_get_admin_by_email(email)
+    if existing:
+        return existing
 
-    admin = {
-        "id": next_portal_id(data, "admin_id"),
-        "email": email,
-        "created_at": portal_now_text(),
-    }
-    data["admins"].append(admin)
-    save_portal_data(data)
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        "INSERT INTO admins (email, created_at) VALUES (?, ?)",
+        (email, portal_now_text()),
+    )
+    conn.commit()
+    c.execute(
+        "SELECT id, email, password_hash, created_at FROM admins WHERE email=?",
+        (email,),
+    )
+    admin = row_to_dict(c.fetchone())
+    conn.close()
     return admin
 
 
 def portal_save_admin(updated_admin):
-    data = load_portal_data()
-    for index, admin in enumerate(data["admins"]):
-        if admin["id"] == updated_admin["id"]:
-            data["admins"][index] = updated_admin
-            save_portal_data(data)
-            return updated_admin
-    return None
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        UPDATE admins
+        SET email=?, password_hash=?, created_at=?
+        WHERE id=?
+        """,
+        (
+            updated_admin.get("email"),
+            updated_admin.get("password_hash"),
+            updated_admin.get("created_at"),
+            updated_admin.get("id"),
+        ),
+    )
+    conn.commit()
+    c.execute(
+        "SELECT id, email, password_hash, created_at FROM admins WHERE id=?",
+        (updated_admin.get("id"),),
+    )
+    admin = row_to_dict(c.fetchone())
+    conn.close()
+    return admin
 
 
 def portal_authenticate_admin(email, password):
@@ -124,19 +187,25 @@ def portal_authenticate_admin(email, password):
 
 
 def portal_create_admin(email, password):
-    data = load_portal_data()
-    for admin in data["admins"]:
-        if admin["email"] == email:
-            return None
+    if portal_get_admin_by_email(email):
+        return None
 
-    admin = {
-        "id": next_portal_id(data, "admin_id"),
-        "email": email,
-        "password_hash": generate_password_hash(password),
-        "created_at": portal_now_text(),
-    }
-    data["admins"].append(admin)
-    save_portal_data(data)
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        INSERT INTO admins (email, password_hash, created_at)
+        VALUES (?, ?, ?)
+        """,
+        (email, generate_password_hash(password), portal_now_text()),
+    )
+    conn.commit()
+    c.execute(
+        "SELECT id, email, password_hash, created_at FROM admins WHERE email=?",
+        (email,),
+    )
+    admin = c.fetchone()
+    conn.close()
     return admin
 
 
@@ -166,8 +235,7 @@ def portal_update_admin_credentials(admin_id, current_password, new_email, new_p
 
 
 def portal_delete_admin(admin_id, current_password):
-    data = load_portal_data()
-    admin = next((row for row in data["admins"] if row["id"] == admin_id), None)
+    admin = portal_get_admin(admin_id)
     if not admin:
         return False, "not_found"
 
@@ -175,190 +243,287 @@ def portal_delete_admin(admin_id, current_password):
     if not password_hash or not check_password_hash(password_hash, current_password):
         return False, "invalid_password"
 
-    target_team_ids = {
-        team["id"]
-        for team in data["teams"]
-        if team["admin_id"] == admin_id
-    }
-
-    data["admins"] = [row for row in data["admins"] if row["id"] != admin_id]
-    data["teams"] = [team for team in data["teams"] if team["admin_id"] != admin_id]
-    data["members"] = [member for member in data["members"] if member["team_id"] not in target_team_ids]
-    data["events"] = [event for event in data["events"] if event["team_id"] not in target_team_ids]
-    data["attendance"] = [row for row in data["attendance"] if row["team_id"] not in target_team_ids]
-    save_portal_data(data)
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("SELECT id FROM teams WHERE admin_id=?", (admin_id,))
+    team_ids = [row["id"] for row in c.fetchall()]
+    for team_id in team_ids:
+        c.execute("DELETE FROM portal_attendance WHERE team_id=?", (team_id,))
+        c.execute("DELETE FROM portal_events WHERE team_id=?", (team_id,))
+        c.execute("DELETE FROM portal_members WHERE team_id=?", (team_id,))
+    c.execute("DELETE FROM teams WHERE admin_id=?", (admin_id,))
+    c.execute("DELETE FROM admins WHERE id=?", (admin_id,))
+    conn.commit()
+    conn.close()
     return True, "deleted"
 
 
 def portal_get_teams_for_admin(admin_id):
-    data = load_portal_data()
-    return [team for team in data["teams"] if team["admin_id"] == admin_id]
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT id, admin_id, name, public_id, created_at
+        FROM teams
+        WHERE admin_id=?
+        ORDER BY id DESC
+        """,
+        (admin_id,),
+    )
+    teams = rows_to_dict(c.fetchall())
+    conn.close()
+    return teams
 
 
 def portal_get_team_by_public_id(public_id):
-    data = load_portal_data()
-    for team in data["teams"]:
-        if team["public_id"] == public_id:
-            return team
-    return None
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        "SELECT id, admin_id, name, public_id, created_at FROM teams WHERE public_id=?",
+        (public_id,),
+    )
+    team = row_to_dict(c.fetchone())
+    conn.close()
+    return team
 
 
 def portal_get_team(team_id):
-    data = load_portal_data()
-    for team in data["teams"]:
-        if team["id"] == team_id:
-            return team
-    return None
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        "SELECT id, admin_id, name, public_id, created_at FROM teams WHERE id=?",
+        (team_id,),
+    )
+    team = row_to_dict(c.fetchone())
+    conn.close()
+    return team
 
 
 def portal_create_team(admin_id, name):
-    data = load_portal_data()
-    team = {
-        "id": next_portal_id(data, "team_id"),
-        "admin_id": admin_id,
-        "name": name,
-        "public_id": generate_public_id(),
-        "created_at": portal_now_text(),
-    }
-    data["teams"].append(team)
-    save_portal_data(data)
+    conn = get_db_connection()
+    c = conn.cursor()
+    public_id = generate_unique_public_id(c)
+    c.execute(
+        """
+        INSERT INTO teams (admin_id, name, public_id, created_at)
+        VALUES (?, ?, ?, ?)
+        """,
+        (admin_id, name, public_id, portal_now_text()),
+    )
+    conn.commit()
+    c.execute(
+        "SELECT id, admin_id, name, public_id, created_at FROM teams WHERE public_id=?",
+        (public_id,),
+    )
+    team = row_to_dict(c.fetchone())
+    conn.close()
     return team
 
 
 def portal_delete_team(admin_id, team_id):
-    data = load_portal_data()
-    target_team = next(
-        (
-            team
-            for team in data["teams"]
-            if team["id"] == team_id and team["admin_id"] == admin_id
-        ),
-        None,
-    )
+    target_team = portal_get_team(team_id)
+    if target_team and target_team["admin_id"] != admin_id:
+        target_team = None
     if not target_team:
         return False
 
-    data["teams"] = [team for team in data["teams"] if team["id"] != team_id]
-    data["members"] = [member for member in data["members"] if member["team_id"] != team_id]
-    data["events"] = [event for event in data["events"] if event["team_id"] != team_id]
-    data["attendance"] = [row for row in data["attendance"] if row["team_id"] != team_id]
-    save_portal_data(data)
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("DELETE FROM portal_attendance WHERE team_id=?", (team_id,))
+    c.execute("DELETE FROM portal_events WHERE team_id=?", (team_id,))
+    c.execute("DELETE FROM portal_members WHERE team_id=?", (team_id,))
+    c.execute("DELETE FROM teams WHERE id=? AND admin_id=?", (team_id, admin_id))
+    conn.commit()
+    conn.close()
     return True
 
 
 def portal_get_members(team_id):
-    data = load_portal_data()
-    return sorted(
-        [member for member in data["members"] if member["team_id"] == team_id],
-        key=lambda item: item["name"].lower(),
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT id, team_id, name, created_at
+        FROM portal_members
+        WHERE team_id=?
+        ORDER BY name
+        """,
+        (team_id,),
     )
+    members = rows_to_dict(c.fetchall())
+    conn.close()
+    return members
 
 
 def portal_add_member(team_id, name):
-    data = load_portal_data()
-    for member in data["members"]:
-        if member["team_id"] == team_id and member["name"] == name:
-            return member
-
-    member = {
-        "id": next_portal_id(data, "member_id"),
-        "team_id": team_id,
-        "name": name,
-        "created_at": portal_now_text(),
-    }
-    data["members"].append(member)
-    save_portal_data(data)
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        INSERT INTO portal_members (team_id, name, created_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT(team_id, name) DO NOTHING
+        """,
+        (team_id, name, portal_now_text()),
+    )
+    conn.commit()
+    c.execute(
+        "SELECT id, team_id, name, created_at FROM portal_members WHERE team_id=? AND name=?",
+        (team_id, name),
+    )
+    member = row_to_dict(c.fetchone())
+    conn.close()
     return member
 
 
 def portal_delete_member(team_id, name):
-    data = load_portal_data()
     target_name = (name or "").strip()
     if not target_name:
         return False
 
-    had_member = any(
-        member["team_id"] == team_id and member["name"] == target_name
-        for member in data["members"]
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        "SELECT 1 FROM portal_members WHERE team_id=? AND name=? LIMIT 1",
+        (team_id, target_name),
     )
-    had_attendance = any(
-        row["team_id"] == team_id and row["member_name"] == target_name
-        for row in data["attendance"]
+    had_member = c.fetchone() is not None
+    c.execute(
+        "SELECT 1 FROM portal_attendance WHERE team_id=? AND member_name=? LIMIT 1",
+        (team_id, target_name),
     )
+    had_attendance = c.fetchone() is not None
     if not had_member and not had_attendance:
+        conn.close()
         return False
 
-    data["members"] = [
-        member
-        for member in data["members"]
-        if not (member["team_id"] == team_id and member["name"] == target_name)
-    ]
-    data["attendance"] = [
-        row
-        for row in data["attendance"]
-        if not (row["team_id"] == team_id and row["member_name"] == target_name)
-    ]
-    save_portal_data(data)
+    c.execute(
+        "DELETE FROM portal_members WHERE team_id=? AND name=?",
+        (team_id, target_name),
+    )
+    c.execute(
+        "DELETE FROM portal_attendance WHERE team_id=? AND member_name=?",
+        (team_id, target_name),
+    )
+    conn.commit()
+    conn.close()
     return True
 
 
 def portal_get_events(team_ids):
-    data = load_portal_data()
-    team_id_set = set(team_ids)
-    return sorted(
-        [event for event in data["events"] if event["team_id"] in team_id_set],
-        key=lambda item: (item.get("date", ""), item.get("start_time", ""), item["id"]),
+    if not team_ids:
+        return []
+
+    placeholders = ",".join("?" for _ in team_ids)
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        f"""
+        SELECT id, team_id, date, start_time, end_time, opponent, place, created_at
+        FROM portal_events
+        WHERE team_id IN ({placeholders})
+        ORDER BY date, start_time, id
+        """,
+        list(team_ids),
     )
+    events = rows_to_dict(c.fetchall())
+    conn.close()
+    return events
 
 
 def portal_create_event(team_id, date, start_time, end_time, opponent, place):
-    data = load_portal_data()
-    event = {
-        "id": next_portal_id(data, "event_id"),
-        "team_id": team_id,
-        "date": date,
-        "start_time": start_time,
-        "end_time": end_time,
-        "opponent": opponent,
-        "place": place,
-        "created_at": portal_now_text(),
-    }
-    data["events"].append(event)
-    save_portal_data(data)
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        INSERT INTO portal_events (team_id, date, start_time, end_time, opponent, place, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (team_id, date, start_time, end_time, opponent, place, portal_now_text()),
+    )
+    conn.commit()
+    if USE_POSTGRES:
+        event_id = c.lastrowid if hasattr(c, "lastrowid") else None
+    else:
+        event_id = c.lastrowid
+    if event_id:
+        c.execute(
+            """
+            SELECT id, team_id, date, start_time, end_time, opponent, place, created_at
+            FROM portal_events
+            WHERE id=?
+            """,
+            (event_id,),
+        )
+    else:
+        c.execute(
+            """
+            SELECT id, team_id, date, start_time, end_time, opponent, place, created_at
+            FROM portal_events
+            WHERE team_id=? AND date=? AND start_time=? AND end_time=? AND opponent=? AND place=?
+            ORDER BY id DESC LIMIT 1
+            """,
+            (team_id, date, start_time, end_time, opponent, place),
+        )
+    event = row_to_dict(c.fetchone())
+    conn.close()
     return event
 
 
 def portal_get_event(team_id, event_id):
-    data = load_portal_data()
-    for event in data["events"]:
-        if event["team_id"] == team_id and event["id"] == event_id:
-            return event
-    return None
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT id, team_id, date, start_time, end_time, opponent, place, created_at
+        FROM portal_events
+        WHERE team_id=? AND id=?
+        """,
+        (team_id, event_id),
+    )
+    event = row_to_dict(c.fetchone())
+    conn.close()
+    return event
 
 
 def portal_update_event(team_id, event_id, date, start_time, end_time, opponent, place):
-    data = load_portal_data()
-    for event in data["events"]:
-        if event["team_id"] == team_id and event["id"] == event_id:
-            event["date"] = date
-            event["start_time"] = start_time
-            event["end_time"] = end_time
-            event["opponent"] = opponent
-            event["place"] = place
-            save_portal_data(data)
-            return event
-    return None
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        UPDATE portal_events
+        SET date=?, start_time=?, end_time=?, opponent=?, place=?
+        WHERE team_id=? AND id=?
+        """,
+        (date, start_time, end_time, opponent, place, team_id, event_id),
+    )
+    conn.commit()
+    c.execute(
+        """
+        SELECT id, team_id, date, start_time, end_time, opponent, place, created_at
+        FROM portal_events
+        WHERE team_id=? AND id=?
+        """,
+        (team_id, event_id),
+    )
+    event = row_to_dict(c.fetchone())
+    conn.close()
+    return event
 
 
 def portal_delete_event(team_id, event_id):
-    data = load_portal_data()
-    data["events"] = [
-        event for event in data["events"] if not (event["team_id"] == team_id and event["id"] == event_id)
-    ]
-    data["attendance"] = [
-        row for row in data["attendance"] if not (row["team_id"] == team_id and row.get("event_id") == event_id)
-    ]
-    save_portal_data(data)
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        "DELETE FROM portal_attendance WHERE team_id=? AND event_id=?",
+        (team_id, event_id),
+    )
+    c.execute(
+        "DELETE FROM portal_events WHERE team_id=? AND id=?",
+        (team_id, event_id),
+    )
+    conn.commit()
+    conn.close()
 
 
 def portal_duplicate_event(team_id, event_id):
@@ -376,62 +541,80 @@ def portal_duplicate_event(team_id, event_id):
 
 
 def portal_upsert_attendance(team_id, event_id, member_name, status):
-    data = load_portal_data()
-    existing = None
-    for row in data["attendance"]:
-        if row["team_id"] == team_id and row.get("event_id") == event_id and row["member_name"] == member_name:
-            existing = row
-            break
-
-    if existing:
-        existing["status"] = status
-        existing["updated_at"] = portal_now_text()
-    else:
-        data["attendance"].append(
-            {
-                "id": next_portal_id(data, "attendance_id"),
-                "team_id": team_id,
-                "event_id": event_id,
-                "member_name": member_name,
-                "status": status,
-                "updated_at": portal_now_text(),
-            }
-        )
-    save_portal_data(data)
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        INSERT INTO portal_attendance (team_id, event_id, member_name, status, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(team_id, event_id, member_name)
+        DO UPDATE SET status=excluded.status, updated_at=excluded.updated_at
+        """,
+        (team_id, event_id, member_name, status, portal_now_text()),
+    )
+    conn.commit()
+    conn.close()
 
 
 def portal_get_attendance(team_id):
-    data = load_portal_data()
-    order = {"参加": 0, "未定": 1, "不参加": 2}
-    return sorted(
-        [row for row in data["attendance"] if row["team_id"] == team_id],
-        key=lambda item: (order.get(item["status"], 99), item["member_name"].lower()),
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT id, team_id, event_id, member_name, status, updated_at
+        FROM portal_attendance
+        WHERE team_id=?
+        ORDER BY
+            CASE status
+                WHEN '参加' THEN 0
+                WHEN '未定' THEN 1
+                WHEN '不参加' THEN 2
+                ELSE 99
+            END,
+            member_name
+        """,
+        (team_id,),
     )
+    rows = rows_to_dict(c.fetchall())
+    conn.close()
+    return rows
 
 
 def portal_get_attendance_for_event(team_id, event_id):
-    data = load_portal_data()
-    rows = [row for row in data["attendance"] if row["team_id"] == team_id and row.get("event_id") == event_id]
-    return sorted(rows, key=lambda item: item["member_name"].lower())
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT id, team_id, event_id, member_name, status, updated_at
+        FROM portal_attendance
+        WHERE team_id=? AND event_id=?
+        ORDER BY member_name
+        """,
+        (team_id, event_id),
+    )
+    rows = rows_to_dict(c.fetchall())
+    conn.close()
+    return rows
 
 
 def portal_delete_member_attendance_by_month(team_id, month, name):
-    data = load_portal_data()
-    month_event_ids = {
-        event["id"]
-        for event in data["events"]
-        if event["team_id"] == team_id and event.get("date", "").startswith(month)
-    }
-    data["attendance"] = [
-        row
-        for row in data["attendance"]
-        if not (
-            row["team_id"] == team_id
-            and row["member_name"] == name
-            and row.get("event_id") in month_event_ids
-        )
-    ]
-    save_portal_data(data)
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        DELETE FROM portal_attendance
+        WHERE team_id=?
+          AND member_name=?
+          AND event_id IN (
+              SELECT id
+              FROM portal_events
+              WHERE team_id=? AND substr(date,1,7)=?
+          )
+        """,
+        (team_id, name, team_id, month),
+    )
+    conn.commit()
+    conn.close()
 
 
 def portal_build_event_list_csv_response(team_id, month="all"):
@@ -439,12 +622,9 @@ def portal_build_event_list_csv_response(team_id, month="all"):
     if month and month != "all":
         events = [event for event in events if event.get("date", "").startswith(month)]
 
-    data = load_portal_data()
     target_event_ids = {event["id"] for event in events}
     attendance_rows = [
-        row
-        for row in data["attendance"]
-        if row["team_id"] == team_id and row.get("event_id") in target_event_ids
+        row for row in portal_get_attendance(team_id) if row.get("event_id") in target_event_ids
     ]
     attendance_rows.sort(key=lambda item: item["id"])
 
@@ -506,10 +686,7 @@ def portal_build_event_list_csv_response(team_id, month="all"):
 
 def build_member_legacy_index_context(team, active_month=""):
     events = portal_get_events([team["id"]])
-    data = load_portal_data()
-    attendance_rows = [
-        row for row in data["attendance"] if row["team_id"] == team["id"]
-    ]
+    attendance_rows = portal_get_attendance(team["id"])
     attendance_rows.sort(key=lambda item: item["id"])
 
     months = sorted({event["date"][:7] for event in events if event.get("date")})
@@ -557,6 +734,153 @@ def build_member_legacy_index_context(team, active_month=""):
     }
 
 
+def portal_has_admins():
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("SELECT 1 FROM admins LIMIT 1")
+    exists = c.fetchone() is not None
+    conn.close()
+    return exists
+
+
+def sync_postgres_id_sequence(cursor, table_name):
+    if not USE_POSTGRES:
+        return
+    cursor.execute(
+        f"""
+        SELECT setval(
+            pg_get_serial_sequence('{table_name}', 'id'),
+            COALESCE((SELECT MAX(id) FROM {table_name}), 1),
+            (SELECT COUNT(*) > 0 FROM {table_name})
+        )
+        """
+    )
+
+
+def migrate_portal_json_to_db():
+    if not PORTAL_DATA_PATH.exists():
+        return
+    try:
+        data = json.loads(PORTAL_DATA_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return
+
+    conn = get_db_connection()
+    c = conn.cursor()
+
+    c.execute("SELECT COUNT(1) AS cnt FROM admins")
+    has_admin = (row_to_dict(c.fetchone()) or {}).get("cnt", 0) > 0
+    c.execute("SELECT COUNT(1) AS cnt FROM teams")
+    has_team = (row_to_dict(c.fetchone()) or {}).get("cnt", 0) > 0
+    c.execute("SELECT COUNT(1) AS cnt FROM portal_events")
+    has_event = (row_to_dict(c.fetchone()) or {}).get("cnt", 0) > 0
+    if has_admin or has_team or has_event:
+        conn.close()
+        return
+
+    for admin in data.get("admins", []):
+        c.execute(
+            """
+            INSERT INTO admins (id, email, password_hash, created_at)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(email) DO NOTHING
+            """,
+            (
+                admin.get("id"),
+                admin.get("email"),
+                admin.get("password_hash"),
+                admin.get("created_at") or portal_now_text(),
+            ),
+        )
+
+    for team in data.get("teams", []):
+        c.execute(
+            """
+            INSERT INTO teams (id, admin_id, name, public_id, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(public_id) DO NOTHING
+            """,
+            (
+                team.get("id"),
+                team.get("admin_id"),
+                team.get("name"),
+                team.get("public_id") or generate_public_id(),
+                team.get("created_at") or portal_now_text(),
+            ),
+        )
+
+    for member in data.get("members", []):
+        c.execute(
+            """
+            INSERT INTO portal_members (id, team_id, name, created_at)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(team_id, name) DO NOTHING
+            """,
+            (
+                member.get("id"),
+                member.get("team_id"),
+                member.get("name"),
+                member.get("created_at") or portal_now_text(),
+            ),
+        )
+
+    for event in data.get("events", []):
+        c.execute(
+            """
+            INSERT INTO portal_events (id, team_id, date, start_time, end_time, opponent, place, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO NOTHING
+            """,
+            (
+                event.get("id"),
+                event.get("team_id"),
+                event.get("date"),
+                event.get("start_time"),
+                event.get("end_time"),
+                event.get("opponent"),
+                event.get("place"),
+                event.get("created_at") or portal_now_text(),
+            ),
+        )
+
+    for attendance in data.get("attendance", []):
+        raw_status = (attendance.get("status") or "").strip()
+        status_map = {
+            "参加": "参加",
+            "出席": "参加",
+            "attend": "参加",
+            "不参加": "不参加",
+            "欠席": "不参加",
+            "absent": "不参加",
+            "未定": "未定",
+            "undecided": "未定",
+        }
+        c.execute(
+            """
+            INSERT INTO portal_attendance (id, team_id, event_id, member_name, status, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO NOTHING
+            """,
+            (
+                attendance.get("id"),
+                attendance.get("team_id"),
+                attendance.get("event_id"),
+                attendance.get("member_name"),
+                status_map.get(raw_status, ""),
+                attendance.get("updated_at") or portal_now_text(),
+            ),
+        )
+
+    sync_postgres_id_sequence(c, "admins")
+    sync_postgres_id_sequence(c, "teams")
+    sync_postgres_id_sequence(c, "portal_members")
+    sync_postgres_id_sequence(c, "portal_events")
+    sync_postgres_id_sequence(c, "portal_attendance")
+
+    conn.commit()
+    conn.close()
+
+
 def redirect_to_team_month(public_id, month=None):
     month_value = (month or "").strip()
     if month_value:
@@ -565,14 +889,19 @@ def redirect_to_team_month(public_id, month=None):
 
 
 def get_db_connection():
-    conn = sqlite3.connect("schedule.db")
+    if USE_POSTGRES:
+        if psycopg2 is None:
+            raise RuntimeError("DATABASE_URL is set but psycopg2 is not installed.")
+        return DBConnection(psycopg2.connect(DATABASE_URL, cursor_factory=DictCursor))
+
+    conn = sqlite3.connect(SQLITE_DB_PATH)
     conn.row_factory = sqlite3.Row
-    return conn
+    return DBConnection(conn)
 
 
-def init_db():
+def init_db_sqlite():
     try:
-        conn = sqlite3.connect("schedule.db")
+        conn = sqlite3.connect(SQLITE_DB_PATH)
         c = conn.cursor()
     except sqlite3.Error:
         return
@@ -583,6 +912,7 @@ def init_db():
     CREATE TABLE IF NOT EXISTS admins (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT NOT NULL UNIQUE,
+        password_hash TEXT,
         created_at TEXT NOT NULL
     )
     """
@@ -628,10 +958,57 @@ def init_db():
     """
     )
 
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_members (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        team_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE(team_id, name),
+        FOREIGN KEY(team_id) REFERENCES teams(id)
+    )
+    """
+    )
+
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        team_id INTEGER NOT NULL,
+        date TEXT,
+        start_time TEXT,
+        end_time TEXT,
+        opponent TEXT,
+        place TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY(team_id) REFERENCES teams(id)
+    )
+    """
+    )
+
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_attendance (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        team_id INTEGER NOT NULL,
+        event_id INTEGER,
+        member_name TEXT NOT NULL,
+        status TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE(team_id, event_id, member_name),
+        FOREIGN KEY(team_id) REFERENCES teams(id),
+        FOREIGN KEY(event_id) REFERENCES portal_events(id)
+    )
+    """
+    )
+
     c.execute("PRAGMA table_info(admins)")
     admin_columns = [row[1] for row in c.fetchall()]
     if "email" not in admin_columns:
         c.execute("ALTER TABLE admins ADD COLUMN email TEXT")
+    if "password_hash" not in admin_columns:
+        c.execute("ALTER TABLE admins ADD COLUMN password_hash TEXT")
     if "created_at" not in admin_columns:
         c.execute("ALTER TABLE admins ADD COLUMN created_at TEXT")
 
@@ -814,9 +1191,196 @@ def init_db():
     conn.close()
 
 
+def init_db_postgres():
+    conn = get_db_connection()
+    c = conn.cursor()
+
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS admins (
+        id SERIAL PRIMARY KEY,
+        email TEXT NOT NULL UNIQUE,
+        password_hash TEXT,
+        created_at TEXT NOT NULL
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        email TEXT
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS teams (
+        id SERIAL PRIMARY KEY,
+        admin_id INTEGER REFERENCES admins(id),
+        name TEXT NOT NULL,
+        public_id TEXT,
+        created_at TEXT
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS team_members (
+        id SERIAL PRIMARY KEY,
+        team_id INTEGER NOT NULL REFERENCES teams(id),
+        name TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE(team_id, name)
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS team_attendance (
+        id SERIAL PRIMARY KEY,
+        team_id INTEGER NOT NULL REFERENCES teams(id),
+        member_name TEXT NOT NULL,
+        status TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE(team_id, member_name)
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_members (
+        id SERIAL PRIMARY KEY,
+        team_id INTEGER NOT NULL REFERENCES teams(id),
+        name TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE(team_id, name)
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_events (
+        id SERIAL PRIMARY KEY,
+        team_id INTEGER NOT NULL REFERENCES teams(id),
+        date TEXT,
+        start_time TEXT,
+        end_time TEXT,
+        opponent TEXT,
+        place TEXT,
+        created_at TEXT NOT NULL
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_attendance (
+        id SERIAL PRIMARY KEY,
+        team_id INTEGER NOT NULL REFERENCES teams(id),
+        event_id INTEGER REFERENCES portal_events(id),
+        member_name TEXT NOT NULL,
+        status TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE(team_id, event_id, member_name)
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS matches (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL DEFAULT 0 REFERENCES users(id),
+        date TEXT,
+        start_time TEXT,
+        end_time TEXT,
+        opponent TEXT,
+        place TEXT
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS attendance (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL DEFAULT 0 REFERENCES users(id),
+        match_id INTEGER,
+        name TEXT,
+        status TEXT,
+        UNIQUE(match_id, name)
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS payments (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        plan_name TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        status TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )
+    """
+    )
+
+    c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS email TEXT")
+    c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS password_hash TEXT")
+    c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS created_at TEXT")
+    c.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT")
+    c.execute("ALTER TABLE teams ADD COLUMN IF NOT EXISTS admin_id INTEGER")
+    c.execute("ALTER TABLE teams ADD COLUMN IF NOT EXISTS public_id TEXT")
+    c.execute("ALTER TABLE teams ADD COLUMN IF NOT EXISTS created_at TEXT")
+    c.execute("ALTER TABLE matches ADD COLUMN IF NOT EXISTS user_id INTEGER NOT NULL DEFAULT 0")
+    c.execute("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS user_id INTEGER NOT NULL DEFAULT 0")
+    c.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS user_id INTEGER NOT NULL DEFAULT 0")
+
+    c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_teams_public_id_unique ON teams(public_id)")
+    c.execute(
+        """
+        UPDATE attendance a
+        SET user_id = m.user_id
+        FROM matches m
+        WHERE a.match_id = m.id
+          AND a.user_id = 0
+        """
+    )
+
+    c.execute("SELECT id, public_id, created_at FROM teams")
+    existing_teams = c.fetchall()
+    for row in existing_teams:
+        team_id = row["id"]
+        public_id = row["public_id"]
+        created_at = row["created_at"]
+        if not public_id:
+            c.execute(
+                "UPDATE teams SET public_id=? WHERE id=?",
+                (generate_unique_public_id(c), team_id),
+            )
+        if not created_at:
+            c.execute(
+                "UPDATE teams SET created_at=? WHERE id=?",
+                (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), team_id),
+            )
+
+    conn.commit()
+    conn.close()
+
+
+def init_db():
+    if USE_POSTGRES:
+        init_db_postgres()
+    else:
+        init_db_sqlite()
+
+
 try:
     init_db()
-except sqlite3.Error:
+    if PORTAL_JSON_MIGRATION_ENABLED:
+        migrate_portal_json_to_db()
+except DatabaseError:
     pass
 
 
@@ -1076,7 +1640,6 @@ def admin_login_entry():
         elif len(password) < 8:
             error_message = "パスワードは8文字以上で入力してください。"
         else:
-            data = load_portal_data()
             existing_admin = portal_get_admin_by_email(email)
 
             if existing_admin:
@@ -1093,7 +1656,7 @@ def admin_login_entry():
                         )
                     return redirect(next_url)
                 error_message = "メールアドレスまたはパスワードが正しくありません。"
-            elif not data["admins"]:
+            elif not portal_has_admins():
                 admin = portal_create_admin(email, password)
                 if admin:
                     session["admin_id"] = admin["id"]
@@ -1108,7 +1671,7 @@ def admin_login_entry():
             else:
                 error_message = "このメールアドレスの管理者アカウントは登録されていません。"
 
-    if not load_portal_data()["admins"]:
+    if not portal_has_admins():
         info_message = "初回のみ、この画面から管理者アカウントを作成できます。"
     else:
         info_message = "登録済みの管理者メールアドレスとパスワードでログインしてください。"
@@ -1615,7 +2178,7 @@ def add_match():
     if not is_valid_10min_time(start_time) or not is_valid_10min_time(end_time):
         return "start_time/end_time must be in 10-minute increments.", 400
 
-    conn = sqlite3.connect("schedule.db")
+    conn = get_db_connection()
     c = conn.cursor()
 
     c.execute(
@@ -1644,7 +2207,7 @@ def add_match():
 @app.route("/apps/attendance/app/delete/<int:id>")
 @login_required
 def delete_match(id):
-    conn = sqlite3.connect("schedule.db")
+    conn = get_db_connection()
     c = conn.cursor()
 
     c.execute("DELETE FROM attendance WHERE match_id=? AND user_id=?", (id, session["user_id"]))
@@ -1658,7 +2221,7 @@ def delete_match(id):
 @app.route("/apps/attendance/app/duplicate/<int:id>")
 @login_required
 def duplicate_match(id):
-    conn = sqlite3.connect("schedule.db")
+    conn = get_db_connection()
     c = conn.cursor()
 
     c.execute(
@@ -1751,8 +2314,7 @@ def bulk_match_action():
 @app.route("/apps/attendance/app/attendance/check/<int:match_id>")
 @login_required
 def attendance_check(match_id):
-    conn = sqlite3.connect("schedule.db")
-    conn.row_factory = sqlite3.Row
+    conn = get_db_connection()
     c = conn.cursor()
 
     c.execute("SELECT * FROM matches WHERE id=? AND user_id=?", (match_id, session["user_id"]))
@@ -1795,8 +2357,7 @@ def attendance_check(match_id):
 @login_required
 def edit_match(id):
     current_month = request.args.get("month", "").strip()
-    conn = sqlite3.connect("schedule.db")
-    conn.row_factory = sqlite3.Row
+    conn = get_db_connection()
     c = conn.cursor()
 
     if request.method == "POST":
@@ -1842,8 +2403,7 @@ def edit_match(id):
 @app.route("/apps/attendance/app/attendance/month", methods=["GET", "POST"])
 @login_required
 def attendance_month():
-    conn = sqlite3.connect("schedule.db")
-    conn.row_factory = sqlite3.Row
+    conn = get_db_connection()
     c = conn.cursor()
 
     c.execute(
@@ -1948,7 +2508,7 @@ def delete_member_attendance_by_month():
     if not month or not name:
         return redirect_to_app_with_month(month)
 
-    conn = sqlite3.connect("schedule.db")
+    conn = get_db_connection()
     c = conn.cursor()
     c.execute(
         """
