@@ -1677,7 +1677,7 @@ def admin_login_entry():
                         )
                     return redirect(next_url)
                 error_message = "メールアドレスまたはパスワードが正しくありません。"
-            elif not portal_has_admins():
+            else:
                 admin = portal_create_admin(email, password)
                 if admin:
                     session["admin_id"] = admin["id"]
@@ -1685,17 +1685,12 @@ def admin_login_entry():
                     return redirect(
                         url_for(
                             "admin_dashboard",
-                            success_message="初回の管理者アカウントを作成しました。",
+                            success_message="管理者アカウントを作成しました。",
                         )
                     )
-                error_message = "管理者アカウントを作成できませんでした。"
-            else:
-                error_message = "このメールアドレスの管理者アカウントは登録されていません。"
+                error_message = "管理者アカウントを作成できませんでした。時間をおいて再度お試しください。"
 
-    if not portal_has_admins():
-        info_message = "初回のみ、この画面から管理者アカウントを作成できます。"
-    else:
-        info_message = "登録済みの管理者メールアドレスとパスワードでログインしてください。"
+    info_message = "メールアドレスが未登録の場合、この画面から新規に管理者アカウントを作成できます。"
 
     return render_template(
         "admin_portal_login_v2.html",
