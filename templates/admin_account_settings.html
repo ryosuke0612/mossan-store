@@ -1,0 +1,53 @@
+{% extends "admin_base_clean.html" %}
+
+{% block title %}管理者アカウント設定 | Mossan Store{% endblock %}
+
+{% block content %}
+<h1 class="page-title">管理者アカウント設定</h1>
+
+<section class="panel" style="max-width: 720px;">
+  {% if error_message %}
+  <div class="notice error">{{ error_message }}</div>
+  {% endif %}
+  {% if success_message %}
+  <div class="notice success">{{ success_message }}</div>
+  {% endif %}
+
+  <form method="POST" action="{{ url_for('admin_account_settings') }}">
+    <div class="field">
+      <label for="account-email">新しいメールアドレス</label>
+      <input id="account-email" type="email" name="email" value="{{ admin_email }}" required>
+    </div>
+    <div class="field">
+      <label for="current-password">現在のパスワード</label>
+      <input id="current-password" type="password" name="current_password" required minlength="8">
+    </div>
+    <div class="field">
+      <label for="new-password">新しいパスワード</label>
+      <input id="new-password" type="password" name="new_password" minlength="8">
+    </div>
+    <div class="field">
+      <label for="confirm-password">新しいパスワード（確認）</label>
+      <input id="confirm-password" type="password" name="confirm_password" minlength="8">
+    </div>
+    <div class="btn-row">
+      <button class="btn" type="submit">変更を保存する</button>
+      <a class="btn secondary" href="{{ url_for('admin_dashboard') }}">管理者トップへ戻る</a>
+    </div>
+  </form>
+</section>
+
+<section class="panel" style="max-width: 720px;">
+  <h2 style="margin-top: 0;">アカウント削除</h2>
+  <p>この管理者アカウントを削除すると、管理チームと関連データもあわせて削除されます。</p>
+  <form method="POST" action="{{ url_for('admin_delete_account') }}" onsubmit="return confirm('管理者アカウントと管理チームを削除します。よろしいですか？');">
+    <div class="field">
+      <label for="delete-current-password">現在のパスワード</label>
+      <input id="delete-current-password" type="password" name="current_password" required minlength="8">
+    </div>
+    <div class="btn-row">
+      <button class="btn danger" type="submit">アカウントを削除する</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

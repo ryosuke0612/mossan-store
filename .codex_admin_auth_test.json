@@ -1,0 +1,21 @@
+{
+  "admins": [
+    {
+      "id": 1,
+      "email": "admin@example.com",
+      "password_hash": "scrypt:32768:8:1$FKo6LLMI7L0VX4zL$be085858ed110901e81fffc2a4c9bac853b97c83e5789c79d78671991b7d7be7aa1d2d917e4c213de3f325b954caaf7c51632ac9862893e2540ef51ccadcca92",
+      "created_at": "2026-03-14 15:53:44"
+    }
+  ],
+  "teams": [],
+  "members": [],
+  "events": [],
+  "attendance": [],
+  "counters": {
+    "admin_id": 2,
+    "team_id": 1,
+    "member_id": 1,
+    "event_id": 1,
+    "attendance_id": 1
+  }
+}

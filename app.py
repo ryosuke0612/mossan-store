@@ -96,6 +96,100 @@ def portal_find_or_create_admin(email):
     return admin
 
 
+def portal_save_admin(updated_admin):
+    data = load_portal_data()
+    for index, admin in enumerate(data["admins"]):
+        if admin["id"] == updated_admin["id"]:
+            data["admins"][index] = updated_admin
+            save_portal_data(data)
+            return updated_admin
+    return None
+
+
+def portal_authenticate_admin(email, password):
+    admin = portal_get_admin_by_email(email)
+    if not admin:
+        return None, "not_found"
+
+    password_hash = admin.get("password_hash", "")
+    if not password_hash:
+        admin["password_hash"] = generate_password_hash(password)
+        portal_save_admin(admin)
+        return admin, "password_initialized"
+
+    if check_password_hash(password_hash, password):
+        return admin, "authenticated"
+
+    return None, "invalid_password"
+
+
+def portal_create_admin(email, password):
+    data = load_portal_data()
+    for admin in data["admins"]:
+        if admin["email"] == email:
+            return None
+
+    admin = {
+        "id": next_portal_id(data, "admin_id"),
+        "email": email,
+        "password_hash": generate_password_hash(password),
+        "created_at": portal_now_text(),
+    }
+    data["admins"].append(admin)
+    save_portal_data(data)
+    return admin
+
+
+def portal_update_admin_credentials(admin_id, current_password, new_email, new_password):
+    admin = portal_get_admin(admin_id)
+    if not admin:
+        return None, "not_found"
+
+    password_hash = admin.get("password_hash", "")
+    if not password_hash or not check_password_hash(password_hash, current_password):
+        return None, "invalid_password"
+
+    normalized_email = (new_email or "").strip().lower()
+    if not normalized_email or "@" not in normalized_email:
+        return None, "invalid_email"
+
+    existing_admin = portal_get_admin_by_email(normalized_email)
+    if existing_admin and existing_admin["id"] != admin_id:
+        return None, "email_taken"
+
+    admin["email"] = normalized_email
+    if new_password:
+        admin["password_hash"] = generate_password_hash(new_password)
+
+    portal_save_admin(admin)
+    return admin, "updated"
+
+
+def portal_delete_admin(admin_id, current_password):
+    data = load_portal_data()
+    admin = next((row for row in data["admins"] if row["id"] == admin_id), None)
+    if not admin:
+        return False, "not_found"
+
+    password_hash = admin.get("password_hash", "")
+    if not password_hash or not check_password_hash(password_hash, current_password):
+        return False, "invalid_password"
+
+    target_team_ids = {
+        team["id"]
+        for team in data["teams"]
+        if team["admin_id"] == admin_id
+    }
+
+    data["admins"] = [row for row in data["admins"] if row["id"] != admin_id]
+    data["teams"] = [team for team in data["teams"] if team["admin_id"] != admin_id]
+    data["members"] = [member for member in data["members"] if member["team_id"] not in target_team_ids]
+    data["events"] = [event for event in data["events"] if event["team_id"] not in target_team_ids]
+    data["attendance"] = [row for row in data["attendance"] if row["team_id"] not in target_team_ids]
+    save_portal_data(data)
+    return True, "deleted"
+
+
 def portal_get_teams_for_admin(admin_id):
     data = load_portal_data()
     return [team for team in data["teams"] if team["admin_id"] == admin_id]
@@ -971,20 +1065,58 @@ def attendance_description():
 def admin_login_entry():
     next_url = request.args.get("next") or request.form.get("next") or url_for("admin_dashboard")
     error_message = ""
+    info_message = ""
 
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+
         if not email or "@" not in email:
             error_message = "メールアドレスを入力してください。"
+        elif len(password) < 8:
+            error_message = "パスワードは8文字以上で入力してください。"
         else:
-            admin = portal_find_or_create_admin(email)
-            session["admin_id"] = admin["id"]
-            session["admin_email"] = admin["email"]
-            return redirect(next_url)
+            data = load_portal_data()
+            existing_admin = portal_get_admin_by_email(email)
+
+            if existing_admin:
+                admin, auth_status = portal_authenticate_admin(email, password)
+                if admin:
+                    session["admin_id"] = admin["id"]
+                    session["admin_email"] = admin["email"]
+                    if auth_status == "password_initialized":
+                        return redirect(
+                            url_for(
+                                "admin_dashboard",
+                                success_message="管理者パスワードを設定しました。",
+                            )
+                        )
+                    return redirect(next_url)
+                error_message = "メールアドレスまたはパスワードが正しくありません。"
+            elif not data["admins"]:
+                admin = portal_create_admin(email, password)
+                if admin:
+                    session["admin_id"] = admin["id"]
+                    session["admin_email"] = admin["email"]
+                    return redirect(
+                        url_for(
+                            "admin_dashboard",
+                            success_message="初回の管理者アカウントを作成しました。",
+                        )
+                    )
+                error_message = "管理者アカウントを作成できませんでした。"
+            else:
+                error_message = "このメールアドレスの管理者アカウントは登録されていません。"
+
+    if not load_portal_data()["admins"]:
+        info_message = "初回のみ、この画面から管理者アカウントを作成できます。"
+    else:
+        info_message = "登録済みの管理者メールアドレスとパスワードでログインしてください。"
 
     return render_template(
-        "admin_portal_login.html",
+        "admin_portal_login_v2.html",
         error_message=error_message,
+        info_message=info_message,
         next_url=next_url,
     )
 
@@ -1012,6 +1144,84 @@ def admin_dashboard():
         teams=teams,
         error_message=error_message,
         success_message=success_message,
+    )
+
+
+@app.route("/admin/account", methods=["GET", "POST"])
+@admin_login_required
+def admin_account_settings():
+    error_message = request.args.get("error_message", "").strip()
+    success_message = request.args.get("success_message", "").strip()
+
+    admin = portal_get_admin(session["admin_id"])
+    if not admin:
+        session.pop("admin_id", None)
+        session.pop("admin_email", None)
+        return redirect(url_for("admin_login_entry"))
+
+    if request.method == "POST":
+        current_password = request.form.get("current_password", "")
+        new_email = request.form.get("email", "").strip().lower()
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if len(current_password) < 8:
+            error_message = "現在のパスワードを入力してください。"
+        elif new_password and len(new_password) < 8:
+            error_message = "新しいパスワードは8文字以上で入力してください。"
+        elif new_password != confirm_password:
+            error_message = "新しいパスワードが確認用と一致しません。"
+        else:
+            updated_admin, status = portal_update_admin_credentials(
+                session["admin_id"],
+                current_password,
+                new_email,
+                new_password,
+            )
+            if updated_admin:
+                session["admin_email"] = updated_admin["email"]
+                admin = updated_admin
+                success_message = "管理者アカウント情報を更新しました。"
+            elif status == "invalid_password":
+                error_message = "現在のパスワードが正しくありません。"
+            elif status == "invalid_email":
+                error_message = "有効なメールアドレスを入力してください。"
+            elif status == "email_taken":
+                error_message = "そのメールアドレスはすでに使用されています。"
+            else:
+                error_message = "管理者情報を更新できませんでした。"
+
+    return render_template(
+        "admin_account_settings.html",
+        admin_email=admin["email"],
+        error_message=error_message,
+        success_message=success_message,
+    )
+
+
+@app.route("/admin/account/delete", methods=["POST"])
+@admin_login_required
+def admin_delete_account():
+    current_password = request.form.get("current_password", "")
+    deleted, status = portal_delete_admin(session["admin_id"], current_password)
+
+    if deleted:
+        session.pop("admin_id", None)
+        session.pop("admin_email", None)
+        return redirect(url_for("admin_login_entry"))
+
+    if status == "invalid_password":
+        return redirect(
+            url_for(
+                "admin_account_settings",
+                error_message="現在のパスワードが正しくありません。",
+            )
+        )
+    return redirect(
+        url_for(
+            "admin_account_settings",
+            error_message="管理者アカウントを削除できませんでした。",
+        )
     )
 
 
