@@ -13,12 +13,21 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 try:
     import psycopg2
-    from psycopg2 import Error as PsycopgError
+    from psycopg2 import Error as Psycopg2Error
     from psycopg2.extras import DictCursor
 except ImportError:
     psycopg2 = None
-    PsycopgError = Exception
+    Psycopg2Error = None
     DictCursor = None
+
+try:
+    import psycopg
+    from psycopg import Error as Psycopg3Error
+    from psycopg.rows import dict_row
+except ImportError:
+    psycopg = None
+    Psycopg3Error = None
+    dict_row = None
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
@@ -28,7 +37,15 @@ USE_POSTGRES = DATABASE_URL.startswith(("postgresql://", "postgres://"))
 SQLITE_DB_PATH = os.environ.get("SQLITE_DB_PATH", "schedule.db")
 RENDER_ENV = os.environ.get("RENDER", "").strip().lower() == "true"
 PORTAL_JSON_MIGRATION_ENABLED = os.environ.get("PORTAL_JSON_MIGRATION_ENABLED", "").strip() == "1"
-DatabaseError = PsycopgError if USE_POSTGRES else sqlite3.Error
+if USE_POSTGRES:
+    pg_errors = []
+    if Psycopg2Error is not None:
+        pg_errors.append(Psycopg2Error)
+    if Psycopg3Error is not None:
+        pg_errors.append(Psycopg3Error)
+    DatabaseError = tuple(pg_errors) if pg_errors else Exception
+else:
+    DatabaseError = sqlite3.Error
 
 if RENDER_ENV and not USE_POSTGRES:
     raise RuntimeError("Render deployment requires DATABASE_URL (PostgreSQL).")
@@ -890,9 +907,11 @@ def redirect_to_team_month(public_id, month=None):
 
 def get_db_connection():
     if USE_POSTGRES:
-        if psycopg2 is None:
-            raise RuntimeError("DATABASE_URL is set but psycopg2 is not installed.")
-        return DBConnection(psycopg2.connect(DATABASE_URL, cursor_factory=DictCursor))
+        if psycopg2 is not None:
+            return DBConnection(psycopg2.connect(DATABASE_URL, cursor_factory=DictCursor))
+        if psycopg is not None:
+            return DBConnection(psycopg.connect(DATABASE_URL, row_factory=dict_row))
+        raise RuntimeError("DATABASE_URL is set but neither psycopg2 nor psycopg is installed.")
 
     conn = sqlite3.connect(SQLITE_DB_PATH)
     conn.row_factory = sqlite3.Row
