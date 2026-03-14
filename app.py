@@ -1381,7 +1381,9 @@ try:
     if PORTAL_JSON_MIGRATION_ENABLED:
         migrate_portal_json_to_db()
 except DatabaseError:
-    pass
+    app.logger.exception("Database initialization failed.")
+    if RENDER_ENV:
+        raise
 
 
 def login_required(func):
