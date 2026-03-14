@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block header_nav_items %}
+<a href="{{ url_for('attendance_description') }}">アプリ説明</a>
+<a href="{{ url_for('admin_dashboard') }}">管理者トップ</a>
+<a href="{{ url_for('admin_events') }}">イベント管理</a>
+<a href="{{ url_for('admin_team_settings') }}">チーム設定</a>
+{% if session.get('admin_id') %}
+<a href="{{ url_for('admin_logout') }}">ログアウト</a>
+{% else %}
+<a href="{{ url_for('admin_login_entry') }}">管理者ログイン</a>
+{% endif %}
+{% endblock %}

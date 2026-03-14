@@ -1,0 +1,51 @@
+{% extends "attendance_base.html" %}
+
+{% block title %}イベント編集 | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<style>
+.event-form .field { min-width: 0; }
+.event-form input[type="date"] { width: 100%; min-width: 0; max-width: 100%; }
+.event-form .time-inline { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 900px) { .event-form .time-inline { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">イベント編集</h1>
+<div class="panel" style="max-width:860px;">
+  <form method="POST" class="event-form">
+    <input type="hidden" name="return_month" value="{{ current_month or '' }}">
+    <div class="grid-2">
+      <div class="field"><label>日付</label><input type="date" name="date" value="{{ match['date'] }}" required></div>
+      <div></div>
+      <div class="field">
+        <label>開始時間</label>
+        {% set current_start = match['start_time'] %}
+        {% set start_hour = current_start[0:2] | int if current_start and current_start|length >= 5 else 12 %}
+        {% set start_minute = current_start[3:5] | int if current_start and current_start|length >= 5 else 0 %}
+        <div class="time-inline">
+          <select name="start_time_hour" required>{% for h in range(24) %}<option value="{{ h }}" {% if h == start_hour %}selected{% endif %}>{{ "%02d"|format(h) }}時</option>{% endfor %}</select>
+          <select name="start_time_minute" required>{% for m in range(0, 60, 10) %}<option value="{{ m }}" {% if m == start_minute %}selected{% endif %}>{{ "%02d"|format(m) }}分</option>{% endfor %}</select>
+        </div>
+      </div>
+      <div class="field">
+        <label>終了時間</label>
+        {% set current_end = match['end_time'] %}
+        {% set end_hour = current_end[0:2] | int if current_end and current_end|length >= 5 else 12 %}
+        {% set end_minute = current_end[3:5] | int if current_end and current_end|length >= 5 else 0 %}
+        <div class="time-inline">
+          <select name="end_time_hour" required>{% for h in range(24) %}<option value="{{ h }}" {% if h == end_hour %}selected{% endif %}>{{ "%02d"|format(h) }}時</option>{% endfor %}</select>
+          <select name="end_time_minute" required>{% for m in range(0, 60, 10) %}<option value="{{ m }}" {% if m == end_minute %}selected{% endif %}>{{ "%02d"|format(m) }}分</option>{% endfor %}</select>
+        </div>
+      </div>
+      <div class="field"><label>イベント内容</label><input type="text" name="opponent" value="{{ match['opponent'] }}" required></div>
+      <div class="field"><label>場所</label><input type="text" name="place" value="{{ match['place'] }}" required></div>
+    </div>
+    <div class="btn-row">
+      <a href="{{ url_for('member_team_page', public_id=public_id) }}{% if current_month %}?month={{ current_month }}{% endif %}" class="btn secondary">戻る</a>
+      <button class="btn" type="submit">更新する</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

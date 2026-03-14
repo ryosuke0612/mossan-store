@@ -1,0 +1,202 @@
+{% extends "admin_base_clean.html" %}
+
+{% block title %}管理者トップ | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<style>
+.dashboard-stack {
+  display: grid;
+  gap: 16px;
+}
+.dashboard-top {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+.dashboard-top > .dashboard-panel {
+  min-height: 232px;
+  margin-top: 0;
+}
+.dashboard-top > .dashboard-panel + .dashboard-panel {
+  margin-top: 0;
+}
+.dashboard-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.dashboard-panel h2 {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+.dashboard-panel form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+}
+.info-grid {
+  display: grid;
+  flex: 1;
+  align-content: start;
+  gap: 14px;
+}
+.field:last-of-type {
+  margin-bottom: 0;
+}
+.info-item {
+  padding: 14px;
+  border: 1px solid rgba(255, 43, 43, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.info-value {
+  font-size: 18px;
+  font-weight: 700;
+  line-break: anywhere;
+}
+.team-cards {
+  display: grid;
+  gap: 14px;
+}
+.team-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 43, 43, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.team-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.team-name {
+  margin: 0;
+  font-size: 20px;
+}
+.team-meta {
+  display: grid;
+  gap: 10px;
+}
+.team-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.team-meta-item label {
+  margin-bottom: 0;
+  flex: 0 0 auto;
+}
+.team-meta-item div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.team-meta-item a {
+  color: #ffb1b1;
+  word-break: break-all;
+}
+.team-card-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.danger-form {
+  margin: 0;
+}
+@media (max-width: 900px) {
+  .dashboard-top {
+    grid-template-columns: 1fr;
+  }
+  .team-card-header {
+    flex-direction: column;
+  }
+  .team-card-actions {
+    justify-content: flex-start;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">管理者トップ</h1>
+
+<div class="dashboard-stack">
+  {% if error_message %}
+  <div class="notice error">{{ error_message }}</div>
+  {% endif %}
+  {% if success_message %}
+  <div class="notice success">{{ success_message }}</div>
+  {% endif %}
+
+  <div class="dashboard-top">
+    <section class="panel dashboard-panel">
+      <h2>管理情報</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <label>ログイン中のメールアドレス</label>
+          <div class="info-value">{{ admin_email }}</div>
+        </div>
+        <div class="info-item">
+          <label>管理チーム数</label>
+          <div class="info-value">{{ teams|length }}</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel dashboard-panel">
+      <h2>チーム作成</h2>
+      <form method="POST">
+        <div class="field">
+          <label for="team_name">新しいチーム名</label>
+          <input id="team_name" type="text" name="team_name" placeholder="Aチーム" required>
+        </div>
+        <button class="btn" type="submit">チームを作成する</button>
+      </form>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2 style="margin-top: 0;">作成済みチーム一覧</h2>
+    {% if teams %}
+    <div class="team-cards">
+      {% for team in teams %}
+      <article class="team-card">
+        <div class="team-card-header">
+          <div>
+            <h3 class="team-name">{{ team["name"] }}</h3>
+          </div>
+          <div class="team-card-actions">
+            <form
+              class="danger-form"
+              method="POST"
+              action="{{ url_for('admin_delete_team', team_id=team['id']) }}"
+              onsubmit="return confirm('このチームを削除します。よろしいですか？');"
+            >
+              <button class="btn danger" type="submit">削除</button>
+            </form>
+          </div>
+        </div>
+        <div class="team-meta">
+          <div class="team-meta-item">
+            <label>メンバー用URL</label>
+            <div>
+              <a href="{{ url_for('member_team_page', public_id=team['public_id']) }}">
+                /team/{{ team["public_id"] }}
+              </a>
+            </div>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="notice success">まだチームはありません。右上のフォームからチームを作成してください。</div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

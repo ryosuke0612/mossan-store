@@ -1,0 +1,66 @@
+{% extends "admin_base_clean.html" %}
+
+{% block title %}管理者トップ | Mossan Store{% endblock %}
+
+{% block content %}
+<h1 class="page-title">管理者トップ</h1>
+
+<section class="panel">
+  {% if error_message %}
+  <div class="notice error">{{ error_message }}</div>
+  {% endif %}
+  {% if success_message %}
+  <div class="notice success">{{ success_message }}</div>
+  {% endif %}
+
+  <div class="grid-2">
+    <div>
+      <label>ログイン中のメールアドレス</label>
+      <div>{{ admin_email }}</div>
+    </div>
+    <div>
+      <label>管理チーム数</label>
+      <div>{{ teams|length }}</div>
+    </div>
+  </div>
+</section>
+
+<section class="panel" style="max-width: 640px;">
+  <h2 style="margin-top: 0;">チーム作成</h2>
+  <form method="POST">
+    <div class="field">
+      <label>新しいチーム名</label>
+      <input type="text" name="team_name" placeholder="Aチーム" required>
+    </div>
+    <button class="btn" type="submit">チームを作成する</button>
+  </form>
+</section>
+
+<section class="panel">
+  <h2 style="margin-top: 0;">作成済みチーム一覧</h2>
+  {% if teams %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>チーム名</th>
+          <th>公開ID</th>
+          <th>メンバー用URL</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for team in teams %}
+        <tr>
+          <td>{{ team["name"] }}</td>
+          <td>{{ team["public_id"] }}</td>
+          <td><a href="{{ url_for('member_team_page', public_id=team['public_id']) }}">/team/{{ team["public_id"] }}</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="notice success">まだチームがありません。上のフォームからチームを作成してください。</div>
+  {% endif %}
+</section>
+{% endblock %}

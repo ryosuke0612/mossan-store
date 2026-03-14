@@ -1,0 +1,56 @@
+{% extends "attendance_base.html" %}
+
+{% block title %}{% if edit_mode %}出欠編集{% else %}新規出欠登録{% endif %} | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<style>
+.status-btn.selected-join { background: #ff2b2b; border-color: #ff4b4b; color: #fff; }
+.status-btn.selected-absent { background: #a22626; border-color: #a22626; color: #fff; }
+.status-btn.selected-undecided { background: #c77900; border-color: #c77900; color: #fff; }
+.event-lines { line-height: 1.4; white-space: normal; text-align: left; }
+.attendance-table { min-width: 0; table-layout: fixed; }
+.attendance-table th, .attendance-table td { padding: 6px; font-size: 13px; }
+.attendance-table th:nth-child(1), .attendance-table td:nth-child(1) { width: 58%; }
+.attendance-table th:nth-child(2), .attendance-table td:nth-child(2), .attendance-table th:nth-child(3), .attendance-table td:nth-child(3), .attendance-table th:nth-child(4), .attendance-table td:nth-child(4) { width: 14%; }
+.attendance-table form { margin: 0; }
+.attendance-table .status-btn { width: 100%; white-space: nowrap; padding: 7px 4px; font-size: 12px; }
+.attention-blink { border: 2px solid #ff2b2b; color: #fff; background: rgba(255, 43, 43, 0.12); animation: blink-border 1s steps(1, end) infinite; }
+@keyframes blink-border { 0%, 50% { border-color: #ff2b2b; box-shadow: 0 0 0 1px rgba(255, 43, 43, 0.4); } 51%, 100% { border-color: rgba(255, 43, 43, 0.15); box-shadow: none; } }
+@media (max-width: 900px) { .attendance-table th, .attendance-table td { padding: 5px 4px; font-size: 12px; } .attendance-table .status-btn { font-size: 11px; padding: 6px 2px; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">{% if edit_mode %}出欠編集{% else %}新規出欠登録{% endif %}</h1>
+{% if error_message %}<section class="panel"><div class="notice error" style="margin-bottom:0;">{{ error_message }}</div></section>{% endif %}
+<section class="panel">
+  {% if not name %}<div class="notice attention-blink" style="margin-bottom:12px;">名前を入力して表示ボタンをクリック！</div>{% endif %}
+  <form method="GET" class="grid-3" style="align-items:end;">
+    <div class="field" style="margin:0;"><label>名前</label><input type="text" name="name" value="{{ name or '' }}" placeholder="名前を入力"></div>
+    <div class="field" style="margin:0;"><label>月</label><select name="month">{% for m in months %}<option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select></div>
+    <div class="field" style="margin:0;"><label>&nbsp;</label><button class="btn" type="submit">表示</button></div>
+  </form>
+</section>
+{% if matches %}
+<section class="panel">
+  <div class="table-wrap">
+    <table class="attendance-table">
+      <thead><tr><th>日程/イベント内容</th><th>参加</th><th>不参加</th><th>未定</th></tr></thead>
+      <tbody>
+        {% for match in matches %}
+        <tr>
+          <td class="event-lines"><div>{{ match["date_label"] }} {{ match["start_time"] }} 〜 {{ match["end_time"] }}</div><div>{{ match["opponent"] }} @{{ match["place"] }}</div></td>
+          <td><form method="POST"><input type="hidden" name="name" value="{{ name }}"><input type="hidden" name="month" value="{{ selected_month }}"><input type="hidden" name="match_id" value="{{ match['id'] }}"><input type="hidden" name="status" value="参加"><button class="btn secondary status-btn {% if attendance_dict.get(match['id']) == '参加' %}selected-join{% endif %}" {% if not name %}disabled{% endif %}>参加</button></form></td>
+          <td><form method="POST"><input type="hidden" name="name" value="{{ name }}"><input type="hidden" name="month" value="{{ selected_month }}"><input type="hidden" name="match_id" value="{{ match['id'] }}"><input type="hidden" name="status" value="不参加"><button class="btn secondary status-btn {% if attendance_dict.get(match['id']) == '不参加' %}selected-absent{% endif %}" {% if not name %}disabled{% endif %}>不参加</button></form></td>
+          <td><form method="POST"><input type="hidden" name="name" value="{{ name }}"><input type="hidden" name="month" value="{{ selected_month }}"><input type="hidden" name="match_id" value="{{ match['id'] }}"><input type="hidden" name="status" value="未定"><button class="btn secondary status-btn {% if attendance_dict.get(match['id']) == '未定' %}selected-undecided{% endif %}" {% if not name %}disabled{% endif %}>未定</button></form></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% elif selected_month %}
+<section class="panel"><div class="notice" style="margin-bottom:0;">選択した月のイベントはありません。</div></section>
+{% endif %}
+<div class="btn-row" style="margin-top:16px;"><a href="{{ url_for('member_team_page', public_id=public_id) }}{% if selected_month %}?month={{ selected_month }}{% endif %}" class="btn secondary">戻る</a></div>
+{% endblock %}

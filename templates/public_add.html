@@ -1,0 +1,45 @@
+{% extends "attendance_base.html" %}
+
+{% block title %}イベント登録 | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<style>
+.event-form .field { min-width: 0; }
+.event-form input[type="date"] { width: 100%; min-width: 0; max-width: 100%; }
+.event-form .time-inline { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 900px) { .event-form .time-inline { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">イベント登録</h1>
+<div class="panel" style="max-width:860px;">
+  <form method="POST" action="{{ url_for('public_add_match', public_id=public_id) }}" class="event-form">
+    <input type="hidden" name="return_month" value="{{ current_month or '' }}">
+    <div class="grid-2">
+      <div class="field"><label>日付</label><input type="date" name="date" required></div>
+      <div></div>
+      <div class="field">
+        <label>開始時間</label>
+        <div class="time-inline">
+          <select name="start_time_hour" required>{% for h in range(24) %}<option value="{{ h }}" {% if h == 12 %}selected{% endif %}>{{ "%02d"|format(h) }}時</option>{% endfor %}</select>
+          <select name="start_time_minute" required>{% for m in range(0, 60, 10) %}<option value="{{ m }}" {% if m == 0 %}selected{% endif %}>{{ "%02d"|format(m) }}分</option>{% endfor %}</select>
+        </div>
+      </div>
+      <div class="field">
+        <label>終了時間</label>
+        <div class="time-inline">
+          <select name="end_time_hour" required>{% for h in range(24) %}<option value="{{ h }}" {% if h == 12 %}selected{% endif %}>{{ "%02d"|format(h) }}時</option>{% endfor %}</select>
+          <select name="end_time_minute" required>{% for m in range(0, 60, 10) %}<option value="{{ m }}" {% if m == 0 %}selected{% endif %}>{{ "%02d"|format(m) }}分</option>{% endfor %}</select>
+        </div>
+      </div>
+      <div class="field"><label>イベント内容</label><input type="text" name="opponent" required></div>
+      <div class="field"><label>場所</label><input type="text" name="place" required></div>
+    </div>
+    <div class="btn-row">
+      <a href="{{ url_for('member_team_page', public_id=public_id) }}{% if current_month %}?month={{ current_month }}{% endif %}" class="btn secondary">戻る</a>
+      <button class="btn" type="submit">登録する</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

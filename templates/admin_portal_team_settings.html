@@ -1,0 +1,93 @@
+{% extends "admin_base.html" %}
+
+{% block title %}チーム設定 | Mossan Store{% endblock %}
+
+{% block content %}
+<h1 class="page-title">チーム設定・メンバー管理</h1>
+
+<section class="panel">
+  {% if error_message %}
+  <div class="notice error">{{ error_message }}</div>
+  {% endif %}
+  {% if success_message %}
+  <div class="notice success">{{ success_message }}</div>
+  {% endif %}
+
+  <div class="grid-2">
+    <form method="POST">
+      <input type="hidden" name="action" value="create_team">
+      <div class="field">
+        <label>新しいチーム名</label>
+        <input type="text" name="team_name" placeholder="Aチーム" required>
+      </div>
+      <button class="btn" type="submit">チームを作成する</button>
+    </form>
+
+    <form method="POST">
+      <input type="hidden" name="action" value="add_member">
+      <div class="field">
+        <label>チームを選択</label>
+        <select name="team_id" required>
+          <option value="">選択してください</option>
+          {% for team in teams %}
+          <option value="{{ team['id'] }}">{{ team["name"] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>メンバー名</label>
+        <input type="text" name="member_name" placeholder="山田 太郎" required>
+      </div>
+      <button class="btn" type="submit">メンバーを追加する</button>
+    </form>
+  </div>
+</section>
+
+<section class="panel">
+  <h2 style="margin-top: 0;">チーム一覧</h2>
+  {% if teams %}
+  {% for team in teams %}
+  <div class="panel" style="margin-top: 12px;">
+    <div class="grid-2">
+      <div>
+        <label>チーム名</label>
+        <div>{{ team["name"] }}</div>
+      </div>
+      <div>
+        <label>メンバー用URL</label>
+        <div><a href="{{ url_for('member_team_page', public_id=team['public_id']) }}">/team/{{ team["public_id"] }}</a></div>
+      </div>
+    </div>
+    <div style="margin-top: 14px;">
+      <label>登録メンバー</label>
+      {% set team_members = members_by_team.get(team["id"], []) %}
+      {% if team_members %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>名前</th>
+              <th>登録日時</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for member in team_members %}
+            <tr>
+              <td>{{ member["name"] }}</td>
+              <td>{{ member["created_at"] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="notice success">まだメンバーは登録されていません。</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <div class="notice success">まずはチームを作成してください。</div>
+  {% endif %}
+</section>
+{% endblock %}

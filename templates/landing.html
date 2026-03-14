@@ -156,7 +156,7 @@ body {
         チームの結束力と責任感を高める。<br>
         本気で勝ちたいチームのための本気のツール。
       </p>
-      <a href="{{ url_for('index') }}" class="cta-btn">今すぐアプリを見る</a>
+      <a href="{{ url_for('admin_login_entry') }}" class="cta-btn">管理者ページを見る</a>
     </div>
     <div class="hero-image">
       <img src="{{ url_for('static', filename='images/gorilla-full.png') }}" alt="ゴリラ後ろ姿">
@@ -203,6 +203,6 @@ body {
 
 <section class="last">
   <h2>チームを進化させろ。</h2>
-  <a href="{{ url_for('index') }}" class="cta-btn">ログインして始める</a>
+  <a href="{{ url_for('admin_login_entry') }}" class="cta-btn">管理者ログインへ</a>
 </section>
 {% endblock %}

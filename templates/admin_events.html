@@ -1,0 +1,26 @@
+{% extends "attendance_base.html" %}
+
+{% block title %}イベント管理 | Mossan Store{% endblock %}
+
+{% block content %}
+<h1 class="page-title">イベント管理</h1>
+
+<section class="panel" style="max-width: 860px;">
+  <p>
+    ここは管理者用のイベント管理ページです。次の段階でイベント作成、編集、出欠一覧確認を追加します。
+  </p>
+  <div class="grid-2">
+    <div>
+      <label>ログイン中の管理者</label>
+      <div>{{ admin_email }}</div>
+    </div>
+    <div>
+      <label>現在の状態</label>
+      <div>イベント管理の導線のみ有効</div>
+    </div>
+  </div>
+  <div class="btn-row" style="margin-top: 18px;">
+    <a class="btn secondary" href="{{ url_for('admin_dashboard') }}">管理者トップへ戻る</a>
+  </div>
+</section>
+{% endblock %}

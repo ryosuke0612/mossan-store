@@ -1,0 +1,37 @@
+{% extends "attendance_base.html" %}
+
+{% block title %}出欠確認 | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<style>
+.check-table { width: 100%; min-width: 0; max-width: 100%; table-layout: fixed; }
+.check-table th, .check-table td { width: 33.3333%; text-align: left; vertical-align: top; }
+.check-table td { height: 220px; }
+.member-list { margin: 0; padding: 0; list-style: none; }
+.member-list li { margin: 0 0 4px; word-break: break-word; }
+.check-wrap { overflow-x: hidden; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">出欠確認</h1>
+<section class="panel">
+  <div>{{ match["date_label"] }} {{ match["start_time"] }}〜{{ match["end_time"] }}</div>
+  <div>{{ match["opponent"] }}@{{ match["place"] }}</div>
+</section>
+<section class="panel">
+  <div class="table-wrap check-wrap">
+    <table class="check-table">
+      <thead><tr><th>参加</th><th>不参加</th><th>未定</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>{% if join_members %}<ul class="member-list">{% for name in join_members %}<li>{{ name }}</li>{% endfor %}</ul>{% else %}-{% endif %}</td>
+          <td>{% if absent_members %}<ul class="member-list">{% for name in absent_members %}<li>{{ name }}</li>{% endfor %}</ul>{% else %}-{% endif %}</td>
+          <td>{% if undecided_members %}<ul class="member-list">{% for name in undecided_members %}<li>{{ name }}</li>{% endfor %}</ul>{% else %}-{% endif %}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+<div class="btn-row" style="margin-top:16px;"><a href="{{ url_for('member_team_page', public_id=public_id) }}" class="btn secondary">戻る</a></div>
+{% endblock %}

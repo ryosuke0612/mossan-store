@@ -1,0 +1,30 @@
+{% extends "admin_base_clean.html" %}
+
+{% block title %}管理者ログイン | Mossan Store{% endblock %}
+
+{% block content %}
+<h1 class="page-title">管理者ログイン</h1>
+
+<section class="panel" style="max-width: 720px;">
+  {% if error_message %}
+  <div class="notice error">{{ error_message }}</div>
+  {% endif %}
+
+  <p>
+    管理者はメールアドレスでログインし、イベント管理、メンバー管理、公開URLの確認へ進みます。
+    現在はマジックリンクへ拡張しやすいように、メールアドレス起点の最小導線で構成しています。
+  </p>
+
+  <form method="POST" action="{{ url_for('admin_login_entry') }}">
+    <input type="hidden" name="next" value="{{ next_url }}">
+    <div class="field">
+      <label>メールアドレス</label>
+      <input type="email" name="email" placeholder="admin@example.com" required>
+    </div>
+    <div class="btn-row">
+      <button class="btn" type="submit">管理画面へ進む</button>
+      <a class="btn secondary" href="{{ url_for('attendance_description') }}">アプリ説明へ</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

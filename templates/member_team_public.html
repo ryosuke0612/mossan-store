@@ -1,0 +1,128 @@
+{% extends "member_base.html" %}
+
+{% block title %}メンバー用ページ | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<style>
+.attendance-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.attendance-actions label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #2d2d2d;
+  border-radius: 12px;
+  padding: 12px;
+  background: #111;
+  color: #f5f5f5;
+}
+.attendance-actions input[type="radio"] {
+  width: auto;
+  margin: 0;
+}
+.attendance-table td,
+.attendance-table th {
+  text-align: left;
+}
+@media (max-width: 900px) {
+  .attendance-actions {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">メンバー用ページ</h1>
+
+<section class="panel" style="max-width: 920px;">
+  {% if team %}
+  <div class="grid-2">
+    <div>
+      <label>チーム名</label>
+      <div>{{ team["name"] }}</div>
+    </div>
+    <div>
+      <label>公開URL用ID</label>
+      <div>{{ team["public_id"] }}</div>
+    </div>
+  </div>
+
+  {% if error_message %}
+  <div class="notice error" style="margin-top: 16px;">{{ error_message }}</div>
+  {% endif %}
+  {% if success_message %}
+  <div class="notice success" style="margin-top: 16px;">{{ success_message }}</div>
+  {% endif %}
+
+  <form method="POST" style="margin-top: 20px;">
+    <div class="field">
+      <label>登録済みメンバーから選択</label>
+      <select name="selected_name">
+        <option value="">選択してください</option>
+        {% for member in members %}
+        <option value="{{ member['name'] }}">{{ member["name"] }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field">
+      <label>または名前を入力</label>
+      <input type="text" name="input_name" placeholder="山田 太郎">
+    </div>
+
+    <div class="field">
+      <label>出欠</label>
+      <div class="attendance-actions">
+        <label><input type="radio" name="status" value="参加" required>参加</label>
+        <label><input type="radio" name="status" value="不参加">不参加</label>
+        <label><input type="radio" name="status" value="未定">未定</label>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" type="submit">出欠を登録する</button>
+    </div>
+  </form>
+  {% else %}
+  <div class="notice error">
+    指定されたチームが見つかりません。URL を確認してください。
+  </div>
+  {% endif %}
+</section>
+
+{% if team %}
+<section class="panel">
+  <h2 style="margin-top: 0;">チームの出欠状況</h2>
+  {% if attendance_rows %}
+  <div class="table-wrap">
+    <table class="attendance-table">
+      <thead>
+        <tr>
+          <th>名前</th>
+          <th>出欠</th>
+          <th>更新日時</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in attendance_rows %}
+        <tr>
+          <td>{{ row["member_name"] }}</td>
+          <td>{{ row["status"] }}</td>
+          <td>{{ row["updated_at"] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="notice success">
+    まだ出欠登録はありません。最初の1件を登録してください。
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}
