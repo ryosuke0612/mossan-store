@@ -11,6 +11,13 @@
   width: 100%;
   min-width: 0;
   max-width: 100%;
+  display: block;
+  box-sizing: border-box;
+  color-scheme: dark;
+}
+.event-form input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.7);
+  opacity: 1;
 }
 .event-form .time-inline {
   display: grid;
@@ -18,6 +25,13 @@
   gap: 10px;
 }
 @media (max-width: 900px) {
+  .event-form .field {
+    overflow: hidden;
+  }
+  .event-form input[type="date"] {
+    inline-size: 100%;
+    max-inline-size: 100%;
+  }
   .event-form .time-inline {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
