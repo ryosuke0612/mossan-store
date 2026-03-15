@@ -3,6 +3,25 @@
 {% block title %}サイト運営者ページ | Mossan Store{% endblock %}
 
 {% block content %}
+<style>
+  .admin-list-table th,
+  .admin-list-table td {
+    white-space: nowrap;
+    width: 1%;
+  }
+
+  .admin-list-table .extend-cell form,
+  .admin-list-table .delete-cell form {
+    margin: 0;
+  }
+
+  .admin-list-table .extend-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+</style>
+
 <h1 class="page-title">サイト運営者ページ</h1>
 
 <section class="panel">
@@ -20,7 +39,7 @@
 
   {% if admin_rows %}
   <div class="table-wrap">
-    <table>
+    <table class="admin-list-table">
       <thead>
         <tr>
           <th>メールアドレス</th>
@@ -28,7 +47,8 @@
           <th>利用開始日</th>
           <th>利用期限</th>
           <th>残り日数</th>
-          <th>操作</th>
+          <th>延長操作</th>
+          <th>削除</th>
         </tr>
       </thead>
       <tbody>
@@ -39,24 +59,26 @@
           <td>{{ row["start_date"] }}</td>
           <td>{{ row["expiry_date"] }}</td>
           <td>{{ row["remaining_days_text"] }}</td>
-          <td>
+          <td class="extend-cell">
             <form
+              class="extend-form"
               method="POST"
               action="{{ url_for('site_admin_extend_admin', admin_id=row['id']) }}"
-              style="margin: 0 0 8px 0; display: flex; gap: 8px; align-items: center;"
             >
               <select name="extend_days" aria-label="延長日数">
                 <option value="7">7日延長</option>
                 <option value="30" selected>30日延長</option>
                 <option value="60">60日延長</option>
+                <option value="unlimited">無期限</option>
               </select>
-              <button class="btn" type="submit">延長</button>
+              <button class="btn" type="submit">Extend</button>
             </form>
+          </td>
+          <td class="delete-cell">
             <form
               method="POST"
               action="{{ url_for('site_admin_delete_admin', admin_id=row['id']) }}"
               onsubmit="return confirm('この管理者を削除します。管理しているチーム、メンバー情報、出欠データも削除されます。実行しますか？');"
-              style="margin: 0;"
             >
               <button class="btn danger" type="submit">削除</button>
             </form>

@@ -38,6 +38,7 @@ SQLITE_DB_PATH = os.environ.get("SQLITE_DB_PATH", "schedule.db")
 RENDER_ENV = os.environ.get("RENDER", "").strip().lower() == "true"
 PORTAL_JSON_MIGRATION_ENABLED = os.environ.get("PORTAL_JSON_MIGRATION_ENABLED", "").strip() == "1"
 ADMIN_TRIAL_DAYS = 30
+ADMIN_EXPIRY_UNLIMITED = "UNLIMITED"
 
 
 def parse_email_allowlist(raw_value):
@@ -129,6 +130,10 @@ def parse_portal_datetime(value):
     return None
 
 
+def is_unlimited_expiry(value):
+    return (value or "").strip().upper() == ADMIN_EXPIRY_UNLIMITED
+
+
 def build_admin_expiry_text(created_at=None, base_datetime=None, extend_days=0):
     base_dt = base_datetime or parse_portal_datetime(created_at) or datetime.now()
     expire_dt = base_dt + timedelta(days=ADMIN_TRIAL_DAYS + max(0, extend_days))
@@ -136,6 +141,8 @@ def build_admin_expiry_text(created_at=None, base_datetime=None, extend_days=0):
 
 
 def resolve_admin_expiry_datetime(created_at, expires_at):
+    if is_unlimited_expiry(expires_at):
+        return None
     return parse_portal_datetime(expires_at) or parse_portal_datetime(
         build_admin_expiry_text(created_at=created_at)
     )
@@ -1620,6 +1627,8 @@ def format_start_date(created_at):
 
 
 def format_expiry_date(expires_at):
+    if is_unlimited_expiry(expires_at):
+        return "無期限"
     parsed = parse_portal_datetime(expires_at)
     if not parsed:
         return "-"
@@ -1627,6 +1636,8 @@ def format_expiry_date(expires_at):
 
 
 def format_remaining_days(expires_at):
+    if is_unlimited_expiry(expires_at):
+        return "無期限"
     parsed = parse_portal_datetime(expires_at)
     if not parsed:
         return "-"
@@ -1948,10 +1959,13 @@ def site_admin_dashboard():
     success_message = request.args.get("success_message", "").strip()
     for row in admin_rows:
         row["start_date"] = format_start_date(row.get("created_at"))
-        effective_expiry = resolve_admin_expiry_datetime(row.get("created_at"), row.get("expires_at"))
-        row["effective_expiry"] = (
-            effective_expiry.strftime("%Y-%m-%d %H:%M:%S") if effective_expiry else ""
-        )
+        if is_unlimited_expiry(row.get("expires_at")):
+            row["effective_expiry"] = ADMIN_EXPIRY_UNLIMITED
+        else:
+            effective_expiry = resolve_admin_expiry_datetime(row.get("created_at"), row.get("expires_at"))
+            row["effective_expiry"] = (
+                effective_expiry.strftime("%Y-%m-%d %H:%M:%S") if effective_expiry else ""
+            )
         row["expiry_date"] = format_expiry_date(row.get("effective_expiry"))
         row["remaining_days_text"] = format_remaining_days(row.get("effective_expiry"))
 
@@ -1977,18 +1991,31 @@ def site_admin_delete_admin(admin_id):
 @site_admin_required
 def site_admin_extend_admin(admin_id):
     extend_days_raw = request.form.get("extend_days", "").strip()
-    try:
-        extend_days = int(extend_days_raw)
-    except ValueError:
-        return redirect(url_for("site_admin_dashboard", error_message="延長日数が不正です。"))
-    if extend_days <= 0:
-        return redirect(url_for("site_admin_dashboard", error_message="延長日数は1日以上で指定してください。"))
-    if extend_days > 3650:
-        return redirect(url_for("site_admin_dashboard", error_message="延長日数が大きすぎます。"))
+    if extend_days_raw.lower() == "unlimited":
+        extend_days = None
+    else:
+        try:
+            extend_days = int(extend_days_raw)
+        except ValueError:
+            return redirect(url_for("site_admin_dashboard", error_message="延長日数が不正です。"))
+        if extend_days <= 0:
+            return redirect(url_for("site_admin_dashboard", error_message="延長日数は1日以上で指定してください。"))
+        if extend_days > 3650:
+            return redirect(url_for("site_admin_dashboard", error_message="延長日数が大きすぎます。"))
 
     admin = portal_get_admin(admin_id)
     if not admin:
         return redirect(url_for("site_admin_dashboard", error_message="対象の管理者が見つかりません。"))
+
+    if extend_days is None:
+        if portal_set_admin_expiry(admin_id, ADMIN_EXPIRY_UNLIMITED):
+            return redirect(
+                url_for(
+                    "site_admin_dashboard",
+                    success_message=f"{admin.get('email', '管理者')}の利用期限を無期限にしました。",
+                )
+            )
+        return redirect(url_for("site_admin_dashboard", error_message="利用期限を更新できませんでした。"))
 
     now_dt = datetime.now()
     effective_expiry = resolve_admin_expiry_datetime(admin.get("created_at"), admin.get("expires_at"))
