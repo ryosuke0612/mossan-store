@@ -4,7 +4,7 @@ import json
 import os
 import secrets
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
 
@@ -37,6 +37,7 @@ USE_POSTGRES = DATABASE_URL.startswith(("postgresql://", "postgres://"))
 SQLITE_DB_PATH = os.environ.get("SQLITE_DB_PATH", "schedule.db")
 RENDER_ENV = os.environ.get("RENDER", "").strip().lower() == "true"
 PORTAL_JSON_MIGRATION_ENABLED = os.environ.get("PORTAL_JSON_MIGRATION_ENABLED", "").strip() == "1"
+ADMIN_TRIAL_DAYS = 30
 
 
 def parse_email_allowlist(raw_value):
@@ -116,6 +117,30 @@ def portal_now_text():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
+def parse_portal_datetime(value):
+    raw = (value or "").strip()
+    if not raw:
+        return None
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(raw, fmt)
+        except ValueError:
+            continue
+    return None
+
+
+def build_admin_expiry_text(created_at=None, base_datetime=None, extend_days=0):
+    base_dt = base_datetime or parse_portal_datetime(created_at) or datetime.now()
+    expire_dt = base_dt + timedelta(days=ADMIN_TRIAL_DAYS + max(0, extend_days))
+    return expire_dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def resolve_admin_expiry_datetime(created_at, expires_at):
+    return parse_portal_datetime(expires_at) or parse_portal_datetime(
+        build_admin_expiry_text(created_at=created_at)
+    )
+
+
 def row_to_dict(row):
     if row is None:
         return None
@@ -130,7 +155,7 @@ def portal_get_admin_by_email(email):
     conn = get_db_connection()
     c = conn.cursor()
     c.execute(
-        "SELECT id, email, password_hash, created_at FROM admins WHERE email=?",
+        "SELECT id, email, password_hash, created_at, expires_at FROM admins WHERE email=?",
         (email,),
     )
     admin = row_to_dict(c.fetchone())
@@ -142,7 +167,7 @@ def portal_get_admin(admin_id):
     conn = get_db_connection()
     c = conn.cursor()
     c.execute(
-        "SELECT id, email, password_hash, created_at FROM admins WHERE id=?",
+        "SELECT id, email, password_hash, created_at, expires_at FROM admins WHERE id=?",
         (admin_id,),
     )
     admin = row_to_dict(c.fetchone())
@@ -160,10 +185,11 @@ def portal_get_admin_summaries():
             a.email,
             a.password_hash,
             a.created_at,
+            a.expires_at,
             COUNT(t.id) AS team_count
         FROM admins a
         LEFT JOIN teams t ON t.admin_id = a.id
-        GROUP BY a.id, a.email, a.password_hash, a.created_at
+        GROUP BY a.id, a.email, a.password_hash, a.created_at, a.expires_at
         ORDER BY a.created_at ASC, a.id ASC
         """
     )
@@ -180,12 +206,16 @@ def portal_find_or_create_admin(email):
     conn = get_db_connection()
     c = conn.cursor()
     c.execute(
-        "INSERT INTO admins (email, created_at) VALUES (?, ?)",
-        (email, portal_now_text()),
+        "INSERT INTO admins (email, created_at, expires_at) VALUES (?, ?, ?)",
+        (
+            email,
+            portal_now_text(),
+            build_admin_expiry_text(base_datetime=datetime.now()),
+        ),
     )
     conn.commit()
     c.execute(
-        "SELECT id, email, password_hash, created_at FROM admins WHERE email=?",
+        "SELECT id, email, password_hash, created_at, expires_at FROM admins WHERE email=?",
         (email,),
     )
     admin = row_to_dict(c.fetchone())
@@ -199,19 +229,20 @@ def portal_save_admin(updated_admin):
     c.execute(
         """
         UPDATE admins
-        SET email=?, password_hash=?, created_at=?
+        SET email=?, password_hash=?, created_at=?, expires_at=?
         WHERE id=?
         """,
         (
             updated_admin.get("email"),
             updated_admin.get("password_hash"),
             updated_admin.get("created_at"),
+            updated_admin.get("expires_at"),
             updated_admin.get("id"),
         ),
     )
     conn.commit()
     c.execute(
-        "SELECT id, email, password_hash, created_at FROM admins WHERE id=?",
+        "SELECT id, email, password_hash, created_at, expires_at FROM admins WHERE id=?",
         (updated_admin.get("id"),),
     )
     admin = row_to_dict(c.fetchone())
@@ -244,14 +275,19 @@ def portal_create_admin(email, password):
     c = conn.cursor()
     c.execute(
         """
-        INSERT INTO admins (email, password_hash, created_at)
-        VALUES (?, ?, ?)
+        INSERT INTO admins (email, password_hash, created_at, expires_at)
+        VALUES (?, ?, ?, ?)
         """,
-        (email, generate_password_hash(password), portal_now_text()),
+        (
+            email,
+            generate_password_hash(password),
+            portal_now_text(),
+            build_admin_expiry_text(base_datetime=datetime.now()),
+        ),
     )
     conn.commit()
     c.execute(
-        "SELECT id, email, password_hash, created_at FROM admins WHERE email=?",
+        "SELECT id, email, password_hash, created_at, expires_at FROM admins WHERE email=?",
         (email,),
     )
     admin = c.fetchone()
@@ -319,6 +355,16 @@ def portal_force_delete_admin(admin_id):
     conn.commit()
     conn.close()
     return deleted
+
+
+def portal_set_admin_expiry(admin_id, expires_at_text):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("UPDATE admins SET expires_at=? WHERE id=?", (expires_at_text, admin_id))
+    updated = c.rowcount > 0
+    conn.commit()
+    conn.close()
+    return updated
 
 
 def portal_get_teams_for_admin(admin_id):
@@ -850,8 +896,8 @@ def migrate_portal_json_to_db():
     for admin in data.get("admins", []):
         c.execute(
             """
-            INSERT INTO admins (id, email, password_hash, created_at)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO admins (id, email, password_hash, created_at, expires_at)
+            VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(email) DO NOTHING
             """,
             (
@@ -859,6 +905,8 @@ def migrate_portal_json_to_db():
                 admin.get("email"),
                 admin.get("password_hash"),
                 admin.get("created_at") or portal_now_text(),
+                admin.get("expires_at")
+                or build_admin_expiry_text(created_at=admin.get("created_at")),
             ),
         )
 
@@ -984,7 +1032,8 @@ def init_db_sqlite():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT NOT NULL UNIQUE,
         password_hash TEXT,
-        created_at TEXT NOT NULL
+        created_at TEXT NOT NULL,
+        expires_at TEXT
     )
     """
     )
@@ -1082,6 +1131,8 @@ def init_db_sqlite():
         c.execute("ALTER TABLE admins ADD COLUMN password_hash TEXT")
     if "created_at" not in admin_columns:
         c.execute("ALTER TABLE admins ADD COLUMN created_at TEXT")
+    if "expires_at" not in admin_columns:
+        c.execute("ALTER TABLE admins ADD COLUMN expires_at TEXT")
 
     c.execute("PRAGMA table_info(teams)")
     team_columns = [row[1] for row in c.fetchall()]
@@ -1255,6 +1306,16 @@ def init_db_sqlite():
                 (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), team_id),
             )
 
+    # Ensure all admins have an expiry value.
+    c.execute("SELECT id, created_at, expires_at FROM admins")
+    existing_admins = c.fetchall()
+    for admin_id, created_at, expires_at in existing_admins:
+        if not expires_at:
+            c.execute(
+                "UPDATE admins SET expires_at=? WHERE id=?",
+                (build_admin_expiry_text(created_at=created_at), admin_id),
+            )
+
     try:
         conn.commit()
     except sqlite3.Error:
@@ -1272,7 +1333,8 @@ def init_db_postgres():
         id SERIAL PRIMARY KEY,
         email TEXT NOT NULL UNIQUE,
         password_hash TEXT,
-        created_at TEXT NOT NULL
+        created_at TEXT NOT NULL,
+        expires_at TEXT
     )
     """
     )
@@ -1400,6 +1462,7 @@ def init_db_postgres():
     c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS email TEXT")
     c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS password_hash TEXT")
     c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS created_at TEXT")
+    c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS expires_at TEXT")
     c.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT")
     c.execute("ALTER TABLE teams ADD COLUMN IF NOT EXISTS admin_id INTEGER")
     c.execute("ALTER TABLE teams ADD COLUMN IF NOT EXISTS public_id TEXT")
@@ -1434,6 +1497,18 @@ def init_db_postgres():
             c.execute(
                 "UPDATE teams SET created_at=? WHERE id=?",
                 (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), team_id),
+            )
+
+    c.execute("SELECT id, created_at, expires_at FROM admins")
+    existing_admins = c.fetchall()
+    for row in existing_admins:
+        admin_id = row["id"]
+        created_at = row["created_at"]
+        expires_at = row["expires_at"]
+        if not expires_at:
+            c.execute(
+                "UPDATE admins SET expires_at=? WHERE id=?",
+                (build_admin_expiry_text(created_at=created_at), admin_id),
             )
 
     conn.commit()
@@ -1542,6 +1617,23 @@ def format_start_date(created_at):
         except ValueError:
             continue
     return raw[:10]
+
+
+def format_expiry_date(expires_at):
+    parsed = parse_portal_datetime(expires_at)
+    if not parsed:
+        return "-"
+    return parsed.strftime("%Y-%m-%d")
+
+
+def format_remaining_days(expires_at):
+    parsed = parse_portal_datetime(expires_at)
+    if not parsed:
+        return "-"
+    remaining_days = (parsed.date() - datetime.now().date()).days
+    if remaining_days >= 0:
+        return f"{remaining_days}日"
+    return f"期限切れ（{abs(remaining_days)}日経過）"
 
 
 def is_valid_10min_time(value):
@@ -1856,6 +1948,12 @@ def site_admin_dashboard():
     success_message = request.args.get("success_message", "").strip()
     for row in admin_rows:
         row["start_date"] = format_start_date(row.get("created_at"))
+        effective_expiry = resolve_admin_expiry_datetime(row.get("created_at"), row.get("expires_at"))
+        row["effective_expiry"] = (
+            effective_expiry.strftime("%Y-%m-%d %H:%M:%S") if effective_expiry else ""
+        )
+        row["expiry_date"] = format_expiry_date(row.get("effective_expiry"))
+        row["remaining_days_text"] = format_remaining_days(row.get("effective_expiry"))
 
     return render_template(
         "site_admin_dashboard.html",
@@ -1873,6 +1971,37 @@ def site_admin_delete_admin(admin_id):
     if deleted:
         return redirect(url_for("site_admin_dashboard", success_message="管理者を削除しました。"))
     return redirect(url_for("site_admin_dashboard", error_message="管理者を削除できませんでした。"))
+
+
+@app.route("/site-admin/admins/<int:admin_id>/extend", methods=["POST"])
+@site_admin_required
+def site_admin_extend_admin(admin_id):
+    extend_days_raw = request.form.get("extend_days", "").strip()
+    try:
+        extend_days = int(extend_days_raw)
+    except ValueError:
+        return redirect(url_for("site_admin_dashboard", error_message="延長日数が不正です。"))
+    if extend_days <= 0:
+        return redirect(url_for("site_admin_dashboard", error_message="延長日数は1日以上で指定してください。"))
+    if extend_days > 3650:
+        return redirect(url_for("site_admin_dashboard", error_message="延長日数が大きすぎます。"))
+
+    admin = portal_get_admin(admin_id)
+    if not admin:
+        return redirect(url_for("site_admin_dashboard", error_message="対象の管理者が見つかりません。"))
+
+    now_dt = datetime.now()
+    effective_expiry = resolve_admin_expiry_datetime(admin.get("created_at"), admin.get("expires_at"))
+    base_dt = effective_expiry if (effective_expiry and effective_expiry > now_dt) else now_dt
+    updated_expiry = (base_dt + timedelta(days=extend_days)).strftime("%Y-%m-%d %H:%M:%S")
+    if portal_set_admin_expiry(admin_id, updated_expiry):
+        return redirect(
+            url_for(
+                "site_admin_dashboard",
+                success_message=f"{admin.get('email', '管理者')}の利用期限を{extend_days}日延長しました。",
+            )
+        )
+    return redirect(url_for("site_admin_dashboard", error_message="利用期限を延長できませんでした。"))
 
 
 @app.route("/admin/account", methods=["GET", "POST"])
