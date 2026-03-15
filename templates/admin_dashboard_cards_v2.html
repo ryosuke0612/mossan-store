@@ -15,7 +15,7 @@
   align-items: stretch;
 }
 .dashboard-top > .dashboard-panel {
-  min-height: 232px;
+  min-height: 188px;
   margin-top: 0;
 }
 .dashboard-top > .dashboard-panel + .dashboard-panel {
@@ -32,10 +32,9 @@
 }
 .dashboard-panel form {
   display: flex;
-  flex: 1;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 14px;
+  justify-content: flex-start;
+  gap: 12px;
 }
 .info-grid {
   display: grid;
@@ -69,54 +68,63 @@
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.02);
 }
-.team-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-}
 .team-name {
   margin: 0;
   font-size: 20px;
+}
+.team-name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
 }
 .team-meta {
   display: grid;
   gap: 10px;
 }
 .team-meta-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  display: grid;
+  gap: 6px;
 }
 .team-meta-item label {
   margin-bottom: 0;
-  flex: 0 0 auto;
 }
-.team-meta-item div {
-  flex: 1 1 auto;
+.team-meta-item > div {
+  width: 100%;
   min-width: 0;
 }
 .team-meta-item a {
   color: #ffb1b1;
   word-break: break-all;
 }
-.team-card-actions {
+.member-url-wrap {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  flex-wrap: wrap;
 }
-.danger-form {
-  margin: 0;
+.member-url-wrap a {
+  flex: 0 0 auto;
+  display: inline;
+}
+.copy-url-btn {
+  margin-left: auto;
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 1.2;
+}
+.team-delete-form {
+  margin: 0 0 0 auto;
+}
+.delete-team-btn {
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 1.2;
 }
 @media (max-width: 900px) {
   .dashboard-top {
     grid-template-columns: 1fr;
-  }
-  .team-card-header {
-    flex-direction: column;
-  }
-  .team-card-actions {
-    justify-content: flex-start;
   }
 }
 </style>
@@ -140,10 +148,6 @@
         <div class="info-item">
           <label>ログイン中のメールアドレス</label>
           <div class="info-value">{{ admin_email }}</div>
-        </div>
-        <div class="info-item">
-          <label>管理チーム数</label>
-          <div class="info-value">{{ teams|length }}</div>
         </div>
         <div class="btn-row">
           <a class="btn secondary" href="{{ url_for('admin_account_settings') }}">アカウント設定</a>
@@ -169,28 +173,34 @@
     <div class="team-cards">
       {% for team in teams %}
       <article class="team-card">
-        <div class="team-card-header">
-          <div>
-            <h3 class="team-name">{{ team["name"] }}</h3>
-          </div>
-          <div class="team-card-actions">
-            <form
-              class="danger-form"
-              method="POST"
-              action="{{ url_for('admin_delete_team', team_id=team['id']) }}"
-              onsubmit="return confirm('このチームを削除します。よろしいですか？');"
-            >
-              <button class="btn danger" type="submit">削除</button>
-            </form>
-          </div>
-        </div>
         <div class="team-meta">
           <div class="team-meta-item">
+            <label>チーム名</label>
+            <div class="team-name-wrap">
+              <div class="team-name">{{ team["name"] }}</div>
+              <form
+                class="team-delete-form"
+                method="POST"
+                action="{{ url_for('admin_delete_team', team_id=team['id']) }}"
+                onsubmit="return confirm('このチームを削除します。よろしいですか？');"
+              >
+                <button class="btn danger delete-team-btn" type="submit">削除</button>
+              </form>
+            </div>
+          </div>
+          <div class="team-meta-item">
             <label>メンバー用URL</label>
-            <div>
+            <div class="member-url-wrap">
               <a href="{{ url_for('member_team_page', public_id=team['public_id']) }}">
                 /team/{{ team["public_id"] }}
               </a>
+              <button
+                class="btn secondary copy-url-btn"
+                type="button"
+                data-copy-url="{{ url_for('member_team_page', public_id=team['public_id']) }}"
+              >
+                URLをコピー
+              </button>
             </div>
           </div>
         </div>
@@ -202,4 +212,49 @@
     {% endif %}
   </section>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+async function copyMemberUrl(urlText) {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(urlText);
+    return;
+  }
+  const textArea = document.createElement("textarea");
+  textArea.value = urlText;
+  textArea.style.position = "fixed";
+  textArea.style.left = "-9999px";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  const copied = document.execCommand("copy");
+  document.body.removeChild(textArea);
+  if (!copied) {
+    throw new Error("copy_failed");
+  }
+}
+
+document.querySelectorAll("[data-copy-url]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const originalLabel = button.textContent;
+    const relativeUrl = button.getAttribute("data-copy-url");
+    const absoluteUrl = new URL(relativeUrl, window.location.origin).toString();
+
+    try {
+      await copyMemberUrl(absoluteUrl);
+      button.textContent = "コピーしました";
+      setTimeout(() => {
+        button.textContent = originalLabel;
+      }, 1400);
+    } catch (error) {
+      button.textContent = "コピー失敗";
+      setTimeout(() => {
+        button.textContent = originalLabel;
+      }, 1400);
+    }
+  });
+});
+</script>
 {% endblock %}
