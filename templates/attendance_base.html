@@ -3,11 +3,16 @@
 {% block header_nav_items %}
 <a href="{{ url_for('attendance_description') }}">アプリ紹介</a>
 <a href="{{ url_for('index') }}">イベント管理</a>
+{% set is_member_view = request.path.startswith('/team/') %}
+{% if not is_member_view %}
 <a href="{{ url_for('payment') }}">決済</a>
+{% endif %}
 {% if session.get('user_id') %}
 <a href="{{ url_for('logout') }}">ログアウト</a>
 {% else %}
+{% if not is_member_view %}
 <a href="{{ url_for('login') }}">ログイン</a>
 <a href="{{ url_for('register') }}">新規登録</a>
+{% endif %}
 {% endif %}
 {% endblock %}

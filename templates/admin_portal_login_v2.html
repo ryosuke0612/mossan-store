@@ -13,11 +13,6 @@
   <div class="notice success">{{ info_message }}</div>
   {% endif %}
 
-  <p>
-    管理者画面へは、登録済みのメールアドレスとパスワードでログインしてください。
-    まだ管理者が1件もない場合のみ、この画面から初回管理者アカウントを作成できます。
-  </p>
-
   <form method="POST" action="{{ url_for('admin_login_entry') }}">
     <input type="hidden" name="next" value="{{ next_url }}">
     <div class="field">
