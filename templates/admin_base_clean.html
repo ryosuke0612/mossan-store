@@ -2,7 +2,10 @@
 
 {% block header_nav_items %}
 <a href="{{ url_for('attendance_description') }}">アプリ説明</a>
-<a href="{{ url_for('admin_dashboard') }}">管理者トップ</a>
+<a href="{{ url_for('admin_dashboard') }}">管理者ポータル</a>
+{% if session.get('is_site_admin') %}
+<a href="{{ url_for('site_admin_dashboard') }}">サイト運営者ページ</a>
+{% endif %}
 {% if session.get('admin_id') %}
 <a href="{{ url_for('admin_logout') }}">ログアウト</a>
 {% else %}

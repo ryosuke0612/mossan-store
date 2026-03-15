@@ -1,0 +1,57 @@
+﻿{% extends "admin_base_clean.html" %}
+
+{% block title %}サイト運営者ページ | Mossan Store{% endblock %}
+
+{% block content %}
+<h1 class="page-title">サイト運営者ページ</h1>
+
+<section class="panel">
+  <h2 style="margin-top: 0;">登録済み管理者一覧</h2>
+  <p style="margin-top: 0; color: var(--muted);">
+    メールアドレス、作成チーム数、利用開始日を表示しています。
+  </p>
+
+  {% if error_message %}
+  <div class="notice error">{{ error_message }}</div>
+  {% endif %}
+  {% if success_message %}
+  <div class="notice success">{{ success_message }}</div>
+  {% endif %}
+
+  {% if admin_rows %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>メールアドレス</th>
+          <th>作成チーム数</th>
+          <th>利用開始日</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in admin_rows %}
+        <tr>
+          <td>{{ row["email"] }}</td>
+          <td>{{ row["team_count"] }}</td>
+          <td>{{ row["start_date"] }}</td>
+          <td>
+            <form
+              method="POST"
+              action="{{ url_for('site_admin_delete_admin', admin_id=row['id']) }}"
+              onsubmit="return confirm('この管理者を削除します。管理しているチーム、メンバー情報、出欠データも削除されます。実行しますか？');"
+              style="margin: 0;"
+            >
+              <button class="btn danger" type="submit">削除</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="notice success">登録済みの管理者はまだいません。</div>
+  {% endif %}
+</section>
+{% endblock %}

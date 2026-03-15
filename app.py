@@ -37,6 +37,17 @@ USE_POSTGRES = DATABASE_URL.startswith(("postgresql://", "postgres://"))
 SQLITE_DB_PATH = os.environ.get("SQLITE_DB_PATH", "schedule.db")
 RENDER_ENV = os.environ.get("RENDER", "").strip().lower() == "true"
 PORTAL_JSON_MIGRATION_ENABLED = os.environ.get("PORTAL_JSON_MIGRATION_ENABLED", "").strip() == "1"
+
+
+def parse_email_allowlist(raw_value):
+    normalized = (raw_value or "").replace(";", ",").replace("\n", ",")
+    return {entry.strip().lower() for entry in normalized.split(",") if "@" in entry}
+
+
+SITE_ADMIN_EMAILS = parse_email_allowlist(os.environ.get("SITE_ADMIN_EMAILS", ""))
+bootstrap_admin_email = os.environ.get("ADMIN_BOOTSTRAP_EMAIL", "").strip().lower()
+if "@" in bootstrap_admin_email:
+    SITE_ADMIN_EMAILS.add(bootstrap_admin_email)
 if USE_POSTGRES:
     pg_errors = []
     if Psycopg2Error is not None:
@@ -137,6 +148,28 @@ def portal_get_admin(admin_id):
     admin = row_to_dict(c.fetchone())
     conn.close()
     return admin
+
+
+def portal_get_admin_summaries():
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT
+            a.id,
+            a.email,
+            a.password_hash,
+            a.created_at,
+            COUNT(t.id) AS team_count
+        FROM admins a
+        LEFT JOIN teams t ON t.admin_id = a.id
+        GROUP BY a.id, a.email, a.password_hash, a.created_at
+        ORDER BY a.created_at ASC, a.id ASC
+        """
+    )
+    admins = rows_to_dict(c.fetchall())
+    conn.close()
+    return admins
 
 
 def portal_find_or_create_admin(email):
@@ -265,14 +298,27 @@ def portal_delete_admin(admin_id, current_password):
     c.execute("SELECT id FROM teams WHERE admin_id=?", (admin_id,))
     team_ids = [row["id"] for row in c.fetchall()]
     for team_id in team_ids:
-        c.execute("DELETE FROM portal_attendance WHERE team_id=?", (team_id,))
-        c.execute("DELETE FROM portal_events WHERE team_id=?", (team_id,))
-        c.execute("DELETE FROM portal_members WHERE team_id=?", (team_id,))
+        delete_team_related_records(c, team_id)
     c.execute("DELETE FROM teams WHERE admin_id=?", (admin_id,))
     c.execute("DELETE FROM admins WHERE id=?", (admin_id,))
     conn.commit()
     conn.close()
     return True, "deleted"
+
+
+def portal_force_delete_admin(admin_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("SELECT id FROM teams WHERE admin_id=?", (admin_id,))
+    team_ids = [row["id"] for row in c.fetchall()]
+    for team_id in team_ids:
+        delete_team_related_records(c, team_id)
+    c.execute("DELETE FROM teams WHERE admin_id=?", (admin_id,))
+    c.execute("DELETE FROM admins WHERE id=?", (admin_id,))
+    deleted = c.rowcount > 0
+    conn.commit()
+    conn.close()
+    return deleted
 
 
 def portal_get_teams_for_admin(admin_id):
@@ -337,6 +383,14 @@ def portal_create_team(admin_id, name):
     return team
 
 
+def delete_team_related_records(cursor, team_id):
+    cursor.execute("DELETE FROM portal_attendance WHERE team_id=?", (team_id,))
+    cursor.execute("DELETE FROM portal_events WHERE team_id=?", (team_id,))
+    cursor.execute("DELETE FROM portal_members WHERE team_id=?", (team_id,))
+    cursor.execute("DELETE FROM team_attendance WHERE team_id=?", (team_id,))
+    cursor.execute("DELETE FROM team_members WHERE team_id=?", (team_id,))
+
+
 def portal_delete_team(admin_id, team_id):
     target_team = portal_get_team(team_id)
     if target_team and target_team["admin_id"] != admin_id:
@@ -346,9 +400,7 @@ def portal_delete_team(admin_id, team_id):
 
     conn = get_db_connection()
     c = conn.cursor()
-    c.execute("DELETE FROM portal_attendance WHERE team_id=?", (team_id,))
-    c.execute("DELETE FROM portal_events WHERE team_id=?", (team_id,))
-    c.execute("DELETE FROM portal_members WHERE team_id=?", (team_id,))
+    delete_team_related_records(c, team_id)
     c.execute("DELETE FROM teams WHERE id=? AND admin_id=?", (team_id, admin_id))
     conn.commit()
     conn.close()
@@ -1457,6 +1509,41 @@ def admin_login_required(func):
     return wrapper
 
 
+def is_site_admin_email(email):
+    return (email or "").strip().lower() in SITE_ADMIN_EMAILS
+
+
+def site_admin_required(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if "admin_id" not in session:
+            return redirect(url_for("admin_login_entry", next=request.path))
+
+        admin_email = session.get("admin_email", "")
+        if not is_site_admin_email(admin_email):
+            return redirect(
+                url_for(
+                    "admin_dashboard",
+                    error_message="サイト運営者ページにはアクセスできません。",
+                )
+            )
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+def format_start_date(created_at):
+    raw = (created_at or "").strip()
+    if not raw:
+        return "-"
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(raw, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    return raw[:10]
+
+
 def is_valid_10min_time(value):
     try:
         dt = datetime.strptime(value, "%H:%M")
@@ -1700,6 +1787,7 @@ def admin_login_entry():
                 if admin:
                     session["admin_id"] = admin["id"]
                     session["admin_email"] = admin["email"]
+                    session["is_site_admin"] = is_site_admin_email(admin["email"])
                     if auth_status == "password_initialized":
                         return redirect(
                             url_for(
@@ -1714,6 +1802,7 @@ def admin_login_entry():
                 if admin:
                     session["admin_id"] = admin["id"]
                     session["admin_email"] = admin["email"]
+                    session["is_site_admin"] = is_site_admin_email(admin["email"])
                     return redirect(
                         url_for(
                             "admin_dashboard",
@@ -1758,6 +1847,32 @@ def admin_dashboard():
     )
 
 
+@app.route("/site-admin")
+@app.route("/site-admin/dashboard")
+def site_admin_dashboard():
+    admin_rows = portal_get_admin_summaries()
+    error_message = request.args.get("error_message", "").strip()
+    success_message = request.args.get("success_message", "").strip()
+    for row in admin_rows:
+        row["start_date"] = format_start_date(row.get("created_at"))
+
+    return render_template(
+        "site_admin_dashboard.html",
+        admin_rows=admin_rows,
+        error_message=error_message,
+        success_message=success_message,
+        site_admin_emails=sorted(SITE_ADMIN_EMAILS),
+    )
+
+
+@app.route("/site-admin/admins/<int:admin_id>/delete", methods=["POST"])
+def site_admin_delete_admin(admin_id):
+    deleted = portal_force_delete_admin(admin_id)
+    if deleted:
+        return redirect(url_for("site_admin_dashboard", success_message="管理者を削除しました。"))
+    return redirect(url_for("site_admin_dashboard", error_message="管理者を削除できませんでした。"))
+
+
 @app.route("/admin/account", methods=["GET", "POST"])
 @admin_login_required
 def admin_account_settings():
@@ -1791,6 +1906,7 @@ def admin_account_settings():
             )
             if updated_admin:
                 session["admin_email"] = updated_admin["email"]
+                session["is_site_admin"] = is_site_admin_email(updated_admin["email"])
                 admin = updated_admin
                 success_message = "管理者アカウント情報を更新しました。"
             elif status == "invalid_password":
@@ -1819,6 +1935,7 @@ def admin_delete_account():
     if deleted:
         session.pop("admin_id", None)
         session.pop("admin_email", None)
+        session.pop("is_site_admin", None)
         return redirect(url_for("admin_login_entry"))
 
     if status == "invalid_password":
@@ -1848,6 +1965,7 @@ def admin_delete_team(team_id):
 def admin_logout():
     session.pop("admin_id", None)
     session.pop("admin_email", None)
+    session.pop("is_site_admin", None)
     return redirect(url_for("admin_login_entry"))
 
 
