@@ -137,7 +137,7 @@
             <div>{{ match["opponent"] }} @{{ match["place"] }}</div>
           </td>
           <td>
-            <form method="POST">
+            <form method="POST" class="attendance-submit-form">
               <input type="hidden" name="name" value="{{ name }}">
               <input type="hidden" name="month" value="{{ selected_month }}">
               <input type="hidden" name="match_id" value="{{ match['id'] }}">
@@ -146,7 +146,7 @@
             </form>
           </td>
           <td>
-            <form method="POST">
+            <form method="POST" class="attendance-submit-form">
               <input type="hidden" name="name" value="{{ name }}">
               <input type="hidden" name="month" value="{{ selected_month }}">
               <input type="hidden" name="match_id" value="{{ match['id'] }}">
@@ -155,7 +155,7 @@
             </form>
           </td>
           <td>
-            <form method="POST">
+            <form method="POST" class="attendance-submit-form">
               <input type="hidden" name="name" value="{{ name }}">
               <input type="hidden" name="month" value="{{ selected_month }}">
               <input type="hidden" name="match_id" value="{{ match['id'] }}">
@@ -178,4 +178,19 @@
 <div class="btn-row" style="margin-top:16px;">
   <a href="{{ url_for('index') }}{% if selected_month %}?month={{ selected_month }}{% endif %}" class="btn secondary">戻る</a>
 </div>
+<script>
+(() => {
+  const storageKey = `attendance-scroll:${location.pathname}:${location.search}`;
+  const savedY = sessionStorage.getItem(storageKey);
+  if (savedY !== null) {
+    sessionStorage.removeItem(storageKey);
+    window.scrollTo(0, Number(savedY) || 0);
+  }
+  document.querySelectorAll(".attendance-submit-form").forEach((form) => {
+    form.addEventListener("submit", () => {
+      sessionStorage.setItem(storageKey, String(window.scrollY));
+    });
+  });
+})();
+</script>
 {% endblock %}

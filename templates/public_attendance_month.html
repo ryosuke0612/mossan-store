@@ -40,9 +40,9 @@
         {% for match in matches %}
         <tr>
           <td class="event-lines"><div>{{ match["date_label"] }} {{ match["start_time"] }} 〜 {{ match["end_time"] }}</div><div>{{ match["opponent"] }} @{{ match["place"] }}</div></td>
-          <td><form method="POST"><input type="hidden" name="name" value="{{ name }}"><input type="hidden" name="month" value="{{ selected_month }}"><input type="hidden" name="match_id" value="{{ match['id'] }}"><input type="hidden" name="status" value="参加"><button class="btn secondary status-btn {% if attendance_dict.get(match['id']) == '参加' %}selected-join{% endif %}" {% if not name %}disabled{% endif %}>参加</button></form></td>
-          <td><form method="POST"><input type="hidden" name="name" value="{{ name }}"><input type="hidden" name="month" value="{{ selected_month }}"><input type="hidden" name="match_id" value="{{ match['id'] }}"><input type="hidden" name="status" value="不参加"><button class="btn secondary status-btn {% if attendance_dict.get(match['id']) == '不参加' %}selected-absent{% endif %}" {% if not name %}disabled{% endif %}>不参加</button></form></td>
-          <td><form method="POST"><input type="hidden" name="name" value="{{ name }}"><input type="hidden" name="month" value="{{ selected_month }}"><input type="hidden" name="match_id" value="{{ match['id'] }}"><input type="hidden" name="status" value="未定"><button class="btn secondary status-btn {% if attendance_dict.get(match['id']) == '未定' %}selected-undecided{% endif %}" {% if not name %}disabled{% endif %}>未定</button></form></td>
+          <td><form method="POST" class="attendance-submit-form"><input type="hidden" name="name" value="{{ name }}"><input type="hidden" name="month" value="{{ selected_month }}"><input type="hidden" name="match_id" value="{{ match['id'] }}"><input type="hidden" name="status" value="参加"><button class="btn secondary status-btn {% if attendance_dict.get(match['id']) == '参加' %}selected-join{% endif %}" {% if not name %}disabled{% endif %}>参加</button></form></td>
+          <td><form method="POST" class="attendance-submit-form"><input type="hidden" name="name" value="{{ name }}"><input type="hidden" name="month" value="{{ selected_month }}"><input type="hidden" name="match_id" value="{{ match['id'] }}"><input type="hidden" name="status" value="不参加"><button class="btn secondary status-btn {% if attendance_dict.get(match['id']) == '不参加' %}selected-absent{% endif %}" {% if not name %}disabled{% endif %}>不参加</button></form></td>
+          <td><form method="POST" class="attendance-submit-form"><input type="hidden" name="name" value="{{ name }}"><input type="hidden" name="month" value="{{ selected_month }}"><input type="hidden" name="match_id" value="{{ match['id'] }}"><input type="hidden" name="status" value="未定"><button class="btn secondary status-btn {% if attendance_dict.get(match['id']) == '未定' %}selected-undecided{% endif %}" {% if not name %}disabled{% endif %}>未定</button></form></td>
         </tr>
         {% endfor %}
       </tbody>
@@ -53,4 +53,19 @@
 <section class="panel"><div class="notice" style="margin-bottom:0;">選択した月のイベントはありません。</div></section>
 {% endif %}
 <div class="btn-row" style="margin-top:16px;"><a href="{{ url_for('member_team_page', public_id=public_id) }}{% if selected_month %}?month={{ selected_month }}{% endif %}" class="btn secondary">戻る</a></div>
+<script>
+(() => {
+  const storageKey = `attendance-scroll:${location.pathname}:${location.search}`;
+  const savedY = sessionStorage.getItem(storageKey);
+  if (savedY !== null) {
+    sessionStorage.removeItem(storageKey);
+    window.scrollTo(0, Number(savedY) || 0);
+  }
+  document.querySelectorAll(".attendance-submit-form").forEach((form) => {
+    form.addEventListener("submit", () => {
+      sessionStorage.setItem(storageKey, String(window.scrollY));
+    });
+  });
+})();
+</script>
 {% endblock %}
