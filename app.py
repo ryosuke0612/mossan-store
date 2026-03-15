@@ -1849,6 +1849,7 @@ def admin_dashboard():
 
 @app.route("/site-admin")
 @app.route("/site-admin/dashboard")
+@site_admin_required
 def site_admin_dashboard():
     admin_rows = portal_get_admin_summaries()
     error_message = request.args.get("error_message", "").strip()
@@ -1866,6 +1867,7 @@ def site_admin_dashboard():
 
 
 @app.route("/site-admin/admins/<int:admin_id>/delete", methods=["POST"])
+@site_admin_required
 def site_admin_delete_admin(admin_id):
     deleted = portal_force_delete_admin(admin_id)
     if deleted:
