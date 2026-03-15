@@ -1,4 +1,4 @@
-{% extends "attendance_base.html" %}
+﻿{% extends "attendance_base.html" %}
 
 {% block title %}{{ team_name or "Guest" }} | Mossan Store{% endblock %}
 
@@ -150,7 +150,6 @@
     <div class="action-rows">
       <div class="action-row">
         <a id="add-link" href="{{ url_for('add_match') }}{% if active_month %}?month={{ active_month }}{% endif %}" class="btn">イベント登録</a>
-        <a id="attendance-month-link" href="{{ url_for('attendance_month') }}{% if active_month %}?month={{ active_month }}{% endif %}" class="btn secondary">新規出欠登録</a>
       </div>
       <div class="action-row">
         <button type="submit" name="action" value="attendance_check" class="btn bulk-action-btn bulk-check" disabled>出欠確認</button>
@@ -176,7 +175,7 @@
           <thead>
             <tr>
               <th class="col-select">選択</th>
-              <th class="col-event">日程/イベント内容</th>
+              <th class="col-event">日時・イベント内容</th>
               <th class="col-summary">
                 <div class="summary-head-title">出欠集計</div>
                 <div class="summary-head-marks">
@@ -306,5 +305,8 @@
 })();
 </script>
 {% endblock %}
+
+
+
 
 

@@ -1,0 +1,267 @@
+﻿{% extends "admin_base_clean.html" %}
+
+{% block title %}イベント管理 | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<style>
+.month-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.month-tab {
+  width: auto;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid #4d4d4d;
+  background: #111;
+  color: #ddd;
+  cursor: pointer;
+}
+.month-tab.active {
+  border-color: #ff4b4b;
+  background: #3d0d0d;
+  color: #fff;
+}
+.month-pane {
+  display: none;
+}
+.month-pane.active {
+  display: block;
+}
+.events-table .col-select {
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+}
+.events-table .col-date {
+  width: 150px;
+}
+.events-table .col-time {
+  width: 140px;
+}
+.events-table .inline-check {
+  width: auto;
+}
+.bulk-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.bulk-buttons .btn:disabled {
+  background: transparent !important;
+  border-color: #3a3a3a !important;
+  color: #666 !important;
+  cursor: not-allowed;
+}
+.bulk-buttons .btn.bulk-edit {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #fff;
+}
+.bulk-buttons .btn.bulk-duplicate {
+  background: #15803d;
+  border-color: #15803d;
+  color: #fff;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">イベント管理</h1>
+
+<section class="panel">
+  <h2 style="margin-top:0;">対象チーム</h2>
+  <div class="grid-2">
+    <div>
+      <label>チーム名</label>
+      <div>{{ team['name'] }}</div>
+    </div>
+    <div>
+      <label>公開ID</label>
+      <div>{{ team['public_id'] }}</div>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  {% if error_message %}
+  <div class="notice error">{{ error_message }}</div>
+  {% endif %}
+  {% if success_message %}
+  <div class="notice success">{{ success_message }}</div>
+  {% endif %}
+
+  <h2 style="margin-top:0;">{% if editing_event %}イベント編集{% else %}イベント登録{% endif %}</h2>
+  <form method="POST" id="event-editor-form">
+    <input type="hidden" name="action" value="{% if editing_event %}update_event{% else %}add_event{% endif %}">
+    <input type="hidden" name="month" id="editor-month" value="{{ selected_month }}">
+    <input type="hidden" name="editing_event_id" value="{{ editing_event_id or '' }}">
+    <div class="grid-3">
+      <div class="field">
+        <label>日付</label>
+        <input type="date" name="date" value="{{ editing_event['date'] if editing_event else '' }}" required>
+      </div>
+      <div class="field">
+        <label>開始時刻</label>
+        <input type="time" name="start_time" step="600" value="{{ editing_event['start_time'] if editing_event else '12:00' }}" required>
+      </div>
+      <div class="field">
+        <label>終了時刻</label>
+        <input type="time" name="end_time" step="600" value="{{ editing_event['end_time'] if editing_event else '12:00' }}" required>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label>対戦相手</label>
+        <input type="text" name="opponent" value="{{ editing_event['opponent'] if editing_event else '' }}" placeholder="対戦相手を入力" required>
+      </div>
+      <div class="field">
+        <label>場所</label>
+        <input type="text" name="place" value="{{ editing_event['place'] if editing_event else '' }}" placeholder="グラウンド名など" required>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" type="submit">{% if editing_event %}更新する{% else %}登録する{% endif %}</button>
+      {% if editing_event %}
+      <a class="btn secondary" href="{{ url_for('admin_team_events', team_id=team['id'], month=selected_month) }}">編集を解除</a>
+      {% endif %}
+    </div>
+  </form>
+</section>
+
+<section class="panel">
+  <h2 style="margin-top:0;">登録済みイベント</h2>
+
+  <form method="POST" id="event-list-form">
+    <input type="hidden" name="month" id="list-month" value="{{ selected_month }}">
+    <input type="hidden" name="selected_event_ids" id="selected-event-ids" value="">
+
+    <div class="bulk-buttons">
+      <button type="submit" name="action" value="start_edit" class="btn bulk-edit event-bulk-btn" disabled>編集</button>
+      <button type="submit" name="action" value="duplicate_event" class="btn bulk-duplicate event-bulk-btn" disabled>複製</button>
+      <button type="submit" name="action" value="delete_event" class="btn danger event-bulk-btn" disabled onclick="return confirm('選択したイベントを削除しますか？');">削除</button>
+    </div>
+
+    {% if months %}
+    <div class="month-tabs">
+      {% for month in months %}
+      <button type="button" class="month-tab {% if month == selected_month %}active{% endif %}" data-month="{{ month }}">{{ month }}</button>
+      {% endfor %}
+    </div>
+
+    {% for month in months %}
+    <div class="month-pane {% if month == selected_month %}active{% endif %}" data-pane="{{ month }}">
+      {% set events = month_data.get(month, []) %}
+      {% if events %}
+      <div class="table-wrap">
+        <table class="events-table">
+          <thead>
+            <tr>
+              <th class="col-select">選択</th>
+              <th class="col-date">日付</th>
+              <th class="col-time">時間</th>
+              <th>対戦相手</th>
+              <th>場所</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for event in events %}
+            <tr>
+              <td class="col-select">
+                <input class="inline-check event-select" type="checkbox" data-event-id="{{ event['id'] }}">
+              </td>
+              <td class="col-date">{{ event['date_label'] }}</td>
+              <td class="col-time">{{ event['start_time'] }} - {{ event['end_time'] }}</td>
+              <td>{{ event['opponent'] }}</td>
+              <td>{{ event['place'] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="notice" style="margin-bottom:0;">この月のイベントはありません。</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="notice" style="margin-bottom:0;">イベントはまだ登録されていません。</div>
+    {% endif %}
+  </form>
+</section>
+
+<div class="btn-row" style="margin-top:16px;">
+  <a class="btn secondary" href="{{ url_for('admin_dashboard') }}">管理ダッシュボードに戻る</a>
+  <a class="btn secondary" href="{{ url_for('admin_team_members', team_id=team['id']) }}">メンバー管理へ</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const tabs = document.querySelectorAll('.month-tab');
+  const panes = document.querySelectorAll('.month-pane');
+  const selectedEventIdsInput = document.getElementById('selected-event-ids');
+  const listMonthInput = document.getElementById('list-month');
+  const editorMonthInput = document.getElementById('editor-month');
+  const eventChecks = document.querySelectorAll('.event-select');
+  const editButton = document.querySelector('button[name="action"][value="start_edit"]');
+  const duplicateButton = document.querySelector('button[name="action"][value="duplicate_event"]');
+  const deleteButton = document.querySelector('button[name="action"][value="delete_event"]');
+
+  const activateMonth = (month) => {
+    tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.month === month));
+    panes.forEach((pane) => pane.classList.toggle('active', pane.dataset.pane === month));
+    if (listMonthInput) listMonthInput.value = month;
+    if (editorMonthInput) editorMonthInput.value = month;
+    clearSelection();
+  };
+
+  const updateSelectedIds = () => {
+    const checkedIds = Array.from(eventChecks)
+      .filter((check) => check.checked)
+      .map((check) => (check.dataset.eventId || '').trim())
+      .filter((id) => id !== '');
+    if (selectedEventIdsInput) {
+      selectedEventIdsInput.value = checkedIds.join(',');
+    }
+    return checkedIds.length;
+  };
+
+  const updateBulkButtons = () => {
+    const selectedCount = updateSelectedIds();
+    if (editButton) editButton.disabled = selectedCount !== 1;
+    if (duplicateButton) duplicateButton.disabled = selectedCount < 1;
+    if (deleteButton) deleteButton.disabled = selectedCount < 1;
+  };
+
+  const clearSelection = () => {
+    eventChecks.forEach((check) => {
+      check.checked = false;
+    });
+    if (selectedEventIdsInput) selectedEventIdsInput.value = '';
+    updateBulkButtons();
+  };
+
+  eventChecks.forEach((check) => {
+    check.addEventListener('change', () => {
+      updateBulkButtons();
+    });
+  });
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => activateMonth(tab.dataset.month));
+  });
+
+  if (tabs.length) {
+    const activeTab = Array.from(tabs).find((tab) => tab.classList.contains('active')) || tabs[0];
+    activateMonth(activeTab.dataset.month);
+  } else {
+    updateBulkButtons();
+  }
+})();
+</script>
+{% endblock %}

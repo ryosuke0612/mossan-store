@@ -1,0 +1,463 @@
+﻿{% extends "admin_base_clean.html" %}
+
+{% block title %}メンバー管理 | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<style>
+.member-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.member-stat {
+  border: 1px solid rgba(255, 43, 43, 0.22);
+  border-radius: 12px;
+  padding: 12px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+}
+.member-stat label {
+  margin: 0;
+  font-size: 12px;
+}
+.member-stat .value {
+  margin-top: 6px;
+  font-size: 24px;
+  font-weight: 700;
+}
+.member-editor {
+  border: 1px solid rgba(255, 43, 43, 0.24);
+  border-radius: 14px;
+  padding: 14px;
+  background: linear-gradient(160deg, rgba(255, 76, 76, 0.08), rgba(255, 255, 255, 0.03));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+}
+.member-editor textarea {
+  width: 100%;
+  min-height: 170px;
+  resize: vertical;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: rgba(24, 24, 24, 0.56);
+  color: #fff;
+  line-height: 1.6;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+.member-editor textarea:focus {
+  outline: none;
+  border-color: rgba(255, 105, 105, 0.95);
+  box-shadow: 0 0 0 3px rgba(255, 76, 76, 0.2);
+  transform: translateY(-1px);
+}
+.member-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+  .member-actions .arrow-btn {
+    min-width: 44px;
+    padding-left: 0;
+    padding-right: 0;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .member-actions .delete-btn {
+    margin-left: 4px;
+  }
+.member-guidance {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 43, 43, 0.22);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 13px;
+}
+.member-table {
+  width: 100%;
+  table-layout: auto;
+  font-size: clamp(12px, 2.8vw, 14px);
+}
+.member-table th,
+.member-table td {
+  white-space: nowrap;
+  vertical-align: middle;
+  padding: clamp(6px, 1.7vw, 10px) clamp(5px, 1.5vw, 9px);
+  overflow: hidden;
+}
+.member-name-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+}
+.member-name-cell span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 10ch;
+}
+.member-table th:nth-child(1),
+.member-table td:nth-child(1) {
+  width: 1%;
+  white-space: nowrap;
+}
+.member-table th:nth-child(2),
+.member-table td:nth-child(2) {
+  width: 1%;
+  white-space: nowrap;
+}
+.member-checkbox {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+.member-status-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.status-label {
+  display: inline-flex;
+  align-items: center;
+  min-width: 14px;
+}
+.status-dot {
+  width: clamp(9px, 2.5vw, 12px);
+  height: clamp(9px, 2.5vw, 12px);
+  border-radius: 999px;
+  display: inline-block;
+}
+.status-label.active .status-dot {
+  background: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+}
+.status-label.inactive .status-dot {
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+}
+.status-select {
+  width: auto;
+  min-width: 0;
+  max-width: 78px;
+  box-sizing: border-box;
+  font-size: 12px;
+  padding: 4px 16px 4px 6px;
+}
+.table-wrap.member-table-wrap {
+  overflow-x: hidden;
+}
+@media (max-width: 760px) {
+  .member-summary {
+    grid-template-columns: 1fr;
+  }
+  .member-table th,
+  .member-table td {
+    padding: 8px 6px;
+    font-size: clamp(11px, 3.4vw, 13px);
+  }
+  .member-name-cell {
+    gap: 8px;
+  }
+  .status-select {
+    width: 100%;
+  }
+}
+@media (max-width: 520px) {
+  .member-table {
+    font-size: 12px;
+  }
+  .member-table th,
+  .member-table td {
+    padding: 6px 4px;
+  }
+  .member-status-wrap {
+    gap: 4px;
+  }
+  .member-checkbox {
+    width: 16px;
+    height: 16px;
+  }
+  .status-select {
+    min-width: 0;
+    width: auto;
+    max-width: 68px;
+    font-size: 12px;
+    padding: 3px 14px 3px 4px;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">メンバー管理</h1>
+
+<section class="panel">
+  <div class="grid-2">
+    <div>
+      <label>チーム名</label>
+      <div>{{ team["name"] }}</div>
+    </div>
+    <div>
+      <label>メンバー用URL</label>
+      <div>
+        <a href="{{ url_for('member_team_page', public_id=team['public_id']) }}">
+          /team/{{ team["public_id"] }}
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="member-summary">
+    <div class="member-stat">
+      <label>登録メンバー数</label>
+      <div class="value" id="totalMembersCount">{{ total_members }}</div>
+    </div>
+    <div class="member-stat">
+      <label>有効メンバー数</label>
+      <div class="value" id="activeMembersCount">{{ active_members }}</div>
+    </div>
+    <div class="member-stat">
+      <label>無効メンバー数</label>
+      <div class="value" id="inactiveMembersCount">{{ inactive_members }}</div>
+    </div>
+  </div>
+
+  <div class="btn-row" style="margin-top: 12px;">
+    <a class="btn secondary" href="{{ url_for('admin_dashboard') }}">ダッシュボードに戻る</a>
+  </div>
+</section>
+
+<section class="panel">
+  {% if error_message %}
+  <div class="notice error">{{ error_message }}</div>
+  {% endif %}
+  {% if success_message %}
+  <div class="notice success">{{ success_message }}</div>
+  {% endif %}
+
+  <h2 style="margin-top: 0;">メンバー一括登録</h2>
+  <form method="POST">
+    <input type="hidden" name="action" value="add_members">
+    <div class="member-editor">
+      <label>メンバー名（1行に1名）</label>
+      <textarea name="member_names" placeholder="田中 太郎&#10;佐藤 花子&#10;鈴木 次郎"></textarea>
+    </div>
+    <div class="btn-row" style="margin-top: 12px;">
+      <button class="btn" type="submit">一括登録</button>
+    </div>
+  </form>
+</section>
+
+<section class="panel">
+  {% if members %}
+  <form id="moveForm" method="POST" class="member-actions">
+    <input type="hidden" name="action" id="moveAction" value="">
+    <input type="hidden" name="selected_member_id" id="moveSelectedMemberId" value="{{ selected_member_id or '' }}">
+    <input type="hidden" name="scroll_y" id="moveScrollY" value="{{ scroll_y or '' }}">
+    <button type="button" class="btn secondary arrow-btn" data-move="up" aria-label="上へ移動">↑</button>
+    <button type="button" class="btn secondary arrow-btn" data-move="down" aria-label="下へ移動">↓</button>
+    <button type="button" class="btn danger delete-btn" id="deleteSelectedMemberBtn">削除</button>
+  </form>
+
+  <div class="member-guidance">
+    表示順のまま出欠登録のプルダウンに表示されます。無効メンバーはプルダウンに表示されません。
+  </div>
+
+  <form id="statusForm" method="POST" onsubmit="return false;">
+    <input type="hidden" name="selected_member_id" id="statusSelectedMemberId" value="{{ selected_member_id or '' }}">
+    <input type="hidden" name="scroll_y" id="statusScrollY" value="{{ scroll_y or '' }}">
+
+    <div class="table-wrap member-table-wrap">
+      <table class="member-table">
+        <thead>
+          <tr>
+            <th>メンバー</th>
+            <th>ステータス</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for member in members %}
+          <tr data-member-id="{{ member['id'] }}">
+            <td>
+              <div class="member-name-cell">
+                <input
+                  class="member-checkbox"
+                  type="checkbox"
+                  name="selected_member_checkbox"
+                  value="{{ member['id'] }}"
+                  {% if selected_member_id == member['id'] %}checked{% endif %}
+                >
+                <span>{{ member["name"] }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="member-status-wrap">
+                <span class="status-label {% if member['is_active'] %}active{% else %}inactive{% endif %}" id="statusLabel{{ member['id'] }}">
+                  <span class="status-dot"></span>
+                </span>
+                <select class="status-select" name="is_active_{{ member['id'] }}" data-member-id="{{ member['id'] }}">
+                  <option value="1" {% if member["is_active"] %}selected{% endif %}>有効</option>
+                  <option value="0" {% if not member["is_active"] %}selected{% endif %}>無効</option>
+                </select>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </form>
+  {% else %}
+  <div class="notice success">メンバーはまだ登録されていません。</div>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(function () {
+  const checkboxes = Array.from(document.querySelectorAll('.member-checkbox'));
+  const moveForm = document.getElementById('moveForm');
+  const moveAction = document.getElementById('moveAction');
+  const moveSelectedMemberId = document.getElementById('moveSelectedMemberId');
+  const statusSelectedMemberId = document.getElementById('statusSelectedMemberId');
+  const moveScrollY = document.getElementById('moveScrollY');
+  const statusScrollY = document.getElementById('statusScrollY');
+  const statusSelects = Array.from(document.querySelectorAll('.status-select'));
+  const activeCountEl = document.getElementById('activeMembersCount');
+  const inactiveCountEl = document.getElementById('inactiveMembersCount');
+
+  function getSelectedMemberId() {
+    const checked = checkboxes.find((checkbox) => checkbox.checked);
+    return checked ? checked.value : '';
+  }
+
+  function syncSelectedMember() {
+    const selectedId = getSelectedMemberId();
+    if (moveSelectedMemberId) {
+      moveSelectedMemberId.value = selectedId;
+    }
+    if (statusSelectedMemberId) {
+      statusSelectedMemberId.value = selectedId;
+    }
+  }
+
+  function updateStatusLabel(memberId, isActive) {
+    const label = document.getElementById(`statusLabel${memberId}`);
+    if (!label) {
+      return;
+    }
+    label.classList.remove('active', 'inactive');
+    label.classList.add(isActive ? 'active' : 'inactive');
+  }
+
+  function recalcCounts() {
+    let activeCount = 0;
+    statusSelects.forEach((select) => {
+      if (select.value === '1') {
+        activeCount += 1;
+      }
+    });
+    const inactiveCount = statusSelects.length - activeCount;
+    if (activeCountEl) {
+      activeCountEl.textContent = String(activeCount);
+    }
+    if (inactiveCountEl) {
+      inactiveCountEl.textContent = String(inactiveCount);
+    }
+  }
+
+  checkboxes.forEach((checkbox) => {
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) {
+        checkboxes.forEach((other) => {
+          if (other !== checkbox) {
+            other.checked = false;
+          }
+        });
+      }
+      syncSelectedMember();
+    });
+  });
+
+  if (moveForm) {
+    moveForm.querySelectorAll('[data-move]').forEach((button) => {
+      button.addEventListener('click', () => {
+        syncSelectedMember();
+        if (!moveSelectedMemberId.value) {
+          alert('移動するメンバーを1名選択してください。');
+          return;
+        }
+        moveAction.value = button.dataset.move === 'up' ? 'move_member_up' : 'move_member_down';
+        moveScrollY.value = String(window.scrollY || window.pageYOffset || 0);
+        moveForm.submit();
+      });
+    });
+  }
+
+  const deleteSelectedMemberBtn = document.getElementById('deleteSelectedMemberBtn');
+  if (deleteSelectedMemberBtn && moveForm) {
+    deleteSelectedMemberBtn.addEventListener('click', () => {
+      syncSelectedMember();
+      if (!moveSelectedMemberId.value) {
+        alert('削除するメンバーを1名選択してください。');
+        return;
+      }
+      if (!window.confirm('選択したメンバーを削除します。よろしいですか？')) {
+        return;
+      }
+      moveAction.value = 'delete_selected_member';
+      moveScrollY.value = String(window.scrollY || window.pageYOffset || 0);
+      moveForm.submit();
+    });
+  }
+
+  statusSelects.forEach((select) => {
+    select.addEventListener('change', async () => {
+      const memberId = select.dataset.memberId;
+      const previousValue = select.dataset.prevValue || (select.value === '1' ? '0' : '1');
+      const isActive = select.value === '1';
+      updateStatusLabel(memberId, isActive);
+      recalcCounts();
+
+      try {
+        const response = await fetch(`/admin/api/teams/{{ team['id'] }}/members/${memberId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ is_active: isActive })
+        });
+        if (!response.ok) {
+          throw new Error(`status_${response.status}`);
+        }
+        select.dataset.prevValue = select.value;
+      } catch (error) {
+        select.value = previousValue;
+        updateStatusLabel(memberId, previousValue === '1');
+        recalcCounts();
+        alert('ステータスの保存に失敗しました。通信状態を確認してください。');
+      }
+    });
+    select.dataset.prevValue = select.value;
+  });
+
+  const restoredScrollY = Number('{{ scroll_y or 0 }}');
+  if (!Number.isNaN(restoredScrollY) && restoredScrollY > 0) {
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: restoredScrollY, left: 0, behavior: 'auto' });
+    });
+  }
+
+  if (statusScrollY) {
+    statusScrollY.value = String(window.scrollY || window.pageYOffset || 0);
+  }
+  syncSelectedMember();
+  recalcCounts();
+})();
+</script>
+{% endblock %}

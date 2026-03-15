@@ -1,4 +1,4 @@
-{% extends "attendance_base.html" %}
+﻿{% extends "attendance_base.html" %}
 
 {% block title %}{{ team_name or "Guest" }} | Mossan Store{% endblock %}
 
@@ -99,9 +99,6 @@
   background: #15803d;
   border-color: #15803d;
 }
-.csv-export-wrap {
-  margin-top: 12px;
-}
 .member-head {
   width: 110px;
   min-width: 110px;
@@ -109,25 +106,12 @@
   text-align: center;
 }
 .member-head .member-name {
-  margin-bottom: 6px;
   font-weight: 700;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
-}
-.member-head .member-edit-btn,
-.member-head .member-delete-btn {
-  width: auto;
-  padding: 4px 8px;
-  font-size: 11px;
-}
-.member-head .member-actions {
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-  align-items: center;
 }
 .events-table td.member-cell {
   width: 110px;
@@ -160,6 +144,34 @@
   color: #666 !important;
   cursor: not-allowed;
 }
+.member-filter-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: end;
+}
+.member-filter-form .field {
+  margin: 0;
+  min-width: 220px;
+}
+.inline-status-select {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+.inline-status-select.join {
+  border-color: #ff4b4b;
+  color: #ffd3d3;
+}
+.inline-status-select.absent {
+  border-color: #a22626;
+  color: #ffd6d6;
+}
+.inline-status-select.undecided {
+  border-color: #c77900;
+  color: #ffdca6;
+}
 </style>
 {% endblock %}
 
@@ -167,18 +179,29 @@
 <h1 class="page-title">{{ team_name or "Guest" }}</h1>
 
 <section class="panel">
+  <div class="action-row" style="margin-bottom:10px;">
+    <form method="GET" class="member-filter-form">
+      <input type="hidden" name="month" id="member-filter-month" value="{{ active_month or '' }}">
+      <div class="field">
+        <label>メンバー表示</label>
+        <select name="name" onchange="this.form.submit()">
+          <option value="">全員表示</option>
+          {% for member_name in member_options %}
+          <option value="{{ member_name }}" {% if selected_member_filter == member_name %}selected{% endif %}>{{ member_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+  </div>
+
   <form method="POST" action="{{ url_for('public_bulk_match_action', public_id=public_id) }}">
     <input type="hidden" name="current_month" id="current-month-input" value="{{ active_month or '' }}">
     <div class="action-rows">
       <div class="action-row">
-        <a id="add-link" href="{{ url_for('public_add_match', public_id=public_id) }}{% if active_month %}?month={{ active_month }}{% endif %}" class="btn">イベント登録</a>
-        <a id="attendance-month-link" href="{{ url_for('public_attendance_month', public_id=public_id) }}{% if active_month %}?month={{ active_month }}{% endif %}" class="btn secondary">新規出欠登録</a>
-      </div>
-      <div class="action-row">
         <button type="submit" name="action" value="attendance_check" class="btn bulk-action-btn bulk-check" disabled>出欠確認</button>
-        <button type="submit" name="action" value="duplicate" class="btn bulk-action-btn bulk-duplicate" disabled>複製</button>
-        <button type="submit" name="action" value="edit" class="btn bulk-action-btn bulk-edit" disabled>編集</button>
-        <button type="submit" name="action" value="delete" class="btn bulk-action-btn bulk-delete" disabled onclick="return confirm('選択したイベントを削除しますか？');">削除</button>
+        {% if months %}
+        <a id="csv-export-link" href="{{ url_for('public_export_attendance_csv', public_id=public_id) }}?month={{ active_month or months[0] }}" class="btn csv-export-btn">CSV出力</a>
+        {% endif %}
       </div>
     </div>
 
@@ -198,7 +221,7 @@
           <thead>
             <tr>
               <th class="col-select">選択</th>
-              <th class="col-event">日程/イベント内容</th>
+              <th class="col-event">日時・イベント内容</th>
               <th class="col-summary">
                 <div class="summary-head-title">出欠集計</div>
                 <div class="summary-head-marks">
@@ -210,19 +233,6 @@
               {% for member in month_members %}
               <th class="member-head">
                 <div class="member-name">{{ member }}</div>
-                <div class="member-actions">
-                  <a
-                    class="btn secondary member-edit-btn"
-                    href="{{ url_for('public_attendance_month', public_id=public_id) }}?month={{ month }}&name={{ member | urlencode }}"
-                  >編集</a>
-                  <button
-                    type="submit"
-                    class="btn danger member-delete-btn"
-                    formaction="{{ url_for('public_delete_member_attendance_by_month', public_id=public_id) }}?month={{ month }}&name={{ member | urlencode }}"
-                    formmethod="post"
-                    onclick="return confirm('このメンバー列を削除しますか？');"
-                  >削除</button>
-                </div>
               </th>
               {% endfor %}
             </tr>
@@ -256,24 +266,23 @@
               {% for member in month_members %}
               {% set status = attendance_dict.get((e["id"], member), "") %}
               <td class="member-cell">
-                {% if status == "参加" %}
-                ○
-                {% elif status == "不参加" %}
-                ×
-                {% elif status == "未定" %}
-                △
-                {% else %}
-                -
-                {% endif %}
+                <select
+                  class="inline-status-select attendance-inline-select {% if status == '参加' %}join{% elif status == '不参加' %}absent{% elif status == '未定' %}undecided{% endif %}"
+                  data-month="{{ month }}"
+                  data-filter-name="{{ selected_member_filter }}"
+                  data-member-name="{{ member }}"
+                  data-match-id="{{ e['id'] }}"
+                >
+                  <option value="参加" {% if status == "参加" %}selected{% endif %}>参加</option>
+                  <option value="不参加" {% if status == "不参加" %}selected{% endif %}>不参加</option>
+                  <option value="未定" {% if status == "未定" or not status %}selected{% endif %}>未定</option>
+                </select>
               </td>
               {% endfor %}
             </tr>
             {% endfor %}
           </tbody>
         </table>
-      </div>
-      <div class="csv-export-wrap">
-        <a href="{{ url_for('public_export_attendance_csv', public_id=public_id) }}?month={{ month }}" class="btn csv-export-btn">CSV出力</a>
       </div>
       {% else %}
       <div class="notice">この月のイベントはありません。</div>
@@ -292,22 +301,28 @@
 (() => {
   const tabs = document.querySelectorAll('.month-tab');
   const panes = document.querySelectorAll('.month-pane');
-  const monthLink = document.getElementById('attendance-month-link');
-  const addLink = document.getElementById('add-link');
   const currentMonthInput = document.getElementById('current-month-input');
+  const memberFilterMonthInput = document.getElementById('member-filter-month');
+  const csvExportLink = document.getElementById('csv-export-link');
   const selectedBoxes = document.querySelectorAll('input[name="selected_ids"]');
   const bulkActionButtons = document.querySelectorAll('.bulk-action-btn');
+  const attendanceInlineSelects = document.querySelectorAll('.attendance-inline-select');
   const initialMonth = '{{ active_month|default("", true) }}';
+  const storageKey = `team-top-scroll:${location.pathname}:${location.search}`;
+
+  const savedY = sessionStorage.getItem(storageKey);
+  if (savedY !== null) {
+    sessionStorage.removeItem(storageKey);
+    window.scrollTo(0, Number(savedY) || 0);
+  }
 
   const activate = (month) => {
     tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.month === month));
     panes.forEach((pane) => pane.classList.toggle('active', pane.dataset.pane === month));
     if (currentMonthInput) currentMonthInput.value = month;
-    if (monthLink) {
-      monthLink.href = `{{ url_for('public_attendance_month', public_id=public_id) }}?month=${encodeURIComponent(month)}`;
-    }
-    if (addLink) {
-      addLink.href = `{{ url_for('public_add_match', public_id=public_id) }}?month=${encodeURIComponent(month)}`;
+    if (memberFilterMonthInput) memberFilterMonthInput.value = month;
+    if (csvExportLink) {
+      csvExportLink.href = `{{ url_for('public_export_attendance_csv', public_id=public_id) }}?month=${encodeURIComponent(month)}`;
     }
   };
 
@@ -320,6 +335,31 @@
 
   selectedBoxes.forEach((box) => box.addEventListener('change', updateBulkButtons));
   tabs.forEach((tab) => tab.addEventListener('click', () => activate(tab.dataset.month)));
+  attendanceInlineSelects.forEach((select) => {
+    select.addEventListener('change', () => {
+      sessionStorage.setItem(storageKey, String(window.scrollY));
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '{{ url_for("member_team_page", public_id=public_id) }}';
+      form.style.display = 'none';
+      const hiddenFields = {
+        month: select.dataset.month || '',
+        filter_name: select.dataset.filterName || '',
+        member_name: select.dataset.memberName || '',
+        match_id: select.dataset.matchId || '',
+        status: select.value || '',
+      };
+      Object.entries(hiddenFields).forEach(([key, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+      });
+      document.body.appendChild(form);
+      form.submit();
+    });
+  });
   if (tabs.length) {
     const target = Array.from(tabs).find((tab) => tab.dataset.month === initialMonth);
     activate((target || tabs[0]).dataset.month);
@@ -328,3 +368,6 @@
 })();
 </script>
 {% endblock %}
+
+
+

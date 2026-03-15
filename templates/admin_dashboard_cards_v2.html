@@ -203,6 +203,17 @@
               </button>
             </div>
           </div>
+          <div class="team-meta-item">
+            <label>メンバー管理</label>
+            <div>
+              <a class="btn secondary" href="{{ url_for('admin_team_members', team_id=team['id']) }}">
+                メンバー設定
+              </a>
+              <a class="btn secondary" href="{{ url_for('admin_team_events', team_id=team['id']) }}">
+                イベント管理
+              </a>
+            </div>
+          </div>
         </div>
       </article>
       {% endfor %}

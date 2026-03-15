@@ -465,10 +465,10 @@ def portal_get_members(team_id):
     c = conn.cursor()
     c.execute(
         """
-        SELECT id, team_id, name, created_at
+        SELECT id, team_id, name, display_order, note, is_active, created_at, updated_at
         FROM portal_members
         WHERE team_id=?
-        ORDER BY name
+        ORDER BY display_order ASC, id ASC
         """,
         (team_id,),
     )
@@ -477,25 +477,304 @@ def portal_get_members(team_id):
     return members
 
 
-def portal_add_member(team_id, name):
+def _coerce_positive_int(value):
+    try:
+        converted = int(value)
+    except (TypeError, ValueError):
+        return None
+    return converted if converted > 0 else None
+
+
+def _normalize_member_rows(cursor, team_id):
+    cursor.execute(
+        """
+        SELECT id
+        FROM portal_members
+        WHERE team_id=?
+        ORDER BY display_order ASC, id ASC
+        """,
+        (team_id,),
+    )
+    member_ids = [row["id"] for row in cursor.fetchall()]
+    now_text = portal_now_text()
+    for index, member_id in enumerate(member_ids, start=1):
+        cursor.execute(
+            """
+            UPDATE portal_members
+            SET display_order=?, updated_at=?
+            WHERE team_id=? AND id=?
+            """,
+            (index, now_text, team_id, member_id),
+        )
+
+
+def portal_get_member(team_id, member_id):
     conn = get_db_connection()
     c = conn.cursor()
     c.execute(
         """
-        INSERT INTO portal_members (team_id, name, created_at)
-        VALUES (?, ?, ?)
-        ON CONFLICT(team_id, name) DO NOTHING
+        SELECT id, team_id, name, display_order, note, is_active, created_at, updated_at
+        FROM portal_members
+        WHERE team_id=? AND id=?
         """,
-        (team_id, name, portal_now_text()),
-    )
-    conn.commit()
-    c.execute(
-        "SELECT id, team_id, name, created_at FROM portal_members WHERE team_id=? AND name=?",
-        (team_id, name),
+        (team_id, member_id),
     )
     member = row_to_dict(c.fetchone())
     conn.close()
     return member
+
+
+def portal_get_members_for_team(team_id, include_inactive=False):
+    conn = get_db_connection()
+    c = conn.cursor()
+    if include_inactive:
+        c.execute(
+            """
+            SELECT id, team_id, name, display_order, note, is_active, created_at, updated_at
+            FROM portal_members
+            WHERE team_id=?
+            ORDER BY display_order ASC, id ASC
+            """,
+            (team_id,),
+        )
+    else:
+        c.execute(
+            """
+            SELECT id, team_id, name, display_order, note, is_active, created_at, updated_at
+            FROM portal_members
+            WHERE team_id=? AND is_active=1
+            ORDER BY display_order ASC, id ASC
+            """,
+            (team_id,),
+        )
+    members = rows_to_dict(c.fetchall())
+    conn.close()
+    return members
+
+
+def portal_add_member(team_id, name, note="", display_order=None):
+    target_name = (name or "").strip()
+    if not target_name:
+        return None, "invalid_name"
+
+    conn = get_db_connection()
+    c = conn.cursor()
+
+    c.execute(
+        """
+        SELECT id, team_id, name, display_order, note, is_active, created_at, updated_at
+        FROM portal_members
+        WHERE team_id=? AND name=?
+        """,
+        (team_id, target_name),
+    )
+    existing = row_to_dict(c.fetchone())
+    desired_order = _coerce_positive_int(display_order)
+
+    if existing:
+        update_fields = ["note=?", "updated_at=?"]
+        update_params = [note or "", portal_now_text()]
+        if desired_order is not None:
+            update_fields.append("display_order=?")
+            update_params.append(desired_order)
+        if not existing.get("is_active"):
+            update_fields.append("is_active=1")
+        update_params.extend([team_id, existing["id"]])
+        c.execute(
+            f"UPDATE portal_members SET {', '.join(update_fields)} WHERE team_id=? AND id=?",
+            update_params,
+        )
+        _normalize_member_rows(c, team_id)
+        conn.commit()
+        c.execute(
+            """
+            SELECT id, team_id, name, display_order, note, is_active, created_at, updated_at
+            FROM portal_members
+            WHERE team_id=? AND id=?
+            """,
+            (team_id, existing["id"]),
+        )
+        member = row_to_dict(c.fetchone())
+        conn.close()
+        return member, "reactivated" if not existing.get("is_active") else "exists"
+
+    c.execute("SELECT COALESCE(MAX(display_order), 0) AS max_display_order FROM portal_members WHERE team_id=?", (team_id,))
+    max_display_order = (row_to_dict(c.fetchone()) or {}).get("max_display_order", 0) or 0
+    final_order = desired_order if desired_order is not None else max_display_order + 1
+    now_text = portal_now_text()
+    c.execute(
+        """
+        INSERT INTO portal_members (team_id, name, display_order, note, is_active, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (team_id, target_name, final_order, note or "", 1, now_text, now_text),
+    )
+    member_id = c.lastrowid if not USE_POSTGRES else None
+    _normalize_member_rows(c, team_id)
+    if not member_id:
+        c.execute("SELECT id FROM portal_members WHERE team_id=? AND name=?", (team_id, target_name))
+        row = c.fetchone()
+        member_id = row["id"] if row else None
+    conn.commit()
+    c.execute(
+        """
+        SELECT id, team_id, name, display_order, note, is_active, created_at, updated_at
+        FROM portal_members
+        WHERE team_id=? AND id=?
+        """,
+        (team_id, member_id),
+    )
+    member = row_to_dict(c.fetchone())
+    conn.close()
+    return member, "created"
+
+
+def portal_update_member(team_id, member_id, name=None, note=None, is_active=None):
+    current_member = portal_get_member(team_id, member_id)
+    if not current_member:
+        return None, "not_found"
+
+    update_name = (name if name is not None else current_member.get("name") or "").strip()
+    if not update_name:
+        return None, "invalid_name"
+    update_note = note if note is not None else (current_member.get("note") or "")
+    active_value = current_member.get("is_active", 1) if is_active is None else (1 if bool(is_active) else 0)
+
+    conn = get_db_connection()
+    c = conn.cursor()
+    try:
+        c.execute(
+            """
+            UPDATE portal_members
+            SET name=?, note=?, is_active=?, updated_at=?
+            WHERE team_id=? AND id=?
+            """,
+            (update_name, update_note, active_value, portal_now_text(), team_id, member_id),
+        )
+    except DatabaseError:
+        conn.close()
+        return None, "validation_error"
+
+    _normalize_member_rows(c, team_id)
+    conn.commit()
+    c.execute(
+        """
+        SELECT id, team_id, name, display_order, note, is_active, created_at, updated_at
+        FROM portal_members
+        WHERE team_id=? AND id=?
+        """,
+        (team_id, member_id),
+    )
+    member = row_to_dict(c.fetchone())
+    conn.close()
+    return member, "updated"
+
+
+def portal_reorder_members(team_id, ordered_member_ids):
+    if not ordered_member_ids:
+        return False, "invalid_order"
+
+    normalized_ids = []
+    seen_ids = set()
+    for raw_id in ordered_member_ids:
+        member_id = _coerce_positive_int(raw_id)
+        if member_id is None or member_id in seen_ids:
+            return False, "invalid_order"
+        seen_ids.add(member_id)
+        normalized_ids.append(member_id)
+
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT id
+        FROM portal_members
+        WHERE team_id=?
+        ORDER BY display_order ASC, id ASC
+        """,
+        (team_id,),
+    )
+    existing_ids = [row["id"] for row in c.fetchall()]
+    existing_id_set = set(existing_ids)
+    if not set(normalized_ids).issubset(existing_id_set):
+        conn.close()
+        return False, "not_found"
+
+    remaining_ids = [member_id for member_id in existing_ids if member_id not in seen_ids]
+    final_ids = normalized_ids + remaining_ids
+    now_text = portal_now_text()
+    for order_no, member_id in enumerate(final_ids, start=1):
+        c.execute(
+            """
+            UPDATE portal_members
+            SET display_order=?, updated_at=?
+            WHERE team_id=? AND id=?
+            """,
+            (order_no, now_text, team_id, member_id),
+        )
+    conn.commit()
+    conn.close()
+    return True, "updated"
+
+
+def portal_deactivate_member(team_id, member_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        UPDATE portal_members
+        SET is_active=0, updated_at=?
+        WHERE team_id=? AND id=?
+        """,
+        (portal_now_text(), team_id, member_id),
+    )
+    updated = c.rowcount > 0
+    if updated:
+        _normalize_member_rows(c, team_id)
+    conn.commit()
+    conn.close()
+    return updated
+
+
+def portal_move_member(team_id, member_id, direction):
+    direction_value = (direction or "").strip().lower()
+    if direction_value not in {"up", "down"}:
+        return False, "invalid_direction"
+
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT id
+        FROM portal_members
+        WHERE team_id=?
+        ORDER BY display_order ASC, id ASC
+        """,
+        (team_id,),
+    )
+    member_ids = [row["id"] for row in c.fetchall()]
+    if member_id not in member_ids:
+        conn.close()
+        return False, "not_found"
+
+    current_index = member_ids.index(member_id)
+    if direction_value == "up" and current_index > 0:
+        member_ids[current_index - 1], member_ids[current_index] = member_ids[current_index], member_ids[current_index - 1]
+    elif direction_value == "down" and current_index < len(member_ids) - 1:
+        member_ids[current_index + 1], member_ids[current_index] = member_ids[current_index], member_ids[current_index + 1]
+    else:
+        conn.close()
+        return True, "unchanged"
+
+    now_text = portal_now_text()
+    for order_no, target_member_id in enumerate(member_ids, start=1):
+        c.execute(
+            "UPDATE portal_members SET display_order=?, updated_at=? WHERE team_id=? AND id=?",
+            (order_no, now_text, team_id, target_member_id),
+        )
+    conn.commit()
+    conn.close()
+    return True, "updated"
 
 
 def portal_delete_member(team_id, name):
@@ -806,10 +1085,14 @@ def portal_build_event_list_csv_response(team_id, month="all"):
     )
 
 
-def build_member_legacy_index_context(team, active_month=""):
+def build_member_legacy_index_context(team, active_month="", selected_member=""):
     events = portal_get_events([team["id"]])
     attendance_rows = portal_get_attendance(team["id"])
     attendance_rows.sort(key=lambda item: item["id"])
+    active_members = portal_get_members_for_team(team["id"], include_inactive=False)
+    active_member_names = [member.get("name") for member in active_members if member.get("name")]
+    if selected_member and selected_member not in active_member_names:
+        selected_member = ""
 
     months = sorted({event["date"][:7] for event in events if event.get("date")})
     if active_month not in months:
@@ -827,19 +1110,7 @@ def build_member_legacy_index_context(team, active_month=""):
     }
     members_by_month = {}
     for month in months:
-        month_event_ids = {
-            event["id"]
-            for event in month_data[month]
-        }
-        month_members = []
-        seen_members = set()
-        for row in attendance_rows:
-            member_name = row["member_name"]
-            if row.get("event_id") not in month_event_ids or member_name in seen_members:
-                continue
-            seen_members.add(member_name)
-            month_members.append(member_name)
-        members_by_month[month] = month_members
+        members_by_month[month] = [selected_member] if selected_member else list(active_member_names)
 
     attendance_dict = {}
     for row in attendance_rows:
@@ -852,6 +1123,8 @@ def build_member_legacy_index_context(team, active_month=""):
         "month_data": month_data,
         "members_by_month": members_by_month,
         "attendance_dict": attendance_dict,
+        "member_options": active_member_names,
+        "selected_member_filter": selected_member,
         "public_id": team["public_id"],
     }
 
@@ -936,15 +1209,19 @@ def migrate_portal_json_to_db():
     for member in data.get("members", []):
         c.execute(
             """
-            INSERT INTO portal_members (id, team_id, name, created_at)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO portal_members (id, team_id, name, display_order, note, is_active, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(team_id, name) DO NOTHING
             """,
             (
                 member.get("id"),
                 member.get("team_id"),
                 member.get("name"),
+                member.get("display_order") or member.get("id") or 0,
+                member.get("note") or "",
+                1 if member.get("is_active", True) else 0,
                 member.get("created_at") or portal_now_text(),
+                member.get("updated_at") or member.get("created_at") or portal_now_text(),
             ),
         )
 
@@ -1091,7 +1368,11 @@ def init_db_sqlite():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         team_id INTEGER NOT NULL,
         name TEXT NOT NULL,
+        display_order INTEGER NOT NULL DEFAULT 0,
+        note TEXT,
+        is_active INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
         UNIQUE(team_id, name),
         FOREIGN KEY(team_id) REFERENCES teams(id)
     )
@@ -1149,6 +1430,51 @@ def init_db_sqlite():
         c.execute("ALTER TABLE teams ADD COLUMN public_id TEXT")
     if "created_at" not in team_columns:
         c.execute("ALTER TABLE teams ADD COLUMN created_at TEXT")
+
+    c.execute("PRAGMA table_info(portal_members)")
+    portal_member_columns = [row[1] for row in c.fetchall()]
+    if "display_order" not in portal_member_columns:
+        c.execute("ALTER TABLE portal_members ADD COLUMN display_order INTEGER NOT NULL DEFAULT 0")
+    if "note" not in portal_member_columns:
+        c.execute("ALTER TABLE portal_members ADD COLUMN note TEXT")
+    if "is_active" not in portal_member_columns:
+        c.execute("ALTER TABLE portal_members ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1")
+    if "updated_at" not in portal_member_columns:
+        c.execute("ALTER TABLE portal_members ADD COLUMN updated_at TEXT")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_portal_members_team_id ON portal_members(team_id)")
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_portal_members_team_display_order ON portal_members(team_id, display_order)"
+    )
+    c.execute(
+        """
+        UPDATE portal_members
+        SET is_active = CASE WHEN is_active IS NULL THEN 1 ELSE is_active END,
+            updated_at = CASE
+                WHEN updated_at IS NULL OR updated_at = '' THEN COALESCE(created_at, ?)
+                ELSE updated_at
+            END
+        """,
+        (portal_now_text(),),
+    )
+    c.execute("SELECT id FROM teams ORDER BY id")
+    team_rows = c.fetchall()
+    for team_row in team_rows:
+        team_id = team_row[0]
+        c.execute(
+            """
+            SELECT id
+            FROM portal_members
+            WHERE team_id=?
+            ORDER BY display_order ASC, id ASC
+            """,
+            (team_id,),
+        )
+        ordered_member_ids = [row[0] for row in c.fetchall()]
+        for index, member_id in enumerate(ordered_member_ids, start=1):
+            c.execute(
+                "UPDATE portal_members SET display_order=? WHERE id=?",
+                (index, member_id),
+            )
 
     c.execute(
         """
@@ -1396,11 +1722,53 @@ def init_db_postgres():
         id SERIAL PRIMARY KEY,
         team_id INTEGER NOT NULL REFERENCES teams(id),
         name TEXT NOT NULL,
+        display_order INTEGER NOT NULL DEFAULT 0,
+        note TEXT,
+        is_active INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
         UNIQUE(team_id, name)
     )
     """
     )
+    c.execute("ALTER TABLE portal_members ADD COLUMN IF NOT EXISTS display_order INTEGER NOT NULL DEFAULT 0")
+    c.execute("ALTER TABLE portal_members ADD COLUMN IF NOT EXISTS note TEXT")
+    c.execute("ALTER TABLE portal_members ADD COLUMN IF NOT EXISTS is_active INTEGER NOT NULL DEFAULT 1")
+    c.execute("ALTER TABLE portal_members ADD COLUMN IF NOT EXISTS updated_at TEXT")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_portal_members_team_id ON portal_members(team_id)")
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_portal_members_team_display_order ON portal_members(team_id, display_order)"
+    )
+    c.execute(
+        """
+        UPDATE portal_members
+        SET is_active = COALESCE(is_active, 1),
+            updated_at = CASE
+                WHEN updated_at IS NULL OR updated_at = '' THEN COALESCE(created_at, %s)
+                ELSE updated_at
+            END
+        """,
+        (portal_now_text(),),
+    )
+    c.execute("SELECT id FROM teams ORDER BY id")
+    team_rows = c.fetchall()
+    for team_row in team_rows:
+        team_id = team_row["id"] if isinstance(team_row, dict) or hasattr(team_row, "keys") else team_row[0]
+        c.execute(
+            """
+            SELECT id
+            FROM portal_members
+            WHERE team_id=%s
+            ORDER BY display_order ASC, id ASC
+            """,
+            (team_id,),
+        )
+        ordered_member_ids = [row["id"] if isinstance(row, dict) or hasattr(row, "keys") else row[0] for row in c.fetchall()]
+        for index, member_id in enumerate(ordered_member_ids, start=1):
+            c.execute(
+                "UPDATE portal_members SET display_order=%s WHERE id=%s",
+                (index, member_id),
+            )
     c.execute(
         """
     CREATE TABLE IF NOT EXISTS portal_events (
@@ -1591,6 +1959,16 @@ def admin_login_required(func):
     return wrapper
 
 
+def admin_api_required(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if "admin_id" not in session:
+            return {"error": "forbidden"}, 403
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
 def is_site_admin_email(email):
     return (email or "").strip().lower() in SITE_ADMIN_EMAILS
 
@@ -1612,6 +1990,24 @@ def site_admin_required(func):
         return func(*args, **kwargs)
 
     return wrapper
+
+
+def get_owned_team_or_error(team_id, admin_id):
+    target_team = portal_get_team(team_id)
+    if not target_team:
+        return None, "not_found"
+    if target_team.get("admin_id") != admin_id:
+        return None, "forbidden"
+    return target_team, None
+
+
+def parse_boolean_input(value):
+    normalized = (str(value) if value is not None else "").strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    return None
 
 
 def format_start_date(created_at):
@@ -1720,8 +2116,8 @@ def normalize_member_attendance_status(value):
     return status_map.get((value or "").strip(), "")
 
 
-def get_team_members(team_id):
-    return portal_get_members(team_id)
+def get_team_members(team_id, include_inactive=False):
+    return portal_get_members_for_team(team_id, include_inactive=include_inactive)
 
 
 def get_team_attendance_rows(team_id):
@@ -2119,6 +2515,414 @@ def admin_delete_team(team_id):
     return redirect(url_for("admin_dashboard", error_message="チームを削除できませんでした。"))
 
 
+def serialize_member_for_api(member):
+    if not member:
+        return None
+    return {
+        "id": member.get("id"),
+        "team_id": member.get("team_id"),
+        "display_name": member.get("name"),
+        "name": member.get("name"),
+        "display_order": member.get("display_order"),
+        "note": member.get("note") or "",
+        "is_active": bool(member.get("is_active")),
+        "created_at": member.get("created_at"),
+        "updated_at": member.get("updated_at"),
+    }
+
+
+@app.route("/admin/teams/<int:team_id>/members", methods=["GET", "POST"])
+@admin_login_required
+def admin_team_members(team_id):
+    team, team_error = get_owned_team_or_error(team_id, session["admin_id"])
+    if team_error == "not_found":
+        return redirect(url_for("admin_dashboard", error_message="対象チームが見つかりません。"))
+    if team_error == "forbidden":
+        return redirect(url_for("admin_dashboard", error_message="他チームは操作できません。"))
+
+    include_inactive = True
+    error_message = request.args.get("error_message", "").strip()
+    success_message = request.args.get("success_message", "").strip()
+    selected_member_id = _coerce_positive_int(request.args.get("selected_member_id"))
+    scroll_y = request.args.get("scroll_y", "").strip()
+
+    if request.method == "POST":
+        action = request.form.get("action", "").strip()
+        selected_member_id = _coerce_positive_int(request.form.get("selected_member_id")) or selected_member_id
+        scroll_y = request.form.get("scroll_y", "").strip()
+        if action == "add_members":
+            raw_names = request.form.get("member_names", "")
+            lines = raw_names.replace("\r\n", "\n").split("\n")
+            names = []
+            seen = set()
+            for line in lines:
+                name = line.strip()
+                if not name or name in seen:
+                    continue
+                seen.add(name)
+                names.append(name)
+
+            if not names:
+                error_message = "登録するメンバー名を1行に1名で入力してください。"
+            else:
+                created_count = 0
+                reactivated_count = 0
+                exists_count = 0
+                failed_names = []
+                for name in names:
+                    member, status = portal_add_member(team_id, name, note="", display_order=None)
+                    if not member:
+                        failed_names.append(name)
+                    elif status == "created":
+                        created_count += 1
+                    elif status == "reactivated":
+                        reactivated_count += 1
+                    else:
+                        exists_count += 1
+
+                success_parts = []
+                if created_count:
+                    success_parts.append(f"新規{created_count}名")
+                if reactivated_count:
+                    success_parts.append(f"再有効化{reactivated_count}名")
+                if exists_count:
+                    success_parts.append(f"既存{exists_count}名")
+                if success_parts:
+                    success_message = "メンバー登録を更新しました（" + " / ".join(success_parts) + "）。"
+                if failed_names:
+                    preview = "、".join(failed_names[:5])
+                    suffix = " ほか" if len(failed_names) > 5 else ""
+                    error_message = f"一部登録できませんでした: {preview}{suffix}"
+        elif action in {"move_member_up", "move_member_down"}:
+            if selected_member_id is None:
+                error_message = "移動するメンバーを1名選択してください。"
+            else:
+                direction = "up" if action == "move_member_up" else "down"
+                moved, status = portal_move_member(team_id, selected_member_id, direction)
+                if not moved and status == "not_found":
+                    error_message = "対象メンバーが見つかりません。"
+                elif not moved:
+                    error_message = "並び順を更新できませんでした。"
+                else:
+                    success_message = "メンバーの並び順を更新しました。"
+        elif action == "delete_selected_member":
+            if selected_member_id is None:
+                error_message = "削除するメンバーを1名選択してください。"
+            elif portal_deactivate_member(team_id, selected_member_id):
+                success_message = "メンバーを削除しました。"
+            else:
+                error_message = "対象メンバーが見つかりません。"
+        elif action == "bulk_update_status":
+            member_ids_raw = request.form.getlist("member_ids")
+            if not member_ids_raw:
+                error_message = "更新対象のメンバーがありません。"
+            else:
+                updated_count = 0
+                for raw_member_id in member_ids_raw:
+                    member_id = _coerce_positive_int(raw_member_id)
+                    if member_id is None:
+                        continue
+                    is_active = parse_boolean_input(request.form.get(f"is_active_{member_id}"))
+                    if is_active is None:
+                        continue
+                    member, status = portal_update_member(team_id, member_id, is_active=is_active)
+                    if member and status == "updated":
+                        updated_count += 1
+                success_message = f"ステータスを保存しました（{updated_count}名）。"
+        else:
+            error_message = "不正な操作です。"
+
+    all_members = portal_get_members_for_team(team_id, include_inactive=True)
+    total_members = len(all_members)
+    active_members = len([member for member in all_members if member.get("is_active")])
+    inactive_members = total_members - active_members
+    members = all_members
+    return render_template(
+        "admin_team_members.html",
+        team=team,
+        members=members,
+        total_members=total_members,
+        active_members=active_members,
+        inactive_members=inactive_members,
+        include_inactive=include_inactive,
+        error_message=error_message,
+        success_message=success_message,
+        selected_member_id=selected_member_id,
+        scroll_y=scroll_y,
+    )
+
+
+@app.route("/admin/teams/<int:team_id>/events", methods=["GET", "POST"])
+@admin_login_required
+def admin_team_events(team_id):
+    team, team_error = get_owned_team_or_error(team_id, session["admin_id"])
+    if team_error == "not_found":
+        return redirect(url_for("admin_dashboard", error_message="対象チームが見つかりません。"))
+    if team_error == "forbidden":
+        return redirect(url_for("admin_dashboard", error_message="他チームは操作できません。"))
+
+    error_message = request.args.get("error_message", "").strip()
+    success_message = request.args.get("success_message", "").strip()
+    selected_month = request.args.get("month", "").strip()
+    editing_event_id = _coerce_positive_int(request.args.get("editing_event_id"))
+
+    def _redirect_events(month_value="", success="", error="", editing_id=None):
+        params = {"team_id": team_id}
+        if month_value:
+            params["month"] = month_value
+        if success:
+            params["success_message"] = success
+        if error:
+            params["error_message"] = error
+        if editing_id:
+            params["editing_event_id"] = editing_id
+        return redirect(url_for("admin_team_events", **params))
+
+    if request.method == "POST":
+        action = request.form.get("action", "").strip()
+        selected_month = request.form.get("month", "").strip() or selected_month
+        selected_event_ids_raw = request.form.get("selected_event_ids", "").strip()
+        selected_event_ids = []
+        if selected_event_ids_raw:
+            seen_event_ids = set()
+            for raw_id in selected_event_ids_raw.split(","):
+                event_id = _coerce_positive_int(raw_id.strip())
+                if event_id is None or event_id in seen_event_ids:
+                    continue
+                seen_event_ids.add(event_id)
+                selected_event_ids.append(event_id)
+        editing_event_id = _coerce_positive_int(request.form.get("editing_event_id")) or editing_event_id
+
+        if action in {"add_event", "update_event"}:
+            date = request.form.get("date", "").strip()
+            start_time = build_time_from_form("start_time")
+            end_time = build_time_from_form("end_time")
+            opponent = request.form.get("opponent", "").strip()
+            place = request.form.get("place", "").strip()
+            if not date or not opponent or not place:
+                error_message = "日付・対戦相手・場所は必須です。"
+            elif not is_valid_10min_time(start_time) or not is_valid_10min_time(end_time):
+                error_message = "開始/終了時刻は10分単位で入力してください。"
+            elif action == "add_event":
+                portal_create_event(team["id"], date, start_time, end_time, opponent, place)
+                return _redirect_events(month_value=date[:7], success="イベントを登録しました。")
+            else:
+                if editing_event_id is None:
+                    error_message = "編集対象のイベントを選択してください。"
+                elif not portal_get_event(team["id"], editing_event_id):
+                    error_message = "編集対象のイベントが見つかりません。"
+                else:
+                    portal_update_event(team["id"], editing_event_id, date, start_time, end_time, opponent, place)
+                    return _redirect_events(month_value=date[:7], success="イベントを更新しました。")
+        elif action == "start_edit":
+            if len(selected_event_ids) != 1:
+                return _redirect_events(month_value=selected_month, error="編集するイベントを1件選択してください。")
+            selected_event_id = selected_event_ids[0]
+            target_event = portal_get_event(team["id"], selected_event_id)
+            if not target_event:
+                return _redirect_events(month_value=selected_month, error="対象イベントが見つかりません。")
+            return _redirect_events(month_value=(target_event.get("date") or "")[:7], editing_id=selected_event_id)
+        elif action == "duplicate_event":
+            if not selected_event_ids:
+                return _redirect_events(month_value=selected_month, error="複製するイベントを選択してください。")
+            copied_count = 0
+            last_month = selected_month
+            for selected_event_id in selected_event_ids:
+                target_event = portal_get_event(team["id"], selected_event_id)
+                if not target_event:
+                    continue
+                portal_duplicate_event(team["id"], selected_event_id)
+                copied_count += 1
+                event_month = (target_event.get("date") or "")[:7]
+                if event_month:
+                    last_month = event_month
+            if copied_count == 0:
+                return _redirect_events(month_value=selected_month, error="対象イベントが見つかりません。")
+            return _redirect_events(
+                month_value=last_month,
+                success=f"イベントを複製しました（{copied_count}件）。",
+            )
+        elif action == "delete_event":
+            if not selected_event_ids:
+                return _redirect_events(month_value=selected_month, error="削除するイベントを選択してください。")
+            deleted_count = 0
+            last_month = selected_month
+            for selected_event_id in selected_event_ids:
+                target_event = portal_get_event(team["id"], selected_event_id)
+                if not target_event:
+                    continue
+                event_month = (target_event.get("date") or "")[:7]
+                if event_month:
+                    last_month = event_month
+                portal_delete_event(team["id"], selected_event_id)
+                deleted_count += 1
+            if deleted_count == 0:
+                return _redirect_events(month_value=selected_month, error="対象イベントが見つかりません。")
+            return _redirect_events(
+                month_value=last_month,
+                success=f"イベントを削除しました（{deleted_count}件）。",
+            )
+        else:
+            error_message = "不正な操作です。"
+
+    all_events = portal_get_events([team["id"]])
+    months = sorted({event["date"][:7] for event in all_events if event.get("date")})
+    if not selected_month and months:
+        selected_month = months[0]
+    if selected_month and selected_month not in months:
+        selected_month = months[0] if months else ""
+
+    editing_event = None
+    if editing_event_id is not None:
+        candidate = portal_get_event(team["id"], editing_event_id)
+        if candidate:
+            editing_event = dict(candidate)
+            edit_month = (editing_event.get("date") or "")[:7]
+            if edit_month:
+                selected_month = edit_month
+        else:
+            editing_event_id = None
+
+    events_with_labels = []
+    for event in all_events:
+        event_data = dict(event)
+        event_data["date_label"] = format_date_mmdd_with_weekday(event_data.get("date", ""))
+        events_with_labels.append(event_data)
+    month_data = {
+        month: [event for event in events_with_labels if (event.get("date") or "").startswith(month)]
+        for month in months
+    }
+
+    return render_template(
+        "admin_team_events.html",
+        team=team,
+        months=months,
+        selected_month=selected_month,
+        month_data=month_data,
+        editing_event=editing_event,
+        editing_event_id=editing_event_id,
+        error_message=error_message,
+        success_message=success_message,
+    )
+
+
+@app.route("/admin/api/teams/<int:team_id>/members", methods=["GET"])
+@admin_api_required
+def api_get_members(team_id):
+    team, team_error = get_owned_team_or_error(team_id, session["admin_id"])
+    if team_error == "not_found":
+        return {"error": "not_found"}, 404
+    if team_error == "forbidden":
+        return {"error": "forbidden"}, 403
+
+    include_inactive = request.args.get("include_inactive", "").strip() == "1"
+    members = portal_get_members_for_team(team["id"], include_inactive=include_inactive)
+    return {"members": [serialize_member_for_api(member) for member in members]}
+
+
+@app.route("/admin/api/teams/<int:team_id>/members", methods=["POST"])
+@admin_api_required
+def api_create_member(team_id):
+    team, team_error = get_owned_team_or_error(team_id, session["admin_id"])
+    if team_error == "not_found":
+        return {"error": "not_found"}, 404
+    if team_error == "forbidden":
+        return {"error": "forbidden"}, 403
+
+    payload = request.get_json(silent=True) or request.form
+    display_name = (payload.get("display_name") or payload.get("name") or "").strip()
+    note = (payload.get("note") or "").strip()
+    display_order = payload.get("display_order")
+    if not display_name:
+        return {"error": "display_name is required"}, 400
+    if display_order is not None and str(display_order).strip() and _coerce_positive_int(display_order) is None:
+        return {"error": "display_order must be a positive integer"}, 400
+
+    member, status = portal_add_member(team["id"], display_name, note=note, display_order=display_order)
+    if not member:
+        return {"error": "member_create_failed"}, 400
+    response_status = 200 if status in {"reactivated", "exists"} else 201
+    return {"member": serialize_member_for_api(member), "status": status}, response_status
+
+
+@app.route("/admin/api/teams/<int:team_id>/members/<int:member_id>", methods=["PATCH", "PUT"])
+@admin_api_required
+def api_update_member(team_id, member_id):
+    team, team_error = get_owned_team_or_error(team_id, session["admin_id"])
+    if team_error == "not_found":
+        return {"error": "not_found"}, 404
+    if team_error == "forbidden":
+        return {"error": "forbidden"}, 403
+
+    if not portal_get_member(team["id"], member_id):
+        return {"error": "member_not_found"}, 404
+
+    payload = request.get_json(silent=True) or request.form
+    display_name = payload.get("display_name")
+    note = payload.get("note")
+    if display_name is not None and not str(display_name).strip():
+        return {"error": "display_name must not be empty"}, 400
+    active_raw = payload.get("is_active")
+    is_active = None
+    if active_raw is not None:
+        is_active = parse_boolean_input(active_raw)
+        if is_active is None:
+            return {"error": "is_active must be boolean"}, 400
+
+    member, status = portal_update_member(
+        team["id"],
+        member_id,
+        name=display_name,
+        note=note,
+        is_active=is_active,
+    )
+    if not member and status == "not_found":
+        return {"error": "member_not_found"}, 404
+    if not member:
+        return {"error": "member_update_failed"}, 400
+    return {"member": serialize_member_for_api(member), "status": status}
+
+
+@app.route("/admin/api/teams/<int:team_id>/members/<int:member_id>", methods=["DELETE"])
+@admin_api_required
+def api_delete_member(team_id, member_id):
+    team, team_error = get_owned_team_or_error(team_id, session["admin_id"])
+    if team_error == "not_found":
+        return {"error": "not_found"}, 404
+    if team_error == "forbidden":
+        return {"error": "forbidden"}, 403
+
+    if not portal_deactivate_member(team["id"], member_id):
+        return {"error": "member_not_found"}, 404
+    return {"status": "deactivated"}
+
+
+@app.route("/admin/api/teams/<int:team_id>/members/reorder", methods=["POST"])
+@admin_api_required
+def api_reorder_members(team_id):
+    team, team_error = get_owned_team_or_error(team_id, session["admin_id"])
+    if team_error == "not_found":
+        return {"error": "not_found"}, 404
+    if team_error == "forbidden":
+        return {"error": "forbidden"}, 403
+
+    payload = request.get_json(silent=True) or request.form
+    member_ids = payload.get("member_ids")
+    if isinstance(member_ids, str):
+        member_ids = [value.strip() for value in member_ids.split(",") if value.strip()]
+    if not isinstance(member_ids, list) or not member_ids:
+        return {"error": "member_ids must be a non-empty list"}, 400
+
+    reordered, status = portal_reorder_members(team["id"], member_ids)
+    if not reordered and status == "not_found":
+        return {"error": "member_not_found"}, 404
+    if not reordered:
+        return {"error": "invalid_order"}, 400
+
+    members = portal_get_members_for_team(team["id"], include_inactive=True)
+    return {"status": "updated", "members": [serialize_member_for_api(member) for member in members]}
+
+
 @app.route("/admin/logout")
 def admin_logout():
     session.pop("admin_id", None)
@@ -2133,56 +2937,45 @@ def member_team_page(public_id):
     if not team:
         return render_template("public_index_v2.html", team_name="Guest", months=[]), 404
 
+    active_members = portal_get_members_for_team(team["id"], include_inactive=False)
+    active_member_names = [member.get("name") for member in active_members if member.get("name")]
+    if request.method == "POST":
+        month = request.form.get("month", "").strip()
+        filter_name = request.form.get("filter_name", "").strip()
+        member_name = request.form.get("member_name", "").strip()
+        status = normalize_status(request.form.get("status", ""))
+        try:
+            match_id = int(request.form.get("match_id", "0"))
+        except (TypeError, ValueError):
+            return redirect(url_for("member_team_page", public_id=public_id, month=month, name=filter_name or ""))
+
+        if filter_name and filter_name not in active_member_names:
+            filter_name = ""
+        if member_name in active_member_names and status:
+            match = portal_get_event(team["id"], match_id)
+            if match:
+                portal_upsert_attendance(team["id"], match_id, member_name, status)
+
+        return redirect(url_for("member_team_page", public_id=public_id, month=month, name=filter_name or ""))
+
     active_month = request.args.get("month", "").strip()
-    context = build_member_legacy_index_context(team, active_month)
+    selected_member = request.args.get("name", "").strip()
+    context = build_member_legacy_index_context(team, active_month, selected_member)
     return render_template("public_index_v2.html", **context)
 
 
 @app.route("/team/<public_id>/add", methods=["GET", "POST"])
 def public_add_match(public_id):
-    team = get_team_by_public_id(public_id)
-    if not team:
-        return redirect(url_for("attendance_description"))
-
-    current_month = request.args.get("month", "").strip()
-    if request.method == "GET":
-        return render_template("public_add.html", public_id=public_id, current_month=current_month)
-
-    start_time = build_time_from_form("start_time")
-    end_time = build_time_from_form("end_time")
-    if not is_valid_10min_time(start_time) or not is_valid_10min_time(end_time):
-        return "start_time/end_time must be in 10-minute increments.", 400
-
-    portal_create_event(
-        team["id"],
-        request.form["date"],
-        start_time,
-        end_time,
-        request.form["opponent"],
-        request.form["place"],
-    )
-
-    return_month = request.form.get("return_month", "").strip() or current_month
-    if not return_month:
-        return_month = request.form.get("date", "")[:7]
-    return redirect_to_team_month(public_id, return_month)
+    return redirect(url_for("member_team_page", public_id=public_id))
 
 
 @app.route("/team/<public_id>/delete/<int:id>")
 def public_delete_match(public_id, id):
-    team = get_team_by_public_id(public_id)
-    if not team:
-        return redirect(url_for("attendance_description"))
-    portal_delete_event(team["id"], id)
     return redirect(url_for("member_team_page", public_id=public_id))
 
 
 @app.route("/team/<public_id>/duplicate/<int:id>")
 def public_duplicate_match(public_id, id):
-    team = get_team_by_public_id(public_id)
-    if not team:
-        return redirect(url_for("attendance_description"))
-    portal_duplicate_event(team["id"], id)
     return redirect(url_for("member_team_page", public_id=public_id))
 
 
@@ -2209,15 +3002,11 @@ def public_bulk_match_action(public_id):
         return redirect_to_team_month(public_id, current_month)
 
     if action == "edit":
-        return redirect(url_for("public_edit_match", public_id=public_id, id=target_ids[0], month=current_month))
+        return redirect_to_team_month(public_id, current_month)
     if action == "attendance_check":
         return redirect(url_for("public_attendance_check", public_id=public_id, match_id=target_ids[0], month=current_month))
-    if action == "duplicate":
-        for match_id in target_ids:
-            portal_duplicate_event(team["id"], match_id)
-    elif action == "delete":
-        for match_id in target_ids:
-            portal_delete_event(team["id"], match_id)
+    if action in {"duplicate", "delete"}:
+        return redirect_to_team_month(public_id, current_month)
 
     return redirect_to_team_month(public_id, current_month)
 
@@ -2253,36 +3042,8 @@ def public_attendance_check(public_id, match_id):
 
 @app.route("/team/<public_id>/edit/<int:id>", methods=["GET", "POST"])
 def public_edit_match(public_id, id):
-    team = get_team_by_public_id(public_id)
-    if not team:
-        return redirect(url_for("attendance_description"))
-
     current_month = request.args.get("month", "").strip()
-    match = portal_get_event(team["id"], id)
-    if not match:
-        return redirect_to_team_month(public_id, current_month)
-
-    if request.method == "POST":
-        start_time = build_time_from_form("start_time")
-        end_time = build_time_from_form("end_time")
-        if not is_valid_10min_time(start_time) or not is_valid_10min_time(end_time):
-            return "start_time/end_time must be in 10-minute increments.", 400
-
-        portal_update_event(
-            team["id"],
-            id,
-            request.form["date"],
-            start_time,
-            end_time,
-            request.form["opponent"],
-            request.form["place"],
-        )
-        return_month = request.form.get("return_month", "").strip() or current_month
-        if not return_month:
-            return_month = request.form.get("date", "")[:7]
-        return redirect_to_team_month(public_id, return_month)
-
-    return render_template("public_edit.html", public_id=public_id, match=match, current_month=current_month)
+    return redirect_to_team_month(public_id, current_month)
 
 
 @app.route("/team/<public_id>/attendance/month", methods=["GET", "POST"])
@@ -2291,10 +3052,14 @@ def public_attendance_month(public_id):
     if not team:
         return redirect(url_for("attendance_description"))
 
+    member_options = portal_get_members_for_team(team["id"], include_inactive=False)
+    member_names = [member.get("name") for member in member_options if member.get("name")]
     events = portal_get_events([team["id"]])
     months = sorted({event["date"][:7] for event in events if event.get("date")})
     selected_month = request.args.get("month")
-    name = request.args.get("name")
+    name = (request.args.get("name") or "").strip()
+    if name and name not in member_names:
+        name = ""
     error_message = ""
 
     if not selected_month and months:
@@ -2303,30 +3068,50 @@ def public_attendance_month(public_id):
     if request.method == "POST":
         selected_month = request.form.get("month") or selected_month
         name = request.form.get("name", "").strip()
-        match_id = int(request.form["match_id"])
+        filter_name = request.form.get("filter_name", "").strip()
+        if filter_name and filter_name not in member_names:
+            filter_name = ""
+        try:
+            match_id = int(request.form["match_id"])
+        except (TypeError, ValueError):
+            return redirect(url_for("public_attendance_month", public_id=public_id, month=selected_month or ""))
         status = normalize_status(request.form["status"])
 
         if not name:
-            error_message = "名前を入力してから出欠を登録してください。"
+            error_message = "メンバーを選択してから出欠を登録してください。"
+        elif name not in member_names:
+            error_message = "選択したメンバーは無効のため登録できません。"
         else:
             match = portal_get_event(team["id"], match_id)
             if not match:
                 return redirect_to_team_month(public_id, selected_month)
 
-            portal_add_member(team["id"], name)
             portal_upsert_attendance(team["id"], match_id, name, status)
+            return redirect(
+                url_for(
+                    "public_attendance_month",
+                    public_id=public_id,
+                    month=selected_month or "",
+                    name=filter_name or "",
+                )
+            )
 
     matches = []
     attendance_dict = {}
+    display_member_names = [name] if name else member_names
     if selected_month:
         matches = [dict(event) for event in events if event["date"].startswith(selected_month)]
         for match in matches:
             match["date_label"] = format_date_mmdd_with_weekday(match["date"])
 
-        if name:
+        if display_member_names and matches:
+            match_ids = {match["id"] for match in matches}
+            display_name_set = set(display_member_names)
             for row in portal_get_attendance(team["id"]):
-                if row["member_name"] == name:
-                    attendance_dict[row.get("event_id")] = normalize_status(row["status"])
+                member_name = row.get("member_name")
+                event_id = row.get("event_id")
+                if event_id in match_ids and member_name in display_name_set:
+                    attendance_dict[(event_id, member_name)] = normalize_status(row["status"])
 
     return render_template(
         "public_attendance_month.html",
@@ -2335,6 +3120,8 @@ def public_attendance_month(public_id):
         selected_month=selected_month,
         matches=matches,
         name=name,
+        member_options=member_options,
+        display_member_names=display_member_names,
         attendance_dict=attendance_dict,
         error_message=error_message,
         edit_mode=bool(name),
@@ -2740,9 +3527,25 @@ def attendance_month():
         (session["user_id"],),
     )
     months = [row["month"] for row in c.fetchall()]
+    c.execute(
+        """
+        SELECT
+            a.name,
+            MIN(a.id) AS first_attendance_id
+        FROM attendance a
+        JOIN matches m ON m.id = a.match_id
+        WHERE m.user_id=?
+        GROUP BY a.name
+        ORDER BY first_attendance_id
+        """,
+        (session["user_id"],),
+    )
+    member_options = [row["name"] for row in c.fetchall() if row["name"]]
 
     selected_month = request.args.get("month")
-    name = request.args.get("name")
+    name = (request.args.get("name") or "").strip()
+    if name and name not in member_options:
+        name = ""
     error_message = ""
 
     if not selected_month and months:
@@ -2751,11 +3554,16 @@ def attendance_month():
     if request.method == "POST":
         selected_month = request.form.get("month") or selected_month
         name = request.form.get("name", "").strip()
+        filter_name = request.form.get("filter_name", "").strip()
+        if filter_name and filter_name not in member_options:
+            filter_name = ""
         match_id = request.form["match_id"]
         status = normalize_status(request.form["status"])
 
         if not name:
-            error_message = "名前を入力してから出欠を登録してください。"
+            error_message = "メンバーを選択してから出欠を登録してください。"
+        elif name not in member_options:
+            error_message = "選択したメンバーは登録されていません。"
         else:
             c.execute(
                 "SELECT id FROM matches WHERE id=? AND user_id=?",
@@ -2777,9 +3585,18 @@ def attendance_month():
             )
 
             conn.commit()
+            conn.close()
+            return redirect(
+                url_for(
+                    "attendance_month",
+                    month=selected_month or "",
+                    name=filter_name or "",
+                )
+            )
 
     matches = []
     attendance_dict = {}
+    display_member_names = [name] if name else member_options
 
     if selected_month:
         c.execute(
@@ -2795,18 +3612,21 @@ def attendance_month():
             match_data["date_label"] = format_date_mmdd_with_weekday(row["date"])
             matches.append(match_data)
 
-        if name:
+        if display_member_names:
+            placeholders = ",".join("?" for _ in display_member_names)
             c.execute(
-                """
-            SELECT a.match_id, a.status
+                f"""
+            SELECT a.match_id, a.name, a.status
             FROM attendance a
             JOIN matches m ON m.id = a.match_id
-            WHERE m.user_id=? AND a.name=?
+            WHERE m.user_id=?
+              AND substr(m.date,1,7)=?
+              AND a.name IN ({placeholders})
             """,
-                (session["user_id"], name),
+                [session["user_id"], selected_month, *display_member_names],
             )
             attendance_dict = {
-                row["match_id"]: normalize_status(row["status"]) for row in c.fetchall()
+                (row["match_id"], row["name"]): normalize_status(row["status"]) for row in c.fetchall()
             }
 
     conn.close()
@@ -2817,6 +3637,8 @@ def attendance_month():
         selected_month=selected_month,
         matches=matches,
         name=name,
+        member_options=member_options,
+        display_member_names=display_member_names,
         attendance_dict=attendance_dict,
         error_message=error_message,
         edit_mode=bool(name),
