@@ -5,26 +5,43 @@
 {% block head_extra %}
 <style>
 .month-tabs {
+  --month-tab-width: 112px;
+  --month-tab-gap: 10px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  overflow: hidden;
+  width: calc(var(--month-tab-width) * 3 + var(--month-tab-gap) * 2);
+  max-width: calc(var(--month-tab-width) * 3 + var(--month-tab-gap) * 2);
   margin-bottom: 0;
   align-items: flex-end;
 }
+.month-tabs-track {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--month-tab-gap);
+  will-change: transform;
+  transition: transform 0.28s ease;
+}
 .month-tab {
-  width: auto;
-  min-width: 98px;
-  padding: 8px 14px 14px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--month-tab-width);
+  min-width: var(--month-tab-width);
+  max-width: var(--month-tab-width);
+  padding: 11px 14px;
+  font-size: 1.12rem;
+  line-height: 1.1;
   border-radius: 6px 6px 0 0;
-  border: 1px solid #6a4a2a;
+  border: 1px solid #2f3640;
   background:
     repeating-linear-gradient(
       -12deg,
-      rgba(255, 255, 255, 0.06) 0 2px,
-      rgba(0, 0, 0, 0.05) 2px 4px
+      rgba(255, 255, 255, 0.04) 0 2px,
+      rgba(0, 0, 0, 0.18) 2px 4px
     ),
-    linear-gradient(180deg, #8a6438 0%, #5f4427 100%);
-  color: #f3e4c4;
+    linear-gradient(180deg, #2d333b 0%, #1b2026 100%);
+  color: #d7dde6;
   font-weight: 700;
   letter-spacing: 0.02em;
   cursor: pointer;
@@ -33,23 +50,22 @@
   transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
 }
 .month-tab.active {
-  border-color: #3f5a2d;
+  border-color: #2f6d44;
   background:
     repeating-linear-gradient(
       -12deg,
-      rgba(255, 255, 255, 0.06) 0 2px,
-      rgba(0, 0, 0, 0.05) 2px 4px
+      rgba(255, 255, 255, 0.05) 0 2px,
+      rgba(0, 0, 0, 0.18) 2px 4px
     ),
-    linear-gradient(180deg, #5f7a43 0%, #3e542d 100%);
-  color: #eef7d7;
-  transform: translateY(-3px);
+    linear-gradient(180deg, #2f7a4f 0%, #1f5a3a 100%);
+  color: #edf9f1;
   box-shadow: 0 10px 16px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 .month-tab:hover {
   filter: brightness(1.06) contrast(1.04);
 }
 .month-tab:focus-visible {
-  outline: 2px solid #d9b16f;
+  outline: 2px solid #6ac18d;
   outline-offset: 2px;
 }
 .month-pane {
@@ -60,6 +76,37 @@
 }
 .month-pane .table-wrap {
   margin-top: 0;
+}
+.month-pane .table-wrap .events-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  border-radius: 0;
+  overflow: visible;
+  background: #11151b;
+}
+.events-table thead th {
+  border: 1px solid #2f6d44;
+  background:
+    linear-gradient(180deg, #3b8f5f 0%, #2a6d48 100%);
+  color: #f2fff6;
+  font-weight: 700;
+  text-shadow: none;
+  box-shadow: none;
+}
+.events-table thead th:first-child {
+  border-top-left-radius: 0;
+}
+.events-table thead th:last-child {
+  border-top-right-radius: 0;
+}
+.events-table tbody td {
+  border: 1px solid #2f3946;
+  background: #11151b;
+  color: #e5e7eb;
+}
+.events-table tbody tr:hover td {
+  background: #1b222c;
 }
 .events-table .col-select {
   width: 56px;
@@ -229,9 +276,11 @@
 
     {% if months %}
     <div class="month-tabs">
+      <div class="month-tabs-track">
       {% for month in months %}
       <button type="button" class="month-tab {% if month == selected_month %}active{% endif %}" data-month="{{ month }}">{{ month }}</button>
       {% endfor %}
+      </div>
     </div>
 
     {% for month in months %}
@@ -285,6 +334,9 @@
 (() => {
   const tabs = document.querySelectorAll('.month-tab');
   const panes = document.querySelectorAll('.month-pane');
+  const tabsContainer = document.querySelector('.month-tabs');
+  const tabsTrack = document.querySelector('.month-tabs-track');
+  const tabList = Array.from(tabs);
   const selectedEventIdsInput = document.getElementById('selected-event-ids');
   const listMonthInput = document.getElementById('list-month');
   const editorMonthInput = document.getElementById('editor-month');
@@ -294,9 +346,35 @@
   const deleteButton = document.querySelector('button[name="action"][value="delete_event"]');
   const dateInputs = document.querySelectorAll('.js-date-picker');
 
-  const activateMonth = (month) => {
+  const slideTabsForMonth = (month, { isInitial = false } = {}) => {
+    if (!tabsContainer || !tabsTrack) return;
+    const currentIndex = tabList.findIndex((tab) => tab.dataset.month === month);
+    if (currentIndex < 0) return;
+
+    const anchorIndex = currentIndex === 0 ? 0 : currentIndex - 1;
+    const anchorTab = tabList[anchorIndex];
+    if (!anchorTab) return;
+
+    const targetLeft = anchorTab.offsetLeft;
+    const maxSlide = Math.max(0, tabsTrack.scrollWidth - tabsContainer.clientWidth);
+    const clampedLeft = Math.min(Math.max(0, targetLeft), maxSlide);
+
+    if (isInitial) {
+      tabsTrack.style.transition = 'none';
+      tabsTrack.style.transform = `translateX(${-clampedLeft}px)`;
+      requestAnimationFrame(() => {
+        tabsTrack.style.transition = '';
+      });
+      return;
+    }
+
+    tabsTrack.style.transform = `translateX(${-clampedLeft}px)`;
+  };
+
+  const activateMonth = (month, options = {}) => {
     tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.month === month));
     panes.forEach((pane) => pane.classList.toggle('active', pane.dataset.pane === month));
+    slideTabsForMonth(month, options);
     if (listMonthInput) listMonthInput.value = month;
     if (editorMonthInput) editorMonthInput.value = month;
     clearSelection();
@@ -350,7 +428,7 @@
 
   if (tabs.length) {
     const activeTab = Array.from(tabs).find((tab) => tab.classList.contains('active')) || tabs[0];
-    activateMonth(activeTab.dataset.month);
+    activateMonth(activeTab.dataset.month, { isInitial: true });
   } else {
     updateBulkButtons();
   }

@@ -88,6 +88,9 @@
   min-width: 0;
   table-layout: fixed;
   font-size: clamp(12px, 2.8vw, 14px);
+  border-collapse: collapse;
+  border-spacing: 0;
+  background: #11151b;
 }
 .member-table th,
 .member-table td {
@@ -95,6 +98,20 @@
   vertical-align: middle;
   padding: clamp(6px, 1.7vw, 10px) clamp(5px, 1.5vw, 9px);
   text-align: left;
+  border: 1px solid #2f3946;
+}
+.member-table thead th {
+  border-color: #2f6d44;
+  background: linear-gradient(180deg, #3b8f5f 0%, #2a6d48 100%);
+  color: #f2fff6;
+  font-weight: 700;
+}
+.member-table tbody td {
+  background: #11151b;
+  color: #e5e7eb;
+}
+.member-table tbody tr:hover td {
+  background: #1b222c;
 }
 .member-table .col-select {
   width: 56px;
