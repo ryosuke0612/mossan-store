@@ -56,12 +56,21 @@
   align-items: center;
   margin-bottom: 12px;
 }
+.member-actions .btn:disabled {
+  background: transparent !important;
+  border-color: #3a3a3a !important;
+  color: #666 !important;
+  cursor: not-allowed;
+}
   .member-actions .arrow-btn {
-    min-width: 44px;
-    padding-left: 0;
-    padding-right: 0;
-    font-size: 20px;
+    min-width: auto;
+    padding: 0 6px;
+    font-size: 26px;
     font-weight: 700;
+    line-height: 1;
+    border: none;
+    border-radius: 0;
+    background: transparent;
   }
   .member-actions .delete-btn {
     margin-left: 4px;
@@ -76,7 +85,8 @@
 }
 .member-table {
   width: 100%;
-  table-layout: auto;
+  min-width: 0;
+  table-layout: fixed;
   font-size: clamp(12px, 2.8vw, 14px);
 }
 .member-table th,
@@ -84,35 +94,34 @@
   white-space: nowrap;
   vertical-align: middle;
   padding: clamp(6px, 1.7vw, 10px) clamp(5px, 1.5vw, 9px);
-  overflow: hidden;
+  text-align: left;
 }
-.member-name-cell {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  max-width: 100%;
+.member-table .col-select {
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+  text-align: center;
 }
-.member-name-cell span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.member-table th.col-select,
+.member-table td.col-select {
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+}
+.member-table .col-member,
+.member-table .col-status {
   white-space: nowrap;
-  max-width: 10ch;
+  text-align: left;
 }
-.member-table th:nth-child(1),
-.member-table td:nth-child(1) {
-  width: 1%;
-  white-space: nowrap;
+.member-table .col-member {
+  width: calc(100% - 200px);
 }
-.member-table th:nth-child(2),
-.member-table td:nth-child(2) {
-  width: 1%;
-  white-space: nowrap;
+.member-table .col-status {
+  width: 144px;
 }
 .member-checkbox {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 auto;
+  width: auto;
+  padding: 0;
 }
 .member-status-wrap {
   display: inline-flex;
@@ -147,7 +156,7 @@
   padding: 4px 16px 4px 6px;
 }
 .table-wrap.member-table-wrap {
-  overflow-x: hidden;
+  overflow-x: auto;
 }
 @media (max-width: 760px) {
   .member-summary {
@@ -157,12 +166,6 @@
   .member-table td {
     padding: 8px 6px;
     font-size: clamp(11px, 3.4vw, 13px);
-  }
-  .member-name-cell {
-    gap: 8px;
-  }
-  .status-select {
-    width: 100%;
   }
 }
 @media (max-width: 520px) {
@@ -257,9 +260,9 @@
     <input type="hidden" name="action" id="moveAction" value="">
     <input type="hidden" name="selected_member_id" id="moveSelectedMemberId" value="{{ selected_member_id or '' }}">
     <input type="hidden" name="scroll_y" id="moveScrollY" value="{{ scroll_y or '' }}">
-    <button type="button" class="btn secondary arrow-btn" data-move="up" aria-label="上へ移動">↑</button>
-    <button type="button" class="btn secondary arrow-btn" data-move="down" aria-label="下へ移動">↓</button>
-    <button type="button" class="btn danger delete-btn" id="deleteSelectedMemberBtn">削除</button>
+    <button type="button" class="btn secondary arrow-btn" data-move="up" aria-label="上へ移動" disabled>▲</button>
+    <button type="button" class="btn secondary arrow-btn" data-move="down" aria-label="下へ移動" disabled>▼</button>
+    <button type="button" class="btn danger delete-btn" id="deleteSelectedMemberBtn" disabled>削除</button>
   </form>
 
   <div class="member-guidance">
@@ -274,26 +277,25 @@
       <table class="member-table">
         <thead>
           <tr>
-            <th>メンバー</th>
-            <th>ステータス</th>
+            <th class="col-select">選択</th>
+            <th class="col-member">メンバー</th>
+            <th class="col-status">ステータス</th>
           </tr>
         </thead>
         <tbody>
           {% for member in members %}
           <tr data-member-id="{{ member['id'] }}">
-            <td>
-              <div class="member-name-cell">
-                <input
-                  class="member-checkbox"
-                  type="checkbox"
-                  name="selected_member_checkbox"
-                  value="{{ member['id'] }}"
-                  {% if selected_member_id == member['id'] %}checked{% endif %}
-                >
-                <span>{{ member["name"] }}</span>
-              </div>
+            <td class="col-select">
+              <input
+                class="member-checkbox"
+                type="checkbox"
+                name="selected_member_checkbox"
+                value="{{ member['id'] }}"
+                {% if selected_member_id == member['id'] %}checked{% endif %}
+              >
             </td>
-            <td>
+            <td class="col-member">{{ member["name"] }}</td>
+            <td class="col-status">
               <div class="member-status-wrap">
                 <span class="status-label {% if member['is_active'] %}active{% else %}inactive{% endif %}" id="statusLabel{{ member['id'] }}">
                   <span class="status-dot"></span>
@@ -328,8 +330,10 @@
   const moveScrollY = document.getElementById('moveScrollY');
   const statusScrollY = document.getElementById('statusScrollY');
   const statusSelects = Array.from(document.querySelectorAll('.status-select'));
+  const moveButtons = moveForm ? Array.from(moveForm.querySelectorAll('[data-move]')) : [];
   const activeCountEl = document.getElementById('activeMembersCount');
   const inactiveCountEl = document.getElementById('inactiveMembersCount');
+  const deleteSelectedMemberBtn = document.getElementById('deleteSelectedMemberBtn');
 
   function getSelectedMemberId() {
     const checked = checkboxes.find((checkbox) => checkbox.checked);
@@ -343,6 +347,17 @@
     }
     if (statusSelectedMemberId) {
       statusSelectedMemberId.value = selectedId;
+    }
+    updateActionButtons();
+  }
+
+  function updateActionButtons() {
+    const hasSelection = Boolean(getSelectedMemberId());
+    moveButtons.forEach((button) => {
+      button.disabled = !hasSelection;
+    });
+    if (deleteSelectedMemberBtn) {
+      deleteSelectedMemberBtn.disabled = !hasSelection;
     }
   }
 
@@ -385,7 +400,7 @@
   });
 
   if (moveForm) {
-    moveForm.querySelectorAll('[data-move]').forEach((button) => {
+    moveButtons.forEach((button) => {
       button.addEventListener('click', () => {
         syncSelectedMember();
         if (!moveSelectedMemberId.value) {
@@ -399,7 +414,6 @@
     });
   }
 
-  const deleteSelectedMemberBtn = document.getElementById('deleteSelectedMemberBtn');
   if (deleteSelectedMemberBtn && moveForm) {
     deleteSelectedMemberBtn.addEventListener('click', () => {
       syncSelectedMember();
@@ -457,6 +471,7 @@
     statusScrollY.value = String(window.scrollY || window.pageYOffset || 0);
   }
   syncSelectedMember();
+  updateActionButtons();
   recalcCounts();
 })();
 </script>

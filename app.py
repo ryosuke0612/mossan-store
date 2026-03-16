@@ -736,6 +736,37 @@ def portal_deactivate_member(team_id, member_id):
     return updated
 
 
+def portal_delete_member_by_id(team_id, member_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT name
+        FROM portal_members
+        WHERE team_id=? AND id=?
+        """,
+        (team_id, member_id),
+    )
+    row = c.fetchone()
+    if not row:
+        conn.close()
+        return False
+
+    member_name = row["name"]
+    c.execute(
+        "DELETE FROM portal_members WHERE team_id=? AND id=?",
+        (team_id, member_id),
+    )
+    c.execute(
+        "DELETE FROM portal_attendance WHERE team_id=? AND member_name=?",
+        (team_id, member_name),
+    )
+    _normalize_member_rows(c, team_id)
+    conn.commit()
+    conn.close()
+    return True
+
+
 def portal_move_member(team_id, member_id, direction):
     direction_value = (direction or "").strip().lower()
     if direction_value not in {"up", "down"}:
@@ -2608,7 +2639,7 @@ def admin_team_members(team_id):
         elif action == "delete_selected_member":
             if selected_member_id is None:
                 error_message = "削除するメンバーを1名選択してください。"
-            elif portal_deactivate_member(team_id, selected_member_id):
+            elif portal_delete_member_by_id(team_id, selected_member_id):
                 success_message = "メンバーを削除しました。"
             else:
                 error_message = "対象メンバーが見つかりません。"
@@ -2700,7 +2731,7 @@ def admin_team_events(team_id):
             opponent = request.form.get("opponent", "").strip()
             place = request.form.get("place", "").strip()
             if not date or not opponent or not place:
-                error_message = "日付・対戦相手・場所は必須です。"
+                error_message = "日付・内容・場所は必須です。"
             elif not is_valid_10min_time(start_time) or not is_valid_10min_time(end_time):
                 error_message = "開始/終了時刻は10分単位で入力してください。"
             elif action == "add_event":
@@ -2892,9 +2923,9 @@ def api_delete_member(team_id, member_id):
     if team_error == "forbidden":
         return {"error": "forbidden"}, 403
 
-    if not portal_deactivate_member(team["id"], member_id):
+    if not portal_delete_member_by_id(team["id"], member_id):
         return {"error": "member_not_found"}, 404
-    return {"status": "deactivated"}
+    return {"status": "deleted"}
 
 
 @app.route("/admin/api/teams/<int:team_id>/members/reorder", methods=["POST"])

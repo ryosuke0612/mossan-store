@@ -7,28 +7,59 @@
 .month-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 0;
+  align-items: flex-end;
 }
 .month-tab {
   width: auto;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid #4d4d4d;
-  background: #111;
-  color: #ddd;
+  min-width: 98px;
+  padding: 8px 14px 14px;
+  border-radius: 6px 6px 0 0;
+  border: 1px solid #6a4a2a;
+  background:
+    repeating-linear-gradient(
+      -12deg,
+      rgba(255, 255, 255, 0.06) 0 2px,
+      rgba(0, 0, 0, 0.05) 2px 4px
+    ),
+    linear-gradient(180deg, #8a6438 0%, #5f4427 100%);
+  color: #f3e4c4;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   cursor: pointer;
+  position: relative;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
 }
 .month-tab.active {
-  border-color: #ff4b4b;
-  background: #3d0d0d;
-  color: #fff;
+  border-color: #3f5a2d;
+  background:
+    repeating-linear-gradient(
+      -12deg,
+      rgba(255, 255, 255, 0.06) 0 2px,
+      rgba(0, 0, 0, 0.05) 2px 4px
+    ),
+    linear-gradient(180deg, #5f7a43 0%, #3e542d 100%);
+  color: #eef7d7;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 16px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+.month-tab:hover {
+  filter: brightness(1.06) contrast(1.04);
+}
+.month-tab:focus-visible {
+  outline: 2px solid #d9b16f;
+  outline-offset: 2px;
 }
 .month-pane {
   display: none;
 }
 .month-pane.active {
   display: block;
+}
+.month-pane .table-wrap {
+  margin-top: 0;
 }
 .events-table .col-select {
   width: 56px;
@@ -66,6 +97,23 @@
   border-color: #15803d;
   color: #fff;
 }
+.time-split {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+}
+.time-split-sep {
+  color: #bbb;
+  font-weight: 700;
+}
+.js-date-picker {
+  color-scheme: dark;
+}
+.js-date-picker::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.2);
+  opacity: 1;
+}
 </style>
 {% endblock %}
 
@@ -99,24 +147,58 @@
     <input type="hidden" name="action" value="{% if editing_event %}update_event{% else %}add_event{% endif %}">
     <input type="hidden" name="month" id="editor-month" value="{{ selected_month }}">
     <input type="hidden" name="editing_event_id" value="{{ editing_event_id or '' }}">
+    {% set default_start = editing_event['start_time'] if editing_event else '12:00' %}
+    {% set default_end = editing_event['end_time'] if editing_event else '12:00' %}
+    {% set start_hour = default_start[0:2] %}
+    {% set start_minute = default_start[3:5] %}
+    {% set end_hour = default_end[0:2] %}
+    {% set end_minute = default_end[3:5] %}
     <div class="grid-3">
       <div class="field">
         <label>日付</label>
-        <input type="date" name="date" value="{{ editing_event['date'] if editing_event else '' }}" required>
+        <input class="js-date-picker" type="date" name="date" value="{{ editing_event['date'] if editing_event else '' }}" required>
       </div>
       <div class="field">
         <label>開始時刻</label>
-        <input type="time" name="start_time" step="600" value="{{ editing_event['start_time'] if editing_event else '12:00' }}" required>
+        <div class="time-split">
+          <select name="start_time_hour" required>
+            {% for hour in range(24) %}
+            {% set hour_text = '%02d'|format(hour) %}
+            <option value="{{ hour_text }}" {% if hour_text == start_hour %}selected{% endif %}>{{ hour_text }}時</option>
+            {% endfor %}
+          </select>
+          <span class="time-split-sep">:</span>
+          <select name="start_time_minute" required>
+            {% for minute in range(0, 60, 10) %}
+            {% set minute_text = '%02d'|format(minute) %}
+            <option value="{{ minute_text }}" {% if minute_text == start_minute %}selected{% endif %}>{{ minute_text }}分</option>
+            {% endfor %}
+          </select>
+        </div>
       </div>
       <div class="field">
         <label>終了時刻</label>
-        <input type="time" name="end_time" step="600" value="{{ editing_event['end_time'] if editing_event else '12:00' }}" required>
+        <div class="time-split">
+          <select name="end_time_hour" required>
+            {% for hour in range(24) %}
+            {% set hour_text = '%02d'|format(hour) %}
+            <option value="{{ hour_text }}" {% if hour_text == end_hour %}selected{% endif %}>{{ hour_text }}時</option>
+            {% endfor %}
+          </select>
+          <span class="time-split-sep">:</span>
+          <select name="end_time_minute" required>
+            {% for minute in range(0, 60, 10) %}
+            {% set minute_text = '%02d'|format(minute) %}
+            <option value="{{ minute_text }}" {% if minute_text == end_minute %}selected{% endif %}>{{ minute_text }}分</option>
+            {% endfor %}
+          </select>
+        </div>
       </div>
     </div>
     <div class="grid-2">
       <div class="field">
-        <label>対戦相手</label>
-        <input type="text" name="opponent" value="{{ editing_event['opponent'] if editing_event else '' }}" placeholder="対戦相手を入力" required>
+        <label>内容</label>
+        <input type="text" name="opponent" value="{{ editing_event['opponent'] if editing_event else '' }}" placeholder="イベントを入力" required>
       </div>
       <div class="field">
         <label>場所</label>
@@ -163,7 +245,7 @@
               <th class="col-select">選択</th>
               <th class="col-date">日付</th>
               <th class="col-time">時間</th>
-              <th>対戦相手</th>
+              <th>内容</th>
               <th>場所</th>
             </tr>
           </thead>
@@ -194,8 +276,7 @@
 </section>
 
 <div class="btn-row" style="margin-top:16px;">
-  <a class="btn secondary" href="{{ url_for('admin_dashboard') }}">管理ダッシュボードに戻る</a>
-  <a class="btn secondary" href="{{ url_for('admin_team_members', team_id=team['id']) }}">メンバー管理へ</a>
+  <a class="btn secondary" href="{{ url_for('admin_dashboard') }}">ダッシュボードに戻る</a>
 </div>
 {% endblock %}
 
@@ -211,6 +292,7 @@
   const editButton = document.querySelector('button[name="action"][value="start_edit"]');
   const duplicateButton = document.querySelector('button[name="action"][value="duplicate_event"]');
   const deleteButton = document.querySelector('button[name="action"][value="delete_event"]');
+  const dateInputs = document.querySelectorAll('.js-date-picker');
 
   const activateMonth = (month) => {
     tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.month === month));
@@ -254,6 +336,16 @@
 
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => activateMonth(tab.dataset.month));
+  });
+
+  dateInputs.forEach((input) => {
+    const openPicker = () => {
+      if (typeof input.showPicker === 'function') {
+        input.showPicker();
+      }
+    };
+    input.addEventListener('click', openPicker);
+    input.addEventListener('focus', openPicker);
   });
 
   if (tabs.length) {

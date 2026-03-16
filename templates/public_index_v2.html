@@ -15,28 +15,59 @@
 .month-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 0;
+  align-items: flex-end;
 }
 .month-tab {
   width: auto;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid #4d4d4d;
-  background: #111;
-  color: #ddd;
+  min-width: 98px;
+  padding: 8px 14px 14px;
+  border-radius: 6px 6px 0 0;
+  border: 1px solid #6a4a2a;
+  background:
+    repeating-linear-gradient(
+      -12deg,
+      rgba(255, 255, 255, 0.06) 0 2px,
+      rgba(0, 0, 0, 0.05) 2px 4px
+    ),
+    linear-gradient(180deg, #8a6438 0%, #5f4427 100%);
+  color: #f3e4c4;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   cursor: pointer;
+  position: relative;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
 }
 .month-tab.active {
-  border-color: #ff4b4b;
-  background: #3d0d0d;
-  color: #fff;
+  border-color: #3f5a2d;
+  background:
+    repeating-linear-gradient(
+      -12deg,
+      rgba(255, 255, 255, 0.06) 0 2px,
+      rgba(0, 0, 0, 0.05) 2px 4px
+    ),
+    linear-gradient(180deg, #5f7a43 0%, #3e542d 100%);
+  color: #eef7d7;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 16px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+.month-tab:hover {
+  filter: brightness(1.06) contrast(1.04);
+}
+.month-tab:focus-visible {
+  outline: 2px solid #d9b16f;
+  outline-offset: 2px;
 }
 .month-pane {
   display: none;
 }
 .month-pane.active {
   display: block;
+}
+.month-pane .table-wrap {
+  margin-top: 0;
 }
 .inline-check {
   width: auto;
@@ -99,6 +130,73 @@
   background: #15803d;
   border-color: #15803d;
 }
+.wild-action-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 41px;
+  min-height: 41px;
+  padding: 10px 14px;
+  line-height: 1;
+  border-radius: 4px;
+  border: 1px solid #4a4f55;
+  color: #eef2f6;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.32);
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.05) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #5f666e 0%, #3d434a 100%);
+}
+.wild-action-btn:hover {
+  filter: brightness(1.06) contrast(1.04);
+}
+.wild-action-btn::before,
+.wild-action-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(22, 24, 27, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-50%);
+}
+.wild-action-btn::before {
+  left: 8px;
+}
+.wild-action-btn::after {
+  right: 8px;
+}
+.wild-action-btn.bulk-check {
+  border-color: #555d66;
+  color: #f4f8fc;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.05) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #66707a 0%, #454c55 100%);
+}
+.wild-action-btn.csv-export-btn {
+  border-color: #2f5b3f;
+  color: #e9ffef;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #2f7a4f 0%, #205838 100%);
+}
 .member-head {
   width: 110px;
   min-width: 110px;
@@ -152,7 +250,18 @@
 }
 .member-filter-form .field {
   margin: 0;
-  min-width: 220px;
+  min-width: 148px;
+  max-width: 148px;
+}
+.member-filter-form select {
+  height: 41px;
+  min-height: 41px;
+}
+.top-controls {
+  align-items: end;
+}
+.top-controls .btn {
+  margin-bottom: 0;
 }
 .inline-status-select {
   width: 100%;
@@ -179,28 +288,24 @@
 <h1 class="page-title">{{ team_name or "Guest" }}</h1>
 
 <section class="panel">
-  <div class="action-row" style="margin-bottom:10px;">
-    <form method="GET" class="member-filter-form">
-      <input type="hidden" name="month" id="member-filter-month" value="{{ active_month or '' }}">
-      <div class="field">
-        <label>メンバー表示</label>
-        <select name="name" onchange="this.form.submit()">
-          <option value="">全員表示</option>
-          {% for member_name in member_options %}
-          <option value="{{ member_name }}" {% if selected_member_filter == member_name %}selected{% endif %}>{{ member_name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-    </form>
-  </div>
-
-  <form method="POST" action="{{ url_for('public_bulk_match_action', public_id=public_id) }}">
+  <form method="POST" action="{{ url_for('public_bulk_match_action', public_id=public_id) }}" id="bulk-action-form">
     <input type="hidden" name="current_month" id="current-month-input" value="{{ active_month or '' }}">
     <div class="action-rows">
-      <div class="action-row">
-        <button type="submit" name="action" value="attendance_check" class="btn bulk-action-btn bulk-check" disabled>出欠確認</button>
+      <div class="action-row top-controls">
+        <div class="member-filter-form">
+          <div class="field">
+            <label>メンバー表示</label>
+            <select id="member-filter-select" name="name">
+              <option value="">全員表示</option>
+              {% for member_name in member_options %}
+              <option value="{{ member_name }}" {% if selected_member_filter == member_name %}selected{% endif %}>{{ member_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <button type="submit" name="action" value="attendance_check" class="btn bulk-action-btn bulk-check wild-action-btn" disabled>出欠確認</button>
         {% if months %}
-        <a id="csv-export-link" href="{{ url_for('public_export_attendance_csv', public_id=public_id) }}?month={{ active_month or months[0] }}" class="btn csv-export-btn">CSV出力</a>
+        <a id="csv-export-link" href="{{ url_for('public_export_attendance_csv', public_id=public_id) }}?month={{ active_month or months[0] }}" class="btn csv-export-btn wild-action-btn">CSV出力</a>
         {% endif %}
       </div>
     </div>
@@ -218,10 +323,12 @@
       {% set month_members = members_by_month.get(month, []) %}
       <div class="table-wrap">
         <table class="events-table">
+          {% set show_summary_col = not selected_member_filter %}
           <thead>
             <tr>
               <th class="col-select">選択</th>
               <th class="col-event">日時・イベント内容</th>
+              {% if show_summary_col %}
               <th class="col-summary">
                 <div class="summary-head-title">出欠集計</div>
                 <div class="summary-head-marks">
@@ -230,6 +337,7 @@
                   <span>△</span>
                 </div>
               </th>
+              {% endif %}
               {% for member in month_members %}
               <th class="member-head">
                 <div class="member-name">{{ member }}</div>
@@ -245,6 +353,7 @@
                 <div>{{ e["date_label"] }} {{ e["start_time"] }}〜{{ e["end_time"] }}</div>
                 <div>{{ e["opponent"] }}@{{ e["place"] }}</div>
               </td>
+              {% if show_summary_col %}
               <td class="col-summary summary-lines">
                 {% set ns = namespace(join_count=0, absent_count=0, undecided_count=0) %}
                 {% for member in month_members %}
@@ -263,6 +372,7 @@
                   <span>{{ ns.undecided_count }}</span>
                 </div>
               </td>
+              {% endif %}
               {% for member in month_members %}
               {% set status = attendance_dict.get((e["id"], member), "") %}
               <td class="member-cell">
@@ -302,7 +412,7 @@
   const tabs = document.querySelectorAll('.month-tab');
   const panes = document.querySelectorAll('.month-pane');
   const currentMonthInput = document.getElementById('current-month-input');
-  const memberFilterMonthInput = document.getElementById('member-filter-month');
+  const memberFilterSelect = document.getElementById('member-filter-select');
   const csvExportLink = document.getElementById('csv-export-link');
   const selectedBoxes = document.querySelectorAll('input[name="selected_ids"]');
   const bulkActionButtons = document.querySelectorAll('.bulk-action-btn');
@@ -320,7 +430,6 @@
     tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.month === month));
     panes.forEach((pane) => pane.classList.toggle('active', pane.dataset.pane === month));
     if (currentMonthInput) currentMonthInput.value = month;
-    if (memberFilterMonthInput) memberFilterMonthInput.value = month;
     if (csvExportLink) {
       csvExportLink.href = `{{ url_for('public_export_attendance_csv', public_id=public_id) }}?month=${encodeURIComponent(month)}`;
     }
@@ -335,6 +444,14 @@
 
   selectedBoxes.forEach((box) => box.addEventListener('change', updateBulkButtons));
   tabs.forEach((tab) => tab.addEventListener('click', () => activate(tab.dataset.month)));
+  if (memberFilterSelect) {
+    memberFilterSelect.addEventListener('change', () => {
+      const month = (currentMonthInput && currentMonthInput.value) || initialMonth || '';
+      const name = memberFilterSelect.value || '';
+      const targetUrl = `{{ url_for('member_team_page', public_id=public_id) }}?month=${encodeURIComponent(month)}&name=${encodeURIComponent(name)}`;
+      window.location.href = targetUrl;
+    });
+  }
   attendanceInlineSelects.forEach((select) => {
     select.addEventListener('change', () => {
       sessionStorage.setItem(storageKey, String(window.scrollY));

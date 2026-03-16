@@ -1,6 +1,6 @@
 {% extends "admin_base_clean.html" %}
 
-{% block title %}管理者トップ | Mossan Store{% endblock %}
+{% block title %}ダッシュボード | Mossan Store{% endblock %}
 
 {% block head_extra %}
 <style>
@@ -122,6 +122,61 @@
   font-size: 13px;
   line-height: 1.2;
 }
+.team-manage-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.fancy-admin-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 170px;
+  padding: 10px 40px;
+  border-radius: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #f7f7f7;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 2px 8px rgba(0, 0, 0, 0.28);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+.fancy-admin-btn.gold {
+  background: linear-gradient(90deg, #b87800 0 76%, #d78d00 76% 100%);
+  color: #fff7dc;
+}
+.fancy-admin-btn.rose {
+  background: linear-gradient(90deg, #9f1d1d 0 76%, #b62525 76% 100%);
+  color: #ffe6e6;
+}
+.fancy-admin-btn::before,
+.fancy-admin-btn::after {
+  content: "\2699";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  line-height: 1;
+  color: #eceff3;
+  opacity: 0.95;
+}
+.fancy-admin-btn::before {
+  left: 13px;
+}
+.fancy-admin-btn::after {
+  right: 13px;
+}
+.fancy-admin-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+.fancy-admin-btn:active {
+  transform: translateY(0);
+}
 @media (max-width: 900px) {
   .dashboard-top {
     grid-template-columns: 1fr;
@@ -131,7 +186,7 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="page-title">管理者トップ</h1>
+<h1 class="page-title">ダッシュボード</h1>
 
 <div class="dashboard-stack">
   {% if error_message %}
@@ -143,7 +198,7 @@
 
   <div class="dashboard-top">
     <section class="panel dashboard-panel">
-      <h2>管理情報</h2>
+      <h2>アカウント情報</h2>
       <div class="info-grid">
         <div class="info-item">
           <label>ログイン中のメールアドレス</label>
@@ -204,12 +259,12 @@
             </div>
           </div>
           <div class="team-meta-item">
-            <label>メンバー管理</label>
-            <div>
-              <a class="btn secondary" href="{{ url_for('admin_team_members', team_id=team['id']) }}">
+            <label>メンバー・イベント管理</label>
+            <div class="team-manage-actions">
+              <a class="fancy-admin-btn gold" href="{{ url_for('admin_team_members', team_id=team['id']) }}">
                 メンバー設定
               </a>
-              <a class="btn secondary" href="{{ url_for('admin_team_events', team_id=team['id']) }}">
+              <a class="fancy-admin-btn rose" href="{{ url_for('admin_team_events', team_id=team['id']) }}">
                 イベント管理
               </a>
             </div>
