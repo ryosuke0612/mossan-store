@@ -133,46 +133,67 @@
   align-items: center;
   justify-content: center;
   min-width: 170px;
-  padding: 10px 40px;
-  border-radius: 0;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  color: #f7f7f7;
-  font-weight: 900;
-  letter-spacing: 0.08em;
+  min-height: 41px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  border: 1px solid #4a4f55;
+  color: #eef2f6;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   text-decoration: none;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 2px 8px rgba(0, 0, 0, 0.28);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.32);
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.05) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #5f666e 0%, #3d434a 100%);
   transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
 }
 .fancy-admin-btn.gold {
-  background: linear-gradient(90deg, #b87800 0 76%, #d78d00 76% 100%);
-  color: #fff7dc;
+  border-color: #2f5b3f;
+  color: #e9ffef;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #2f7a4f 0%, #205838 100%);
 }
 .fancy-admin-btn.rose {
-  background: linear-gradient(90deg, #9f1d1d 0 76%, #b62525 76% 100%);
-  color: #ffe6e6;
+  border-color: #555d66;
+  color: #f4f8fc;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.05) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #66707a 0%, #454c55 100%);
 }
 .fancy-admin-btn::before,
 .fancy-admin-btn::after {
-  content: "\2699";
+  content: "";
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 15px;
-  line-height: 1;
-  color: #eceff3;
-  opacity: 0.95;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(22, 24, 27, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 .fancy-admin-btn::before {
-  left: 13px;
+  left: 8px;
 }
 .fancy-admin-btn::after {
-  right: 13px;
+  right: 8px;
 }
 .fancy-admin-btn:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.06);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 12px rgba(0, 0, 0, 0.35);
+  filter: brightness(1.06) contrast(1.04);
 }
 .fancy-admin-btn:active {
   transform: translateY(0);
@@ -180,6 +201,19 @@
 @media (max-width: 900px) {
   .dashboard-top {
     grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .team-manage-actions {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .fancy-admin-btn {
+    min-width: 0;
+    flex: 1 1 0;
+    padding: 9px 12px;
+    font-size: 14px;
+    letter-spacing: 0.02em;
   }
 }
 </style>

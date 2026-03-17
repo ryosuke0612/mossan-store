@@ -4,9 +4,36 @@
 
 {% block head_extra %}
 <style>
-.check-table { width: 100%; min-width: 0; max-width: 100%; table-layout: fixed; }
-.check-table th, .check-table td { width: 33.3333%; text-align: left; vertical-align: top; }
-.check-table td { height: 220px; }
+.check-table {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  border-spacing: 0;
+  background: #11151b;
+}
+.check-table th,
+.check-table td {
+  width: 33.3333%;
+  text-align: left;
+  vertical-align: top;
+  border: 1px solid #2f3946;
+}
+.check-table th {
+  border-color: #2f6d44;
+  background: linear-gradient(180deg, #3b8f5f 0%, #2a6d48 100%);
+  color: #f2fff6;
+  font-weight: 700;
+}
+.check-table td {
+  height: 220px;
+  background: #11151b;
+  color: #e5e7eb;
+}
+.check-table tbody tr:hover td {
+  background: #1b222c;
+}
 .member-list { margin: 0; padding: 0; list-style: none; }
 .member-list li { margin: 0 0 4px; word-break: break-word; }
 .check-wrap { overflow-x: hidden; }
