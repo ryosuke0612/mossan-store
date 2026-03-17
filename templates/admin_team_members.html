@@ -3,7 +3,20 @@
 {% block title %}メンバー管理 | Mossan Store{% endblock %}
 
 {% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
 <style>
+.dashboard-reggae-title {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.04em;
+  color: #ead7b3;
+}
+.dashboard-reggae-heading {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.02em;
+  color: #ead7b3;
+}
 .member-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -212,7 +225,7 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="page-title">メンバー管理</h1>
+<h1 class="page-title dashboard-reggae-title">メンバー管理</h1>
 
 <section class="panel">
   <div class="grid-2">
@@ -258,7 +271,7 @@
   <div class="notice success">{{ success_message }}</div>
   {% endif %}
 
-  <h2 style="margin-top: 0;">メンバー一括登録</h2>
+  <h2 class="dashboard-reggae-heading" style="margin-top: 0;">メンバー一括登録</h2>
   <form method="POST">
     <input type="hidden" name="action" value="add_members">
     <div class="member-editor">

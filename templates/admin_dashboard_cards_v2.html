@@ -3,6 +3,9 @@
 {% block title %}ダッシュボード | Mossan Store{% endblock %}
 
 {% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
 <style>
 .dashboard-stack {
   display: grid;
@@ -29,6 +32,16 @@
 .dashboard-panel h2 {
   margin-top: 0;
   margin-bottom: 16px;
+}
+.dashboard-reggae-title {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.04em;
+  color: #ead7b3;
+}
+.dashboard-reggae-heading {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.02em;
+  color: #ead7b3;
 }
 .dashboard-panel form {
   display: flex;
@@ -221,7 +234,7 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="page-title">ダッシュボード</h1>
+<h1 class="page-title dashboard-reggae-title">ダッシュボード</h1>
 
 <div class="dashboard-stack">
   {% if error_message %}
@@ -233,7 +246,7 @@
 
   <div class="dashboard-top">
     <section class="panel dashboard-panel">
-      <h2>アカウント情報</h2>
+      <h2 class="dashboard-reggae-heading">アカウント情報</h2>
       <div class="info-grid">
         <div class="info-item">
           <label>ログイン中のメールアドレス</label>
@@ -246,7 +259,7 @@
     </section>
 
     <section class="panel dashboard-panel">
-      <h2>チーム作成</h2>
+      <h2 class="dashboard-reggae-heading">チーム作成</h2>
       <form method="POST">
         <div class="field">
           <label for="team_name">新しいチーム名</label>
@@ -258,7 +271,7 @@
   </div>
 
   <section class="panel">
-    <h2 style="margin-top: 0;">作成済みチーム一覧</h2>
+    <h2 class="dashboard-reggae-heading" style="margin-top: 0;">作成済みチーム一覧</h2>
     {% if teams %}
     <div class="team-cards">
       {% for team in teams %}
@@ -297,7 +310,7 @@
             <label>メンバー・イベント管理</label>
             <div class="team-manage-actions">
               <a class="fancy-admin-btn gold" href="{{ url_for('admin_team_members', team_id=team['id']) }}">
-                メンバー設定
+                メンバー管理
               </a>
               <a class="fancy-admin-btn rose" href="{{ url_for('admin_team_events', team_id=team['id']) }}">
                 イベント管理

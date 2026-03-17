@@ -3,7 +3,20 @@
 {% block title %}イベント管理 | Mossan Store{% endblock %}
 
 {% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
 <style>
+.dashboard-reggae-heading {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.02em;
+  color: #ead7b3;
+}
+.dashboard-reggae-title {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.04em;
+  color: #ead7b3;
+}
 .month-tabs {
   --month-tab-width: 112px;
   --month-tab-gap: 10px;
@@ -165,10 +178,10 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="page-title">イベント管理</h1>
+<h1 class="page-title dashboard-reggae-title">イベント管理</h1>
 
 <section class="panel">
-  <h2 style="margin-top:0;">対象チーム</h2>
+  <h2 class="dashboard-reggae-heading" style="margin-top:0;">対象チーム</h2>
   <div class="grid-2">
     <div>
       <label>チーム名</label>
@@ -189,7 +202,7 @@
   <div class="notice success">{{ success_message }}</div>
   {% endif %}
 
-  <h2 style="margin-top:0;">{% if editing_event %}イベント編集{% else %}イベント登録{% endif %}</h2>
+  <h2 class="dashboard-reggae-heading" style="margin-top:0;">イベント登録</h2>
   <form method="POST" id="event-editor-form">
     <input type="hidden" name="action" value="{% if editing_event %}update_event{% else %}add_event{% endif %}">
     <input type="hidden" name="month" id="editor-month" value="{{ selected_month }}">
@@ -262,7 +275,7 @@
 </section>
 
 <section class="panel">
-  <h2 style="margin-top:0;">登録済みイベント</h2>
+  <h2 class="dashboard-reggae-heading" style="margin-top:0;">登録済みイベント</h2>
 
   <form method="POST" id="event-list-form">
     <input type="hidden" name="month" id="list-month" value="{{ selected_month }}">

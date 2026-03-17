@@ -1,0 +1,92 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 300" role="img" aria-label="dashboard wood logo" style="font-family:'Noto Sans JP','Yu Gothic','Meiryo',sans-serif;">
+  <defs>
+    <linearGradient id="woodTone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#efc99a"/>
+      <stop offset="0.52" stop-color="#d79d69"/>
+      <stop offset="1" stop-color="#b97b47"/>
+    </linearGradient>
+
+    <pattern id="grain" width="180" height="44" patternUnits="userSpaceOnUse">
+      <rect width="180" height="44" fill="none"/>
+      <path d="M0 8 C24 -2, 58 16, 90 8 C120 0, 152 16, 180 10" stroke="rgba(110,70,35,0.34)" stroke-width="2" fill="none"/>
+      <path d="M0 19 C28 9, 62 29, 94 19 C124 9, 156 29, 180 19" stroke="rgba(110,70,35,0.28)" stroke-width="1.8" fill="none"/>
+      <path d="M0 31 C24 23, 60 43, 92 33 C122 25, 154 43, 180 33" stroke="rgba(110,70,35,0.24)" stroke-width="1.6" fill="none"/>
+      <ellipse cx="52" cy="20" rx="10" ry="5" fill="none" stroke="rgba(100,62,30,0.22)" stroke-width="1.4"/>
+      <ellipse cx="138" cy="12" rx="8" ry="4" fill="none" stroke="rgba(100,62,30,0.2)" stroke-width="1.2"/>
+    </pattern>
+
+    <pattern id="logTexture" width="220" height="120" patternUnits="userSpaceOnUse">
+      <rect width="220" height="120" fill="none"/>
+
+      <g transform="translate(62 36) rotate(-10)">
+        <rect x="-52" y="-14" width="104" height="28" rx="14" fill="url(#woodTone)" stroke="#5a2720" stroke-width="4"/>
+        <circle cx="-52" cy="0" r="14" fill="#f3e29f" stroke="#5a2720" stroke-width="4"/>
+        <circle cx="52" cy="0" r="14" fill="#f3e29f" stroke="#5a2720" stroke-width="4"/>
+        <ellipse cx="-52" cy="0" rx="6" ry="3.3" fill="none" stroke="#8d7037" stroke-width="1.6"/>
+        <ellipse cx="52" cy="0" rx="6" ry="3.3" fill="none" stroke="#8d7037" stroke-width="1.6"/>
+      </g>
+
+      <g transform="translate(152 82) rotate(14)">
+        <rect x="-52" y="-14" width="104" height="28" rx="14" fill="url(#woodTone)" stroke="#5a2720" stroke-width="4"/>
+        <circle cx="-52" cy="0" r="14" fill="#f3e29f" stroke="#5a2720" stroke-width="4"/>
+        <circle cx="52" cy="0" r="14" fill="#f3e29f" stroke="#5a2720" stroke-width="4"/>
+        <ellipse cx="-52" cy="0" rx="6" ry="3.3" fill="none" stroke="#8d7037" stroke-width="1.6"/>
+        <ellipse cx="52" cy="0" rx="6" ry="3.3" fill="none" stroke="#8d7037" stroke-width="1.6"/>
+      </g>
+    </pattern>
+
+    <filter id="textShadow" x="-20%" y="-30%" width="160%" height="220%">
+      <feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#000" flood-opacity="0.42"/>
+    </filter>
+
+    <mask id="titleMask">
+      <rect width="1280" height="300" fill="black"/>
+      <g font-size="154" font-weight="900" fill="white">
+        <text x="64" y="188" transform="rotate(-4 120 188)">ダ</text>
+        <text x="210" y="188" transform="rotate(2 250 188)">ッ</text>
+        <text x="314" y="188" transform="rotate(-3 360 188)">シ</text>
+        <text x="456" y="188" transform="rotate(3 500 188)">ュ</text>
+        <text x="550" y="188" transform="rotate(-2 600 188)">ボ</text>
+        <text x="736" y="168" transform="rotate(-1 780 168)">ー</text>
+        <text x="866" y="188" transform="rotate(2 920 188)">ド</text>
+      </g>
+    </mask>
+  </defs>
+
+  <rect x="24" y="44" width="1228" height="212" rx="20" fill="rgba(0,0,0,0.1)"/>
+
+  <g filter="url(#textShadow)">
+    <rect width="1280" height="300" fill="url(#logTexture)" mask="url(#titleMask)"/>
+    <rect width="1280" height="300" fill="url(#grain)" mask="url(#titleMask)" opacity="0.78"/>
+
+    <g font-size="154" font-weight="900" fill="none" stroke="#4b1f1f" stroke-width="12" stroke-linejoin="round">
+      <text x="64" y="188" transform="rotate(-4 120 188)">ダ</text>
+      <text x="210" y="188" transform="rotate(2 250 188)">ッ</text>
+      <text x="314" y="188" transform="rotate(-3 360 188)">シ</text>
+      <text x="456" y="188" transform="rotate(3 500 188)">ュ</text>
+      <text x="550" y="188" transform="rotate(-2 600 188)">ボ</text>
+      <text x="736" y="168" transform="rotate(-1 780 168)">ー</text>
+      <text x="866" y="188" transform="rotate(2 920 188)">ド</text>
+    </g>
+
+    <g font-size="154" font-weight="900" fill="none" stroke="rgba(255,232,190,0.42)" stroke-width="2.4">
+      <text x="64" y="183" transform="rotate(-4 120 183)">ダ</text>
+      <text x="210" y="183" transform="rotate(2 250 183)">ッ</text>
+      <text x="314" y="183" transform="rotate(-3 360 183)">シ</text>
+      <text x="456" y="183" transform="rotate(3 500 183)">ュ</text>
+      <text x="550" y="183" transform="rotate(-2 600 183)">ボ</text>
+      <text x="736" y="163" transform="rotate(-1 780 163)">ー</text>
+      <text x="866" y="183" transform="rotate(2 920 183)">ド</text>
+    </g>
+  </g>
+
+  <g fill="#32363b">
+    <circle cx="112" cy="96" r="4"/><circle cx="156" cy="160" r="4"/>
+    <circle cx="256" cy="130" r="4"/><circle cx="282" cy="158" r="4"/>
+    <circle cx="378" cy="102" r="4"/><circle cx="414" cy="160" r="4"/>
+    <circle cx="500" cy="130" r="4"/><circle cx="532" cy="166" r="4"/>
+    <circle cx="636" cy="102" r="4"/><circle cx="676" cy="158" r="4"/>
+    <circle cx="786" cy="128" r="4"/>
+    <circle cx="930" cy="102" r="4"/><circle cx="968" cy="160" r="4"/>
+  </g>
+</svg>

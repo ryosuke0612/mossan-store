@@ -3,7 +3,15 @@
 {% block title %}出欠確認 | Mossan Store{% endblock %}
 
 {% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
 <style>
+.dashboard-reggae-title {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.04em;
+  color: #ead7b3;
+}
 .check-table {
   width: 100%;
   min-width: 0;
@@ -35,7 +43,7 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="page-title">出欠確認</h1>
+<h1 class="page-title dashboard-reggae-title">出欠確認</h1>
 
 <section class="panel">
   <div>{{ match["date_label"] }} {{ match["start_time"] }}〜{{ match["end_time"] }}</div>
