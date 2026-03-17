@@ -34,6 +34,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
   width: var(--month-tab-width);
   min-width: var(--month-tab-width);
   max-width: var(--month-tab-width);
@@ -310,6 +311,50 @@
 .inline-status-select.undecided {
   border-color: #c77900;
   color: #ffdca6;
+}
+@media (max-width: 640px) {
+  .top-controls {
+    flex-wrap: nowrap;
+    gap: 6px;
+    align-items: end;
+  }
+  .top-controls .member-filter-form {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .member-filter-form .field {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+  }
+  .member-filter-form select {
+    height: 36px;
+    min-height: 36px;
+    padding: 4px 8px;
+    font-size: 14px;
+  }
+  .top-controls .wild-action-btn {
+    height: 36px;
+    min-height: 36px;
+    padding: 8px 10px;
+    font-size: 14px;
+    letter-spacing: 0;
+    white-space: nowrap;
+  }
+  .top-controls .wild-action-btn::before,
+  .top-controls .wild-action-btn::after {
+    display: none;
+  }
+  .month-tabs {
+    width: 100%;
+    max-width: 100%;
+    --month-tab-gap: 6px;
+    --month-tab-width: calc((100% - (var(--month-tab-gap) * 2)) / 3);
+  }
+  .month-tab {
+    padding: 9px 6px;
+    font-size: 1rem;
+  }
 }
 </style>
 {% endblock %}
