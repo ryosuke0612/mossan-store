@@ -4,10 +4,34 @@
 
 {% block content %}
 <style>
+  .admin-list-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    background: #11151b;
+  }
+
   .admin-list-table th,
   .admin-list-table td {
     white-space: nowrap;
     width: 1%;
+    border: 1px solid #2f3946;
+    color: #e5e7eb;
+  }
+
+  .admin-list-table thead th {
+    border-color: #2f6d44;
+    background: linear-gradient(180deg, #3b8f5f 0%, #2a6d48 100%);
+    color: #f2fff6;
+    font-weight: 700;
+  }
+
+  .admin-list-table tbody td {
+    background: #11151b;
+  }
+
+  .admin-list-table tbody tr:hover td {
+    background: #1b222c;
   }
 
   .admin-list-table .extend-cell form,
