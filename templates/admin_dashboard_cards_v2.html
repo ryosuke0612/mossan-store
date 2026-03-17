@@ -99,17 +99,18 @@
 }
 .member-url-wrap {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   width: 100%;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex-direction: column;
 }
 .member-url-wrap a {
   flex: 0 0 auto;
-  display: inline;
+  display: inline-block;
 }
 .copy-url-btn {
-  margin-left: auto;
+  margin-left: 0;
   padding: 8px 12px;
   font-size: 13px;
   line-height: 1.2;
