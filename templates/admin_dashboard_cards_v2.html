@@ -188,6 +188,31 @@
     ),
     linear-gradient(180deg, #66707a 0%, #454c55 100%);
 }
+.fancy-admin-btn.maroon {
+  border-color: #8a1f35;
+  color: #fff0f3;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #b12b4b 0%, #7b1e35 100%);
+}
+.fancy-admin-btn.maroon-dark {
+  border-color: #78172d;
+  color: #ffe9ee;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.05) 0 3px,
+      rgba(0, 0, 0, 0.1) 3px 6px
+    ),
+    linear-gradient(180deg, #9d1f3c 0%, #681328 100%);
+}
+.create-team-btn {
+  width: 100%;
+}
 .fancy-admin-btn::before,
 .fancy-admin-btn::after {
   content: "";
@@ -211,6 +236,13 @@
 }
 .fancy-admin-btn:active {
   transform: translateY(0);
+}
+.delete-team-btn {
+  min-width: 90px;
+  min-height: 36px;
+  padding: 8px 12px;
+  font-size: 13px;
+  letter-spacing: 0.03em;
 }
 @media (max-width: 900px) {
   .dashboard-top {
@@ -265,7 +297,7 @@
           <label for="team_name">新しいチーム名</label>
           <input id="team_name" type="text" name="team_name" placeholder="Aチーム" required>
         </div>
-        <button class="btn" type="submit">チームを作成する</button>
+        <button class="btn fancy-admin-btn maroon create-team-btn" type="submit">チームを作成する</button>
       </form>
     </section>
   </div>
@@ -287,7 +319,7 @@
                 action="{{ url_for('admin_delete_team', team_id=team['id']) }}"
                 onsubmit="return confirm('このチームを削除します。よろしいですか？');"
               >
-                <button class="btn danger delete-team-btn" type="submit">削除</button>
+                <button class="btn fancy-admin-btn maroon-dark delete-team-btn" type="submit">削除</button>
               </form>
             </div>
           </div>

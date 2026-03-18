@@ -174,6 +174,125 @@
   filter: invert(1) brightness(1.2);
   opacity: 1;
 }
+.crimson-action-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 41px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  border: 1px solid #8a1f35;
+  color: #fff0f3;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.32);
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #b12b4b 0%, #7b1e35 100%);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+.crimson-action-btn::before,
+.crimson-action-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(22, 24, 27, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.crimson-action-btn::before {
+  left: 8px;
+}
+.crimson-action-btn::after {
+  right: 8px;
+}
+.crimson-action-btn:hover {
+  filter: brightness(1.06) contrast(1.04);
+}
+.crimson-action-btn:active {
+  transform: translateY(0);
+}
+.bulk-buttons .btn.fancy-bulk-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.28);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+.bulk-buttons .btn.fancy-bulk-btn::before,
+.bulk-buttons .btn.fancy-bulk-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(22, 24, 27, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.bulk-buttons .btn.fancy-bulk-btn::before {
+  left: 8px;
+}
+.bulk-buttons .btn.fancy-bulk-btn::after {
+  right: 8px;
+}
+.bulk-buttons .btn.fancy-bulk-btn:hover {
+  filter: brightness(1.06) contrast(1.04);
+}
+.bulk-buttons .btn.fancy-bulk-btn:active {
+  transform: translateY(0);
+}
+.bulk-buttons .btn.bulk-edit.fancy-bulk-btn {
+  border-color: #1e40af;
+  color: #eef4ff;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+}
+.bulk-buttons .btn.bulk-duplicate.fancy-bulk-btn {
+  border-color: #166534;
+  color: #eefff3;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #16a34a 0%, #15803d 100%);
+}
+.bulk-buttons .btn.danger.fancy-bulk-btn {
+  border-color: #8a1f35;
+  color: #fff0f3;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #b12b4b 0%, #7b1e35 100%);
+}
 </style>
 {% endblock %}
 
@@ -266,7 +385,7 @@
       </div>
     </div>
     <div class="btn-row">
-      <button class="btn" type="submit">{% if editing_event %}更新する{% else %}登録する{% endif %}</button>
+      <button class="btn crimson-action-btn" type="submit">{% if editing_event %}更新する{% else %}登録する{% endif %}</button>
       {% if editing_event %}
       <a class="btn secondary" href="{{ url_for('admin_team_events', team_id=team['id'], month=selected_month) }}">編集を解除</a>
       {% endif %}
@@ -282,9 +401,9 @@
     <input type="hidden" name="selected_event_ids" id="selected-event-ids" value="">
 
     <div class="bulk-buttons">
-      <button type="submit" name="action" value="start_edit" class="btn bulk-edit event-bulk-btn" disabled>編集</button>
-      <button type="submit" name="action" value="duplicate_event" class="btn bulk-duplicate event-bulk-btn" disabled>複製</button>
-      <button type="submit" name="action" value="delete_event" class="btn danger event-bulk-btn" disabled onclick="return confirm('選択したイベントを削除しますか？');">削除</button>
+      <button type="submit" name="action" value="start_edit" class="btn bulk-edit fancy-bulk-btn event-bulk-btn" disabled>編集</button>
+      <button type="submit" name="action" value="duplicate_event" class="btn bulk-duplicate fancy-bulk-btn event-bulk-btn" disabled>複製</button>
+      <button type="submit" name="action" value="delete_event" class="btn danger fancy-bulk-btn event-bulk-btn" disabled onclick="return confirm('選択したイベントを削除しますか？');">削除</button>
     </div>
 
     {% if months %}

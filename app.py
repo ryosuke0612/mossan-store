@@ -382,7 +382,7 @@ def portal_get_teams_for_admin(admin_id):
         SELECT id, admin_id, name, public_id, created_at
         FROM teams
         WHERE admin_id=?
-        ORDER BY id DESC
+        ORDER BY created_at ASC, id ASC
         """,
         (admin_id,),
     )
