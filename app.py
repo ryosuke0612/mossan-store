@@ -2316,7 +2316,7 @@ def _normalize_name_list(values):
     return normalized
 
 
-def _coerce_team_count(value, default=2, minimum=2, maximum=8):
+def _coerce_team_count(value, default=2, minimum=2, maximum=9):
     try:
         team_count = int(value)
     except (TypeError, ValueError):
@@ -3963,7 +3963,6 @@ def public_attendance_check_confirm_attendees(public_id, match_id):
             match_id=match_id,
             tool_message="当日参加者を確定しました。",
         )
-        + "#confirmed-attendees-section"
     )
 
 
@@ -3975,7 +3974,7 @@ def public_attendance_check_add_walkin(public_id, match_id):
     walkin_name = request.form.get("walkin_name", "")
     added = add_portal_walkin_attendee(team["id"], match_id, walkin_name)
     message = "飛び入り参加者を追加しました。" if added else "飛び入り参加者名を入力してください。"
-    return redirect(url_for("public_attendance_check", public_id=public_id, match_id=match_id, tool_message=message) + "#confirmed-attendees-section")
+    return redirect(url_for("public_attendance_check", public_id=public_id, match_id=match_id, tool_message=message))
 
 
 @app.route("/team/<public_id>/attendance/check/<int:match_id>/walkin/delete", methods=["POST"])
@@ -3986,7 +3985,7 @@ def public_attendance_check_delete_walkin(public_id, match_id):
     member_name = request.form.get("member_name", "")
     deleted = remove_portal_walkin_attendee(team["id"], match_id, member_name)
     message = "飛び入り参加者を削除しました。" if deleted else "削除対象の飛び入り参加者が見つかりませんでした。"
-    return redirect(url_for("public_attendance_check", public_id=public_id, match_id=match_id, tool_message=message) + "#confirmed-attendees-section")
+    return redirect(url_for("public_attendance_check", public_id=public_id, match_id=match_id, tool_message=message))
 
 
 @app.route("/team/<public_id>/attendance/check/<int:match_id>/tools/team-split", methods=["POST"])
@@ -4750,7 +4749,6 @@ def attendance_check_confirm_attendees(match_id):
             match_id=match_id,
             tool_message="当日参加者を確定しました。",
         )
-        + "#confirmed-attendees-section"
     )
 
 
@@ -4760,7 +4758,7 @@ def attendance_check_add_walkin(match_id):
     walkin_name = request.form.get("walkin_name", "")
     added = add_walkin_attendee(session["user_id"], match_id, walkin_name)
     message = "飛び入り参加者を追加しました。" if added else "飛び入り参加者名を入力してください。"
-    return redirect(url_for("attendance_check", match_id=match_id, tool_message=message) + "#confirmed-attendees-section")
+    return redirect(url_for("attendance_check", match_id=match_id, tool_message=message))
 
 
 @app.route("/apps/attendance/app/attendance/check/<int:match_id>/walkin/delete", methods=["POST"])
@@ -4769,7 +4767,7 @@ def attendance_check_delete_walkin(match_id):
     member_name = request.form.get("member_name", "")
     deleted = remove_walkin_attendee(session["user_id"], match_id, member_name)
     message = "飛び入り参加者を削除しました。" if deleted else "削除対象の飛び入り参加者が見つかりませんでした。"
-    return redirect(url_for("attendance_check", match_id=match_id, tool_message=message) + "#confirmed-attendees-section")
+    return redirect(url_for("attendance_check", match_id=match_id, tool_message=message))
 
 
 @app.route("/apps/attendance/app/attendance/check/<int:match_id>/tools/team-split", methods=["POST"])

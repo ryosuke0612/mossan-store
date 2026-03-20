@@ -172,7 +172,7 @@
                 value="{{ name }}"
                 formaction="{{ url_for('attendance_check_delete_walkin', match_id=match['id']) }}"
                 formmethod="post"
-                class="btn secondary compact"
+                class="btn secondary compact delete-walkin-btn"
               >削除</button>
               {% else %}
               -
@@ -194,4 +194,30 @@
 </section>
 
 <div class="btn-row" style="margin-top:16px;"><a href="{{ url_for('index') }}" class="btn secondary">戻る</a></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const storageKey = "attendance-check-scroll:" + window.location.pathname + window.location.search;
+  const savedPosition = window.sessionStorage.getItem(storageKey);
+  if (savedPosition !== null) {
+    window.scrollTo(0, Number(savedPosition) || 0);
+    window.sessionStorage.removeItem(storageKey);
+  }
+
+  const confirmForm = document.getElementById("confirm-attendees-form");
+  if (confirmForm) {
+    confirmForm.addEventListener("submit", function () {
+      window.sessionStorage.setItem(storageKey, String(window.scrollY));
+    });
+  }
+
+  document.querySelectorAll(".delete-walkin-btn").forEach(function (button) {
+    button.addEventListener("click", function () {
+      window.sessionStorage.setItem(storageKey, String(window.scrollY));
+    });
+  });
+});
+</script>
 {% endblock %}
