@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}Mossan Store{% endblock %}</title>
 <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+JP:wght@400;700;900&family=Yomogi&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg: #0f0f0f;
@@ -38,7 +38,8 @@ a { color: inherit; }
 .header-inner {
   width: min(1120px, 92%);
   margin: 0 auto;
-  padding: 14px 0;
+  height: 60px;
+  padding: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -56,6 +57,166 @@ a { color: inherit; }
   font-family: 'Anton', sans-serif;
   font-size: 28px;
   letter-spacing: 2px;
+}
+.logo-text.attendance-brand {
+  font-family: 'Noto Sans JP', sans-serif;
+  letter-spacing: 0;
+}
+.logo-text.attendance-brand.brand-v1 {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-weight: 900;
+}
+.logo-text.attendance-brand.brand-v1 .brand-main {
+  letter-spacing: 0.08em;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45), 0 0 10px rgba(255, 66, 66, 0.24);
+}
+.logo-text.attendance-brand.brand-v1 .brand-plus {
+  color: #ff8f00;
+  font-size: 1.2em;
+  line-height: 1;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45), 0 0 12px rgba(255, 143, 0, 0.32);
+}
+.logo-text.attendance-brand.brand-v2 {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Yomogi', 'Noto Sans JP', sans-serif;
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.36);
+  padding: 0 16px 0;
+}
+.logo-text.attendance-brand.brand-v2::before,
+.logo-text.attendance-brand.brand-v2::after {
+  content: none;
+  position: absolute;
+  bottom: -1px;
+  width: 9px;
+  height: 13px;
+  background: linear-gradient(180deg, #86d17d 0%, #2e8b57 100%);
+  clip-path: polygon(50% 0%, 0% 100%, 35% 100%, 50% 48%, 65% 100%, 100% 100%);
+  opacity: 0.92;
+  box-shadow:
+    4px -1px 0 rgba(88, 184, 103, 0.9),
+    8px 1px 0 rgba(62, 158, 86, 0.84),
+    12px -2px 0 rgba(102, 198, 110, 0.78),
+    16px 0 0 rgba(74, 168, 92, 0.74),
+    23px -1px 0 rgba(108, 200, 111, 0.78),
+    31px 1px 0 rgba(86, 176, 94, 0.8),
+    40px -2px 0 rgba(72, 160, 80, 0.74),
+    50px 0 0 rgba(112, 206, 115, 0.76),
+    61px -1px 0 rgba(90, 182, 96, 0.78),
+    73px 1px 0 rgba(78, 167, 87, 0.72),
+    86px -2px 0 rgba(104, 198, 109, 0.75),
+    100px 0 0 rgba(84, 174, 93, 0.77),
+    112px -1px 0 rgba(96, 190, 103, 0.76),
+    124px 1px 0 rgba(72, 162, 82, 0.73),
+    136px -2px 0 rgba(110, 202, 112, 0.78),
+    148px 0 0 rgba(86, 176, 94, 0.76),
+    160px -1px 0 rgba(102, 198, 109, 0.79),
+    172px 1px 0 rgba(76, 166, 86, 0.74),
+    184px -2px 0 rgba(116, 208, 117, 0.78),
+    196px 0 0 rgba(84, 174, 93, 0.76),
+    208px -1px 0 rgba(98, 192, 104, 0.77),
+    220px 1px 0 rgba(70, 158, 80, 0.72);
+}
+.logo-text.attendance-brand.brand-v2::before {
+  left: 0;
+  transform: rotate(-14deg);
+}
+.logo-text.attendance-brand.brand-v2::after {
+  right: 0;
+  transform: rotate(15deg);
+  box-shadow:
+    -4px 0 0 rgba(88, 184, 103, 0.9),
+    -8px -1px 0 rgba(62, 158, 86, 0.84),
+    -12px 1px 0 rgba(102, 198, 110, 0.78),
+    -16px -1px 0 rgba(74, 168, 92, 0.74),
+    -23px 0 0 rgba(108, 200, 111, 0.78),
+    -31px -2px 0 rgba(86, 176, 94, 0.8),
+    -40px 1px 0 rgba(72, 160, 80, 0.74),
+    -50px -1px 0 rgba(112, 206, 115, 0.76),
+    -61px 0 0 rgba(90, 182, 96, 0.78),
+    -73px -2px 0 rgba(78, 167, 87, 0.72),
+    -86px 1px 0 rgba(104, 198, 109, 0.75),
+    -100px -1px 0 rgba(84, 174, 93, 0.77),
+    -112px 1px 0 rgba(96, 190, 103, 0.76),
+    -124px -1px 0 rgba(72, 162, 82, 0.73),
+    -136px 2px 0 rgba(110, 202, 112, 0.78),
+    -148px 0 0 rgba(86, 176, 94, 0.76),
+    -160px 1px 0 rgba(102, 198, 109, 0.79),
+    -172px -1px 0 rgba(76, 166, 86, 0.74),
+    -184px 2px 0 rgba(116, 208, 117, 0.78),
+    -196px 0 0 rgba(84, 174, 93, 0.76),
+    -208px 1px 0 rgba(98, 192, 104, 0.77),
+    -220px -1px 0 rgba(70, 158, 80, 0.72);
+}
+.logo-text.attendance-brand.brand-v3 {
+  display: inline-flex;
+  align-items: center;
+}
+.logo-text.attendance-brand.brand-v3 .wild-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 4px 26px;
+  border-radius: 4px;
+  border: 1px solid #8a1f35;
+  color: #fff0f3;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.32);
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #b12b4b 0%, #7b1e35 100%);
+}
+.logo-text.attendance-brand.brand-v3 .wild-chip::before,
+.logo-text.attendance-brand.brand-v3 .wild-chip::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(22, 24, 27, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.logo-text.attendance-brand.brand-v3 .wild-chip::before { left: 8px; }
+.logo-text.attendance-brand.brand-v3 .wild-chip::after { right: 8px; }
+.logo-variant-switch {
+  display: flex;
+  gap: 6px;
+  margin-left: 8px;
+}
+.logo-variant-btn {
+  width: auto;
+  border-radius: 999px;
+  border: 1px solid #3e3e3e;
+  background: #111;
+  color: #ddd;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+.logo-variant-btn.active {
+  border-color: #ff4b4b;
+  background: #3d0d0d;
+  color: #fff;
 }
 .top-nav {
   display: flex;
@@ -211,6 +372,17 @@ th { background: #1b1b1b; color: #ffcbcb; }
     font-size: 22px;
     letter-spacing: 1px;
   }
+  .logo-text.attendance-brand.brand-v2 {
+    font-size: 28px;
+  }
+  .logo-text.attendance-brand.brand-v3 .wild-chip {
+    font-size: 18px;
+    min-height: 34px;
+    padding: 4px 20px;
+  }
+  .logo-variant-switch {
+    margin-left: 0;
+  }
   .menu-toggle {
     display: inline-flex;
     position: absolute;
@@ -245,13 +417,33 @@ th { background: #1b1b1b; color: #ffcbcb; }
 }
 </style>
 {% block head_extra %}{% endblock %}
+{% if request.path.startswith('/admin') or request.path.startswith('/team/') %}
+<style>
+  .top-nav a[href="{{ url_for('attendance_description') }}"] { display: none; }
+</style>
+{% endif %}
 </head>
 <body>
 <header class="site-header">
   <div class="header-inner">
-    <a class="logo-area" href="{{ url_for('home') }}">
-      <img src="{{ url_for('static', filename='images/gorilla-logo.png') }}" alt="logo">
-      <span class="logo-text">MOSSAN STORE</span>
+    {% set is_attendance_brand = request.path.startswith('/admin') or request.path.startswith('/team/') %}
+    {% set logo_variant = request.args.get('logo_variant', 'v2') %}
+    <a class="logo-area" href="{{ url_for('attendance_description') if (request.path.startswith('/admin') or request.path.startswith('/team/')) else url_for('home') }}">
+      <span class="logo-text{% if is_attendance_brand %} attendance-brand brand-{{ logo_variant }}{% endif %}">
+        {% block header_logo_text %}
+        {% if is_attendance_brand %}
+          {% if logo_variant == 'v2' %}
+          出欠ボード+
+          {% elif logo_variant == 'v3' %}
+          <span class="wild-chip">出欠ボード+</span>
+          {% else %}
+          <span class="brand-main">出欠ボード</span><span class="brand-plus">+</span>
+          {% endif %}
+        {% else %}
+        MOSSAN STORE
+        {% endif %}
+        {% endblock %}
+      </span>
     </a>
     <button type="button" class="menu-toggle" aria-label="メニュー" aria-expanded="false" aria-controls="top-nav">
       <span></span>
@@ -294,6 +486,7 @@ th { background: #1b1b1b; color: #ffcbcb; }
   window.addEventListener('resize', () => {
     if (window.innerWidth > 900) closeNav();
   });
+
 })();
 </script>
 {% block scripts %}{% endblock %}

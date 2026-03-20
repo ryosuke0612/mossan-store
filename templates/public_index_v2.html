@@ -386,7 +386,7 @@
             </select>
           </div>
         </div>
-        <button type="submit" name="action" value="attendance_check" class="btn bulk-action-btn bulk-check wild-action-btn" disabled>出欠確認</button>
+        <button type="submit" name="action" value="attendance_check" class="btn bulk-action-btn bulk-check wild-action-btn" disabled title="イベントを選択してください">出欠確認</button>
         {% if months %}
         <a id="csv-export-link" href="{{ url_for('public_export_attendance_csv', public_id=public_id) }}?month={{ active_month or months[0] }}" class="btn csv-export-btn wild-action-btn">CSV出力</a>
         {% endif %}

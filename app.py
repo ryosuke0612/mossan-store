@@ -2,6 +2,7 @@
 import io
 import json
 import os
+import random
 import secrets
 import sqlite3
 from datetime import datetime, timedelta
@@ -1441,6 +1442,51 @@ def init_db_sqlite():
     )
     """
     )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_actual_attendees (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        team_id INTEGER NOT NULL,
+        event_id INTEGER NOT NULL,
+        member_name TEXT NOT NULL,
+        source_type TEXT NOT NULL DEFAULT 'attendance',
+        confirmed_at TEXT NOT NULL,
+        UNIQUE(team_id, event_id, member_name),
+        FOREIGN KEY(team_id) REFERENCES teams(id),
+        FOREIGN KEY(event_id) REFERENCES portal_events(id)
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_tool_shares (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        team_id INTEGER NOT NULL,
+        event_id INTEGER NOT NULL,
+        tool_type TEXT NOT NULL,
+        share_id TEXT NOT NULL UNIQUE,
+        payload_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY(team_id) REFERENCES teams(id),
+        FOREIGN KEY(event_id) REFERENCES portal_events(id)
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_tool_saved_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        team_id INTEGER NOT NULL,
+        event_id INTEGER NOT NULL,
+        tool_type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        payload_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY(team_id) REFERENCES teams(id),
+        FOREIGN KEY(event_id) REFERENCES portal_events(id)
+    )
+    """
+    )
 
     c.execute("PRAGMA table_info(admins)")
     admin_columns = [row[1] for row in c.fetchall()]
@@ -1475,6 +1521,13 @@ def init_db_sqlite():
     c.execute("CREATE INDEX IF NOT EXISTS idx_portal_members_team_id ON portal_members(team_id)")
     c.execute(
         "CREATE INDEX IF NOT EXISTS idx_portal_members_team_display_order ON portal_members(team_id, display_order)"
+    )
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_portal_actual_attendees_event_team ON portal_actual_attendees(team_id, event_id)"
+    )
+    c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_portal_tool_shares_share_id ON portal_tool_shares(share_id)")
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_portal_tool_saved_results_event_team ON portal_tool_saved_results(team_id, event_id, tool_type)"
     )
     c.execute(
         """
@@ -1538,6 +1591,53 @@ def init_db_sqlite():
 
     c.execute(
         """
+    CREATE TABLE IF NOT EXISTS attendance_actual_attendees (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        match_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        source_type TEXT NOT NULL DEFAULT 'attendance',
+        confirmed_at TEXT NOT NULL,
+        UNIQUE(user_id, match_id, name),
+        FOREIGN KEY(user_id) REFERENCES users(id),
+        FOREIGN KEY(match_id) REFERENCES matches(id)
+    )
+    """
+    )
+
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS attendance_tool_shares (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        match_id INTEGER NOT NULL,
+        tool_type TEXT NOT NULL,
+        share_id TEXT NOT NULL UNIQUE,
+        payload_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY(user_id) REFERENCES users(id),
+        FOREIGN KEY(match_id) REFERENCES matches(id)
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS attendance_tool_saved_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        match_id INTEGER NOT NULL,
+        tool_type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        payload_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY(user_id) REFERENCES users(id),
+        FOREIGN KEY(match_id) REFERENCES matches(id)
+    )
+    """
+    )
+
+    c.execute(
+        """
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
@@ -1570,6 +1670,13 @@ def init_db_sqlite():
     attendance_columns = [row[1] for row in c.fetchall()]
     if "user_id" not in attendance_columns:
         c.execute("ALTER TABLE attendance ADD COLUMN user_id INTEGER NOT NULL DEFAULT 0")
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_attendance_actual_attendees_match_user ON attendance_actual_attendees(user_id, match_id)"
+    )
+    c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_attendance_tool_shares_share_id ON attendance_tool_shares(share_id)")
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_attendance_tool_saved_results_match_user ON attendance_tool_saved_results(user_id, match_id, tool_type)"
+    )
 
     c.execute("PRAGMA table_info(users)")
     user_info = c.fetchall()
@@ -1771,6 +1878,10 @@ def init_db_postgres():
         "CREATE INDEX IF NOT EXISTS idx_portal_members_team_display_order ON portal_members(team_id, display_order)"
     )
     c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_portal_actual_attendees_event_team ON portal_actual_attendees(team_id, event_id)"
+    )
+    c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_portal_tool_shares_share_id ON portal_tool_shares(share_id)")
+    c.execute(
         """
         UPDATE portal_members
         SET is_active = COALESCE(is_active, 1),
@@ -1829,6 +1940,45 @@ def init_db_postgres():
     )
     c.execute(
         """
+    CREATE TABLE IF NOT EXISTS portal_actual_attendees (
+        id SERIAL PRIMARY KEY,
+        team_id INTEGER NOT NULL REFERENCES teams(id),
+        event_id INTEGER NOT NULL REFERENCES portal_events(id),
+        member_name TEXT NOT NULL,
+        source_type TEXT NOT NULL DEFAULT 'attendance',
+        confirmed_at TEXT NOT NULL,
+        UNIQUE(team_id, event_id, member_name)
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_tool_shares (
+        id SERIAL PRIMARY KEY,
+        team_id INTEGER NOT NULL REFERENCES teams(id),
+        event_id INTEGER NOT NULL REFERENCES portal_events(id),
+        tool_type TEXT NOT NULL,
+        share_id TEXT NOT NULL UNIQUE,
+        payload_json TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_tool_saved_results (
+        id SERIAL PRIMARY KEY,
+        team_id INTEGER NOT NULL REFERENCES teams(id),
+        event_id INTEGER NOT NULL REFERENCES portal_events(id),
+        tool_type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        payload_json TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )
+    """
+    )
+    c.execute(
+        """
     CREATE TABLE IF NOT EXISTS matches (
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL DEFAULT 0 REFERENCES users(id),
@@ -1849,6 +1999,45 @@ def init_db_postgres():
         name TEXT,
         status TEXT,
         UNIQUE(match_id, name)
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS attendance_actual_attendees (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        match_id INTEGER NOT NULL REFERENCES matches(id),
+        name TEXT NOT NULL,
+        source_type TEXT NOT NULL DEFAULT 'attendance',
+        confirmed_at TEXT NOT NULL,
+        UNIQUE(user_id, match_id, name)
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS attendance_tool_shares (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        match_id INTEGER NOT NULL REFERENCES matches(id),
+        tool_type TEXT NOT NULL,
+        share_id TEXT NOT NULL UNIQUE,
+        payload_json TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS attendance_tool_saved_results (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        match_id INTEGER NOT NULL REFERENCES matches(id),
+        tool_type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        payload_json TEXT NOT NULL,
+        created_at TEXT NOT NULL
     )
     """
     )
@@ -1876,6 +2065,16 @@ def init_db_postgres():
     c.execute("ALTER TABLE matches ADD COLUMN IF NOT EXISTS user_id INTEGER NOT NULL DEFAULT 0")
     c.execute("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS user_id INTEGER NOT NULL DEFAULT 0")
     c.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS user_id INTEGER NOT NULL DEFAULT 0")
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_attendance_actual_attendees_match_user ON attendance_actual_attendees(user_id, match_id)"
+    )
+    c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_attendance_tool_shares_share_id ON attendance_tool_shares(share_id)")
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_attendance_tool_saved_results_match_user ON attendance_tool_saved_results(user_id, match_id, tool_type)"
+    )
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_portal_tool_saved_results_event_team ON portal_tool_saved_results(team_id, event_id, tool_type)"
+    )
 
     c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_teams_public_id_unique ON teams(public_id)")
     c.execute(
@@ -2103,6 +2302,617 @@ def normalize_status(value):
         "\u8b5b\uff6a\u87b3\u30fb": "\u672a\u5b9a",
     }
     return status_map.get(value, value)
+
+
+def _normalize_name_list(values):
+    normalized = []
+    seen = set()
+    for value in values or []:
+        name = (value or "").strip()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        normalized.append(name)
+    return normalized
+
+
+def _coerce_team_count(value, default=2, minimum=2, maximum=8):
+    try:
+        team_count = int(value)
+    except (TypeError, ValueError):
+        team_count = default
+    return max(minimum, min(maximum, team_count))
+
+
+class TeamAllocator:
+    def allocate(self, members, team_count):
+        raise NotImplementedError
+
+
+class RandomTeamAllocator(TeamAllocator):
+    def allocate(self, members, team_count):
+        shuffled = list(members)
+        random.shuffle(shuffled)
+        teams = [{"name": f"Team {index + 1}", "members": []} for index in range(team_count)]
+        for index, member_name in enumerate(shuffled):
+            teams[index % team_count]["members"].append(member_name)
+        return teams
+
+
+def build_team_allocator(strategy="random"):
+    # Strategy hook for future extension (level/position balanced allocation).
+    if strategy == "random":
+        return RandomTeamAllocator()
+    return RandomTeamAllocator()
+
+
+def serialize_team_result(teams):
+    return [{"name": team.get("name", ""), "members": _normalize_name_list(team.get("members", []))} for team in teams]
+
+
+def parse_team_state_from_form(raw_value):
+    if not raw_value:
+        return []
+    try:
+        loaded = json.loads(raw_value)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return []
+    if not isinstance(loaded, list):
+        return []
+    teams = []
+    for index, raw_team in enumerate(loaded, start=1):
+        if not isinstance(raw_team, dict):
+            continue
+        team_name = (raw_team.get("name") or f"Team {index}").strip() or f"Team {index}"
+        teams.append({"name": team_name, "members": _normalize_name_list(raw_team.get("members", []))})
+    return teams
+
+
+def parse_random_pick_names(raw_value="", single_value=""):
+    names = []
+    if raw_value:
+        try:
+            loaded = json.loads(raw_value)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            loaded = []
+        if isinstance(loaded, list):
+            names = _normalize_name_list(loaded)
+    if not names and single_value:
+        single_name = single_value.strip()
+        if single_name:
+            names = [single_name]
+    return names
+
+
+def swap_members_in_teams(teams, src_team_idx, src_member_idx, dst_team_idx, dst_member_idx):
+    if not teams:
+        return teams, "empty"
+    if src_team_idx < 0 or src_team_idx >= len(teams) or dst_team_idx < 0 or dst_team_idx >= len(teams):
+        return teams, "invalid_team"
+    src_members = teams[src_team_idx].get("members", [])
+    dst_members = teams[dst_team_idx].get("members", [])
+    if src_member_idx < 0 or src_member_idx >= len(src_members) or dst_member_idx < 0 or dst_member_idx >= len(dst_members):
+        return teams, "invalid_member"
+    src_members[src_member_idx], dst_members[dst_member_idx] = dst_members[dst_member_idx], src_members[src_member_idx]
+    return teams, "swapped"
+
+
+def build_role_slots(form):
+    role_fields = [
+        ("キャプテン", "role_captain_count"),
+        ("審判", "role_referee_count"),
+        ("タイムキーパー", "role_timekeeper_count"),
+        ("用具係", "role_equipment_count"),
+    ]
+    slots = []
+    for role_name, field_name in role_fields:
+        count = _coerce_positive_int(form.get(field_name))
+        if count:
+            slots.extend([role_name] * count)
+
+    custom_text = (form.get("custom_roles") or "").strip()
+    if custom_text:
+        for line in custom_text.replace("\r", "").split("\n"):
+            row = line.strip()
+            if not row:
+                continue
+            if ":" in row:
+                name, count_text = row.split(":", 1)
+                role_name = name.strip()
+                role_count = _coerce_positive_int(count_text.strip()) or 0
+            else:
+                role_name = row
+                role_count = 1
+            if role_name and role_count > 0:
+                slots.extend([role_name] * role_count)
+    return slots
+
+
+def assign_roles(members, role_slots):
+    shuffled_members = list(members)
+    random.shuffle(shuffled_members)
+    assignments = []
+    for index, role_name in enumerate(role_slots):
+        if index >= len(shuffled_members):
+            break
+        assignments.append({"role": role_name, "member": shuffled_members[index]})
+    unassigned_roles = role_slots[len(assignments) :]
+    remaining_members = shuffled_members[len(assignments) :]
+    return assignments, unassigned_roles, remaining_members
+
+
+def create_attendance_tool_share(user_id, match_id, tool_type, payload):
+    share_id = secrets.token_urlsafe(10)
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        INSERT INTO attendance_tool_shares (user_id, match_id, tool_type, share_id, payload_json, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            user_id,
+            match_id,
+            tool_type,
+            share_id,
+            json.dumps(payload, ensure_ascii=False),
+            portal_now_text(),
+        ),
+    )
+    conn.commit()
+    conn.close()
+    return share_id
+
+
+def get_attendance_tool_share(share_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT id, user_id, match_id, tool_type, share_id, payload_json, created_at
+        FROM attendance_tool_shares
+        WHERE share_id=?
+        """,
+        (share_id,),
+    )
+    row = row_to_dict(c.fetchone())
+    conn.close()
+    if not row:
+        return None
+    try:
+        row["payload"] = json.loads(row.get("payload_json") or "{}")
+    except (TypeError, ValueError, json.JSONDecodeError):
+        row["payload"] = {}
+    return row
+
+
+def create_attendance_tool_saved_result(user_id, match_id, tool_type, title, payload):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        INSERT INTO attendance_tool_saved_results (user_id, match_id, tool_type, title, payload_json, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            user_id,
+            match_id,
+            tool_type,
+            title,
+            json.dumps(payload, ensure_ascii=False),
+            portal_now_text(),
+        ),
+    )
+    saved_id = c.lastrowid if not USE_POSTGRES else None
+    conn.commit()
+    if USE_POSTGRES and not saved_id:
+        c.execute(
+            """
+            SELECT id
+            FROM attendance_tool_saved_results
+            WHERE user_id=? AND match_id=? AND tool_type=? AND title=?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (user_id, match_id, tool_type, title),
+        )
+        row = row_to_dict(c.fetchone())
+        saved_id = row.get("id") if row else None
+    conn.close()
+    return saved_id
+
+
+def get_attendance_tool_saved_results(user_id, match_id, tool_type=None, limit=20):
+    conn = get_db_connection()
+    c = conn.cursor()
+    params = [user_id, match_id]
+    where_clause = "WHERE user_id=? AND match_id=?"
+    if tool_type:
+        where_clause += " AND tool_type=?"
+        params.append(tool_type)
+    params.append(limit)
+    c.execute(
+        f"""
+        SELECT id, user_id, match_id, tool_type, title, payload_json, created_at
+        FROM attendance_tool_saved_results
+        {where_clause}
+        ORDER BY id DESC
+        LIMIT ?
+        """,
+        params,
+    )
+    rows = rows_to_dict(c.fetchall())
+    conn.close()
+    for row in rows:
+        try:
+            row["payload"] = json.loads(row.get("payload_json") or "{}")
+        except (TypeError, ValueError, json.JSONDecodeError):
+            row["payload"] = {}
+    return rows
+
+
+def get_attendance_tool_saved_result(user_id, match_id, saved_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT id, user_id, match_id, tool_type, title, payload_json, created_at
+        FROM attendance_tool_saved_results
+        WHERE user_id=? AND match_id=? AND id=?
+        """,
+        (user_id, match_id, saved_id),
+    )
+    row = row_to_dict(c.fetchone())
+    conn.close()
+    if not row:
+        return None
+    try:
+        row["payload"] = json.loads(row.get("payload_json") or "{}")
+    except (TypeError, ValueError, json.JSONDecodeError):
+        row["payload"] = {}
+    return row
+
+
+def get_match_join_members(user_id, match_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT name, status
+        FROM attendance
+        WHERE match_id=? AND user_id=?
+        ORDER BY id
+        """,
+        (match_id, user_id),
+    )
+    join_members = []
+    for row in c.fetchall():
+        if normalize_status(row["status"]) == "参加":
+            join_members.append(row["name"])
+    conn.close()
+    return _normalize_name_list(join_members)
+
+
+def get_confirmed_attendees(user_id, match_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT name, source_type
+        FROM attendance_actual_attendees
+        WHERE user_id=? AND match_id=?
+        ORDER BY id ASC
+        """,
+        (user_id, match_id),
+    )
+    rows = rows_to_dict(c.fetchall())
+    conn.close()
+    return rows
+
+
+def save_confirmed_attendees(user_id, match_id, selected_names, walkin_names=None):
+    selected = _normalize_name_list(selected_names)
+    walkins = _normalize_name_list(walkin_names or [])
+    join_names = set(get_match_join_members(user_id, match_id))
+    names_to_keep = _normalize_name_list(selected + walkins)
+
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        "DELETE FROM attendance_actual_attendees WHERE user_id=? AND match_id=?",
+        (user_id, match_id),
+    )
+    for name in names_to_keep:
+        if name in walkins:
+            source_type = "walkin" if name in selected else "walkin_pending"
+        else:
+            source_type = "attendance" if name in join_names else "walkin"
+        c.execute(
+            """
+            INSERT INTO attendance_actual_attendees (user_id, match_id, name, source_type, confirmed_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (user_id, match_id, name, source_type, portal_now_text()),
+    )
+    conn.commit()
+    conn.close()
+    return names_to_keep
+
+
+def add_walkin_attendee(user_id, match_id, name):
+    target_name = (name or "").strip()
+    if not target_name:
+        return False
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        INSERT INTO attendance_actual_attendees (user_id, match_id, name, source_type, confirmed_at)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(user_id, match_id, name)
+        DO UPDATE SET source_type=excluded.source_type, confirmed_at=excluded.confirmed_at
+        """,
+        (user_id, match_id, target_name, "walkin", portal_now_text()),
+    )
+    conn.commit()
+    conn.close()
+    return True
+
+
+def remove_walkin_attendee(user_id, match_id, name):
+    target_name = (name or "").strip()
+    if not target_name:
+        return False
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        DELETE FROM attendance_actual_attendees
+        WHERE user_id=? AND match_id=? AND name=? AND source_type IN ('walkin', 'walkin_pending')
+        """,
+        (user_id, match_id, target_name),
+    )
+    deleted = c.rowcount > 0
+    conn.commit()
+    conn.close()
+    return deleted
+
+
+def get_effective_attendees(user_id, match_id):
+    confirmed_rows = get_confirmed_attendees(user_id, match_id)
+    if confirmed_rows:
+        return _normalize_name_list([row.get("name") for row in confirmed_rows if row.get("source_type") != "walkin_pending"])
+    return get_match_join_members(user_id, match_id)
+
+
+def create_portal_tool_share(team_id, event_id, tool_type, payload):
+    share_id = secrets.token_urlsafe(10)
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        INSERT INTO portal_tool_shares (team_id, event_id, tool_type, share_id, payload_json, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            team_id,
+            event_id,
+            tool_type,
+            share_id,
+            json.dumps(payload, ensure_ascii=False),
+            portal_now_text(),
+        ),
+    )
+    conn.commit()
+    conn.close()
+    return share_id
+
+
+def get_portal_tool_share(share_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT id, team_id, event_id, tool_type, share_id, payload_json, created_at
+        FROM portal_tool_shares
+        WHERE share_id=?
+        """,
+        (share_id,),
+    )
+    row = row_to_dict(c.fetchone())
+    conn.close()
+    if not row:
+        return None
+    try:
+        row["payload"] = json.loads(row.get("payload_json") or "{}")
+    except (TypeError, ValueError, json.JSONDecodeError):
+        row["payload"] = {}
+    return row
+
+
+def create_portal_tool_saved_result(team_id, event_id, tool_type, title, payload):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        INSERT INTO portal_tool_saved_results (team_id, event_id, tool_type, title, payload_json, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            team_id,
+            event_id,
+            tool_type,
+            title,
+            json.dumps(payload, ensure_ascii=False),
+            portal_now_text(),
+        ),
+    )
+    saved_id = c.lastrowid if not USE_POSTGRES else None
+    conn.commit()
+    if USE_POSTGRES and not saved_id:
+        c.execute(
+            """
+            SELECT id
+            FROM portal_tool_saved_results
+            WHERE team_id=? AND event_id=? AND tool_type=? AND title=?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (team_id, event_id, tool_type, title),
+        )
+        row = row_to_dict(c.fetchone())
+        saved_id = row.get("id") if row else None
+    conn.close()
+    return saved_id
+
+
+def get_portal_tool_saved_results(team_id, event_id, tool_type=None, limit=20):
+    conn = get_db_connection()
+    c = conn.cursor()
+    params = [team_id, event_id]
+    where_clause = "WHERE team_id=? AND event_id=?"
+    if tool_type:
+        where_clause += " AND tool_type=?"
+        params.append(tool_type)
+    params.append(limit)
+    c.execute(
+        f"""
+        SELECT id, team_id, event_id, tool_type, title, payload_json, created_at
+        FROM portal_tool_saved_results
+        {where_clause}
+        ORDER BY id DESC
+        LIMIT ?
+        """,
+        params,
+    )
+    rows = rows_to_dict(c.fetchall())
+    conn.close()
+    for row in rows:
+        try:
+            row["payload"] = json.loads(row.get("payload_json") or "{}")
+        except (TypeError, ValueError, json.JSONDecodeError):
+            row["payload"] = {}
+    return rows
+
+
+def get_portal_tool_saved_result(team_id, event_id, saved_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT id, team_id, event_id, tool_type, title, payload_json, created_at
+        FROM portal_tool_saved_results
+        WHERE team_id=? AND event_id=? AND id=?
+        """,
+        (team_id, event_id, saved_id),
+    )
+    row = row_to_dict(c.fetchone())
+    conn.close()
+    if not row:
+        return None
+    try:
+        row["payload"] = json.loads(row.get("payload_json") or "{}")
+    except (TypeError, ValueError, json.JSONDecodeError):
+        row["payload"] = {}
+    return row
+
+
+def get_portal_event_join_members(team_id, event_id):
+    rows = portal_get_attendance_for_event(team_id, event_id)
+    join_members = []
+    for row in rows:
+        if normalize_status(row["status"]) == "参加":
+            join_members.append(row["member_name"])
+    return _normalize_name_list(join_members)
+
+
+def get_portal_confirmed_attendees(team_id, event_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT member_name, source_type
+        FROM portal_actual_attendees
+        WHERE team_id=? AND event_id=?
+        ORDER BY id ASC
+        """,
+        (team_id, event_id),
+    )
+    rows = rows_to_dict(c.fetchall())
+    conn.close()
+    return rows
+
+
+def save_portal_confirmed_attendees(team_id, event_id, selected_names, walkin_names=None):
+    selected = _normalize_name_list(selected_names)
+    walkins = _normalize_name_list(walkin_names or [])
+    join_names = set(get_portal_event_join_members(team_id, event_id))
+    names_to_keep = _normalize_name_list(selected + walkins)
+
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("DELETE FROM portal_actual_attendees WHERE team_id=? AND event_id=?", (team_id, event_id))
+    for member_name in names_to_keep:
+        if member_name in walkins:
+            source_type = "walkin" if member_name in selected else "walkin_pending"
+        else:
+            source_type = "attendance" if member_name in join_names else "walkin"
+        c.execute(
+            """
+            INSERT INTO portal_actual_attendees (team_id, event_id, member_name, source_type, confirmed_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (team_id, event_id, member_name, source_type, portal_now_text()),
+        )
+    conn.commit()
+    conn.close()
+    return names_to_keep
+
+
+def add_portal_walkin_attendee(team_id, event_id, member_name):
+    target_name = (member_name or "").strip()
+    if not target_name:
+        return False
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        INSERT INTO portal_actual_attendees (team_id, event_id, member_name, source_type, confirmed_at)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(team_id, event_id, member_name)
+        DO UPDATE SET source_type=excluded.source_type, confirmed_at=excluded.confirmed_at
+        """,
+        (team_id, event_id, target_name, "walkin", portal_now_text()),
+    )
+    conn.commit()
+    conn.close()
+    return True
+
+
+def remove_portal_walkin_attendee(team_id, event_id, member_name):
+    target_name = (member_name or "").strip()
+    if not target_name:
+        return False
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        DELETE FROM portal_actual_attendees
+        WHERE team_id=? AND event_id=? AND member_name=? AND source_type IN ('walkin', 'walkin_pending')
+        """,
+        (team_id, event_id, target_name),
+    )
+    deleted = c.rowcount > 0
+    conn.commit()
+    conn.close()
+    return deleted
+
+
+def get_portal_effective_attendees(team_id, event_id):
+    confirmed_rows = get_portal_confirmed_attendees(team_id, event_id)
+    if confirmed_rows:
+        return _normalize_name_list([row.get("member_name") for row in confirmed_rows if row.get("source_type") != "walkin_pending"])
+    return get_portal_event_join_members(team_id, event_id)
 
 
 def format_date_mmdd_with_weekday(date_text):
@@ -3061,6 +3871,14 @@ def public_attendance_check(public_id, match_id):
 
     match_data = dict(match)
     match_data["date_label"] = format_date_mmdd_with_weekday(match["date"])
+    confirmed_rows = get_portal_confirmed_attendees(team["id"], match_id)
+    confirmed_names = [row.get("member_name") for row in confirmed_rows if row.get("member_name") and row.get("source_type") != "walkin_pending"]
+    walkin_names = [row.get("member_name") for row in confirmed_rows if row.get("member_name") and row.get("source_type") in ("walkin", "walkin_pending")]
+    has_confirmed_today = bool(confirmed_names)
+    candidate_names = _normalize_name_list(grouped_members["参加"] + walkin_names)
+    effective_attendees = get_portal_effective_attendees(team["id"], match_id)
+
+    tool_message = request.args.get("tool_message", "").strip()
     return render_template(
         "public_attendance_check.html",
         public_id=public_id,
@@ -3068,6 +3886,361 @@ def public_attendance_check(public_id, match_id):
         join_members=grouped_members["参加"],
         absent_members=grouped_members["不参加"],
         undecided_members=grouped_members["未定"],
+        candidate_names=candidate_names,
+        confirmed_names=confirmed_names,
+        walkin_names=walkin_names,
+        has_confirmed_today=has_confirmed_today,
+        effective_attendees=effective_attendees,
+        tool_message=tool_message,
+        tools_url=url_for("public_attendance_tools", public_id=public_id, match_id=match_id),
+    )
+
+
+@app.route("/team/<public_id>/attendance/tools/<int:match_id>")
+def public_attendance_tools(public_id, match_id):
+    team = get_team_by_public_id(public_id)
+    if not team:
+        return redirect(url_for("attendance_description"))
+    match = portal_get_event(team["id"], match_id)
+    if not match:
+        return redirect(url_for("member_team_page", public_id=public_id))
+
+    match_data = dict(match)
+    match_data["date_label"] = format_date_mmdd_with_weekday(match["date"])
+    effective_attendees = get_portal_effective_attendees(team["id"], match_id)
+    team_result = []
+    random_pick = []
+    team_share_url = ""
+    team_share_text = ""
+    team_qr_url = ""
+    selected_team_count = _coerce_team_count(request.args.get("team_count"), default=2)
+    selected_pick_count = _coerce_team_count(request.args.get("pick_count"), default=1, minimum=1, maximum=max(1, len(effective_attendees)))
+    tool_message = request.args.get("tool_message", "").strip()
+    if request.args.get("tool_type") == "team_split":
+        team_result = parse_team_state_from_form(request.args.get("team_state", ""))
+    if request.args.get("tool_type") == "random_pick":
+        random_pick = parse_random_pick_names(request.args.get("picked_names", ""), request.args.get("picked_name", ""))
+    if team_result:
+        share_id = request.args.get("share_id", "").strip()
+        if share_id:
+            team_share_url = url_for("public_attendance_tool_share_view", public_id=public_id, share_id=share_id, _external=True)
+            lines = ["【チーム分け結果】"]
+            for team_data in team_result:
+                lines.append(f"{team_data['name']}: " + ", ".join(team_data["members"]))
+            team_share_text = "\n".join(lines)
+            team_qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=240x240&data={team_share_url}"
+    saved_tool_results = get_portal_tool_saved_results(team["id"], match_id, limit=30)
+    return render_template(
+        "public_attendance_tools.html",
+        public_id=public_id,
+        match=match_data,
+        effective_attendees=effective_attendees,
+        tool_message=tool_message,
+        team_result=team_result,
+        random_pick=random_pick,
+        team_state_json=json.dumps(serialize_team_result(team_result), ensure_ascii=False) if team_result else "[]",
+        team_share_url=team_share_url,
+        team_share_text=team_share_text,
+        team_qr_url=team_qr_url,
+        saved_tool_results=saved_tool_results,
+        selected_team_count=selected_team_count,
+        selected_pick_count=selected_pick_count,
+    )
+
+
+@app.route("/team/<public_id>/attendance/check/<int:match_id>/confirm", methods=["POST"])
+def public_attendance_check_confirm_attendees(public_id, match_id):
+    team = get_team_by_public_id(public_id)
+    if not team:
+        return redirect(url_for("attendance_description"))
+    selected_names = request.form.getlist("confirmed_names")
+    walkin_names = request.form.getlist("walkin_names")
+    save_portal_confirmed_attendees(team["id"], match_id, selected_names, walkin_names)
+    return redirect(
+        url_for(
+            "public_attendance_check",
+            public_id=public_id,
+            match_id=match_id,
+            tool_message="当日参加者を確定しました。",
+        )
+        + "#confirmed-attendees-section"
+    )
+
+
+@app.route("/team/<public_id>/attendance/check/<int:match_id>/walkin", methods=["POST"])
+def public_attendance_check_add_walkin(public_id, match_id):
+    team = get_team_by_public_id(public_id)
+    if not team:
+        return redirect(url_for("attendance_description"))
+    walkin_name = request.form.get("walkin_name", "")
+    added = add_portal_walkin_attendee(team["id"], match_id, walkin_name)
+    message = "飛び入り参加者を追加しました。" if added else "飛び入り参加者名を入力してください。"
+    return redirect(url_for("public_attendance_check", public_id=public_id, match_id=match_id, tool_message=message) + "#confirmed-attendees-section")
+
+
+@app.route("/team/<public_id>/attendance/check/<int:match_id>/walkin/delete", methods=["POST"])
+def public_attendance_check_delete_walkin(public_id, match_id):
+    team = get_team_by_public_id(public_id)
+    if not team:
+        return redirect(url_for("attendance_description"))
+    member_name = request.form.get("member_name", "")
+    deleted = remove_portal_walkin_attendee(team["id"], match_id, member_name)
+    message = "飛び入り参加者を削除しました。" if deleted else "削除対象の飛び入り参加者が見つかりませんでした。"
+    return redirect(url_for("public_attendance_check", public_id=public_id, match_id=match_id, tool_message=message) + "#confirmed-attendees-section")
+
+
+@app.route("/team/<public_id>/attendance/check/<int:match_id>/tools/team-split", methods=["POST"])
+def public_attendance_check_team_split(public_id, match_id):
+    team = get_team_by_public_id(public_id)
+    if not team:
+        return redirect(url_for("attendance_description"))
+    attendees = get_portal_effective_attendees(team["id"], match_id)
+    if len(attendees) < 2:
+        return redirect(url_for("public_attendance_tools", public_id=public_id, match_id=match_id, tool_message="チーム分けには2名以上必要です。"))
+    team_count = _coerce_team_count(request.form.get("team_count"), default=2)
+    teams = build_team_allocator("random").allocate(attendees, team_count)
+    return redirect(
+        url_for(
+            "public_attendance_tools",
+            public_id=public_id,
+            match_id=match_id,
+            tool_type="team_split",
+            team_state=json.dumps(serialize_team_result(teams), ensure_ascii=False),
+            team_count=team_count,
+            tool_message=f"{team_count}チームにランダム分けしました。",
+        )
+    )
+
+
+@app.route("/team/<public_id>/attendance/check/<int:match_id>/tools/team-rerun", methods=["POST"])
+def public_attendance_check_team_rerun(public_id, match_id):
+    team = get_team_by_public_id(public_id)
+    if not team:
+        return redirect(url_for("attendance_description"))
+    attendees = get_portal_effective_attendees(team["id"], match_id)
+    team_count = _coerce_team_count(request.form.get("team_count"), default=2)
+    if len(attendees) < 2:
+        return redirect(url_for("public_attendance_tools", public_id=public_id, match_id=match_id, tool_message="参加者が不足しているため再実行できません。"))
+    teams = build_team_allocator("random").allocate(attendees, team_count)
+    return redirect(
+        url_for(
+            "public_attendance_tools",
+            public_id=public_id,
+            match_id=match_id,
+            tool_type="team_split",
+            team_state=json.dumps(serialize_team_result(teams), ensure_ascii=False),
+            team_count=team_count,
+            tool_message="チーム分けを再実行しました。",
+        )
+    )
+
+
+@app.route("/team/<public_id>/attendance/check/<int:match_id>/tools/team-swap", methods=["POST"])
+def public_attendance_check_team_swap(public_id, match_id):
+    team = get_team_by_public_id(public_id)
+    if not team:
+        return redirect(url_for("attendance_description"))
+    teams = parse_team_state_from_form(request.form.get("team_state_json", ""))
+    src_team_idx = _coerce_positive_int(request.form.get("src_team_idx"))
+    src_member_idx = _coerce_positive_int(request.form.get("src_member_idx"))
+    dst_team_idx = _coerce_positive_int(request.form.get("dst_team_idx"))
+    dst_member_idx = _coerce_positive_int(request.form.get("dst_member_idx"))
+    if None in {src_team_idx, src_member_idx, dst_team_idx, dst_member_idx}:
+        return redirect(
+            url_for(
+                "public_attendance_tools",
+                public_id=public_id,
+                match_id=match_id,
+                tool_type="team_split",
+                team_state=json.dumps(serialize_team_result(teams), ensure_ascii=False),
+                team_count=len(teams),
+                tool_message="入れ替え対象を選択してください。",
+            )
+        )
+    updated_teams, swap_status = swap_members_in_teams(
+        teams,
+        src_team_idx - 1,
+        src_member_idx - 1,
+        dst_team_idx - 1,
+        dst_member_idx - 1,
+    )
+    message = "メンバーを入れ替えました。" if swap_status == "swapped" else "入れ替えに失敗しました。"
+    return redirect(
+        url_for(
+            "public_attendance_tools",
+            public_id=public_id,
+            match_id=match_id,
+            tool_type="team_split",
+            team_state=json.dumps(serialize_team_result(updated_teams), ensure_ascii=False),
+            team_count=len(updated_teams),
+            tool_message=message,
+        )
+    )
+
+
+@app.route("/team/<public_id>/attendance/check/<int:match_id>/tools/team-share", methods=["POST"])
+def public_attendance_check_team_share(public_id, match_id):
+    team = get_team_by_public_id(public_id)
+    if not team:
+        return redirect(url_for("attendance_description"))
+    teams = parse_team_state_from_form(request.form.get("team_state_json", ""))
+    if not teams:
+        return redirect(url_for("public_attendance_tools", public_id=public_id, match_id=match_id, tool_message="共有するチーム分け結果がありません。"))
+    payload = {"teams": serialize_team_result(teams)}
+    share_id = create_portal_tool_share(team["id"], match_id, "team_split", payload)
+    return redirect(
+        url_for(
+            "public_attendance_tools",
+            public_id=public_id,
+            match_id=match_id,
+            tool_type="team_split",
+            team_state=json.dumps(payload["teams"], ensure_ascii=False),
+            team_count=len(payload["teams"]),
+            share_id=share_id,
+            tool_message="共有URLを作成しました。",
+        )
+    )
+
+
+@app.route("/team/<public_id>/attendance/check/<int:match_id>/tools/role-assign", methods=["POST"])
+def public_attendance_check_role_assign(public_id, match_id):
+    return redirect(url_for("public_attendance_tools", public_id=public_id, match_id=match_id, tool_message="役割決め機能は廃止しました。"))
+
+
+@app.route("/team/<public_id>/attendance/check/<int:match_id>/tools/random-pick", methods=["POST"])
+def public_attendance_check_random_pick(public_id, match_id):
+    team = get_team_by_public_id(public_id)
+    if not team:
+        return redirect(url_for("attendance_description"))
+    attendees = get_portal_effective_attendees(team["id"], match_id)
+    if not attendees:
+        return redirect(url_for("public_attendance_tools", public_id=public_id, match_id=match_id, tool_message="当日参加者を先に確定してください。"))
+    pick_count = _coerce_team_count(request.form.get("pick_count"), default=1, minimum=1, maximum=max(1, len(attendees)))
+    picked_names = random.sample(attendees, k=pick_count)
+    picked_label = f"{len(picked_names)}人" if len(picked_names) > 1 else "1人"
+    return redirect(
+        url_for(
+            "public_attendance_tools",
+            public_id=public_id,
+            match_id=match_id,
+            tool_type="random_pick",
+            picked_names=json.dumps(picked_names, ensure_ascii=False),
+            pick_count=pick_count,
+            tool_message=f"ランダムで{picked_label}を代表者に選出しました。",
+        )
+    )
+
+
+@app.route("/team/<public_id>/attendance/check/<int:match_id>/tools/save", methods=["POST"])
+def public_attendance_check_save_tool_result(public_id, match_id):
+    team = get_team_by_public_id(public_id)
+    if not team:
+        return redirect(url_for("attendance_description"))
+
+    tool_type = (request.form.get("tool_type") or "").strip()
+    title = (request.form.get("title") or "").strip()
+    payload = None
+
+    if tool_type == "team_split":
+        teams = parse_team_state_from_form(request.form.get("team_state_json", ""))
+        if teams:
+            payload = {"teams": serialize_team_result(teams)}
+        if not title:
+            title = f"チーム分け {datetime.now().strftime('%m/%d %H:%M')}"
+    elif tool_type == "role_assign":
+        try:
+            role_state = json.loads(request.form.get("role_state_json", "{}"))
+        except (TypeError, ValueError, json.JSONDecodeError):
+            role_state = {}
+        if isinstance(role_state, dict) and role_state:
+            payload = role_state
+        if not title:
+            title = f"役割決め {datetime.now().strftime('%m/%d %H:%M')}"
+    elif tool_type == "random_pick":
+        picked_names = parse_random_pick_names(request.form.get("picked_names_json", ""), request.form.get("picked_name", ""))
+        if picked_names:
+            payload = {"picked_names": picked_names}
+        if not title:
+            title = f"代表者選出 {datetime.now().strftime('%m/%d %H:%M')}"
+    else:
+        return redirect(url_for("public_attendance_tools", public_id=public_id, match_id=match_id, tool_message="保存対象の種類が不正です。"))
+
+    if not payload:
+        return redirect(url_for("public_attendance_tools", public_id=public_id, match_id=match_id, tool_message="保存対象の結果がありません。"))
+
+    create_portal_tool_saved_result(team["id"], match_id, tool_type, title, payload)
+    return redirect(url_for("public_attendance_tools", public_id=public_id, match_id=match_id, tool_message="結果を保存しました。"))
+
+
+@app.route("/team/<public_id>/attendance/check/<int:match_id>/tools/load/<int:saved_id>", methods=["POST"])
+def public_attendance_check_load_tool_result(public_id, match_id, saved_id):
+    team = get_team_by_public_id(public_id)
+    if not team:
+        return redirect(url_for("attendance_description"))
+    saved = get_portal_tool_saved_result(team["id"], match_id, saved_id)
+    if not saved:
+        return redirect(url_for("public_attendance_tools", public_id=public_id, match_id=match_id, tool_message="保存結果が見つかりません。"))
+
+    tool_type = saved.get("tool_type")
+    payload = saved.get("payload") or {}
+    title = saved.get("title") or "保存結果"
+    if tool_type == "team_split":
+        teams = payload.get("teams") if isinstance(payload, dict) else []
+        return redirect(
+            url_for(
+                "public_attendance_tools",
+                public_id=public_id,
+                match_id=match_id,
+                tool_type="team_split",
+                team_state=json.dumps(teams, ensure_ascii=False),
+                team_count=len(teams),
+                tool_message=f"{title} を再利用しました。",
+            )
+        )
+    if tool_type == "role_assign":
+        return redirect(
+            url_for(
+                "public_attendance_tools",
+                public_id=public_id,
+                match_id=match_id,
+                tool_message=f"{title} は役割決め機能のため再利用できません。",
+            )
+        )
+    if tool_type == "random_pick":
+        picked_names = []
+        if isinstance(payload, dict):
+            picked_names = parse_random_pick_names(json.dumps(payload.get("picked_names", []), ensure_ascii=False), payload.get("picked_name", ""))
+        return redirect(
+            url_for(
+                "public_attendance_tools",
+                public_id=public_id,
+                match_id=match_id,
+                tool_type="random_pick",
+                picked_names=json.dumps(picked_names, ensure_ascii=False),
+                pick_count=max(1, len(picked_names)),
+                tool_message=f"{title} を再利用しました。",
+            )
+        )
+    return redirect(url_for("public_attendance_tools", public_id=public_id, match_id=match_id, tool_message="この保存結果は再利用できません。"))
+
+
+@app.route("/team/<public_id>/share/<share_id>")
+def public_attendance_tool_share_view(public_id, share_id):
+    team = get_team_by_public_id(public_id)
+    if not team:
+        return redirect(url_for("attendance_description"))
+    share_data = get_portal_tool_share(share_id)
+    if not share_data or share_data.get("team_id") != team["id"]:
+        return "Share data not found.", 404
+    payload = share_data.get("payload") or {}
+    teams = payload.get("teams") if isinstance(payload, dict) else []
+    if not isinstance(teams, list):
+        teams = []
+    return render_template(
+        "attendance_team_share.html",
+        share_id=share_id,
+        teams=parse_team_state_from_form(json.dumps(teams, ensure_ascii=False)),
+        created_at=share_data.get("created_at"),
     )
 
 
@@ -3485,6 +4658,14 @@ def attendance_check(match_id):
 
     match_data = dict(match)
     match_data["date_label"] = format_date_mmdd_with_weekday(match["date"])
+    confirmed_rows = get_confirmed_attendees(session["user_id"], match_id)
+    confirmed_names = [row.get("name") for row in confirmed_rows if row.get("name") and row.get("source_type") != "walkin_pending"]
+    walkin_names = [row.get("name") for row in confirmed_rows if row.get("name") and row.get("source_type") in ("walkin", "walkin_pending")]
+    has_confirmed_today = bool(confirmed_names)
+    candidate_names = _normalize_name_list(grouped_members["参加"] + walkin_names)
+    effective_attendees = get_effective_attendees(session["user_id"], match_id)
+
+    tool_message = request.args.get("tool_message", "").strip()
 
     return render_template(
         "attendance_check.html",
@@ -3492,6 +4673,338 @@ def attendance_check(match_id):
         join_members=grouped_members["\u53c2\u52a0"],
         absent_members=grouped_members["\u4e0d\u53c2\u52a0"],
         undecided_members=grouped_members["\u672a\u5b9a"],
+        candidate_names=candidate_names,
+        confirmed_names=confirmed_names,
+        walkin_names=walkin_names,
+        has_confirmed_today=has_confirmed_today,
+        effective_attendees=effective_attendees,
+        tool_message=tool_message,
+        tools_url=url_for("attendance_tools", match_id=match_id),
+    )
+
+
+@app.route("/apps/attendance/app/attendance/tools/<int:match_id>")
+@login_required
+def attendance_tools(match_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("SELECT * FROM matches WHERE id=? AND user_id=?", (match_id, session["user_id"]))
+    match = c.fetchone()
+    conn.close()
+    if not match:
+        return redirect(url_for("index"))
+
+    match_data = dict(match)
+    match_data["date_label"] = format_date_mmdd_with_weekday(match["date"])
+    effective_attendees = get_effective_attendees(session["user_id"], match_id)
+
+    team_result = []
+    random_pick = []
+    team_share_url = ""
+    team_share_text = ""
+    team_qr_url = ""
+    selected_team_count = _coerce_team_count(request.args.get("team_count"), default=2)
+    selected_pick_count = _coerce_team_count(request.args.get("pick_count"), default=1, minimum=1, maximum=max(1, len(effective_attendees)))
+    tool_message = request.args.get("tool_message", "").strip()
+    if request.args.get("tool_type") == "team_split":
+        team_result = parse_team_state_from_form(request.args.get("team_state", ""))
+    if request.args.get("tool_type") == "random_pick":
+        random_pick = parse_random_pick_names(request.args.get("picked_names", ""), request.args.get("picked_name", ""))
+    if team_result:
+        share_id = request.args.get("share_id", "").strip()
+        if share_id:
+            team_share_url = url_for("attendance_tool_share_view", share_id=share_id, _external=True)
+            lines = ["【チーム分け結果】"]
+            for team_data in team_result:
+                lines.append(f"{team_data['name']}: " + ", ".join(team_data["members"]))
+            team_share_text = "\n".join(lines)
+            team_qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=240x240&data={team_share_url}"
+
+    saved_tool_results = get_attendance_tool_saved_results(session["user_id"], match_id, limit=30)
+    return render_template(
+        "attendance_tools.html",
+        match=match_data,
+        effective_attendees=effective_attendees,
+        tool_message=tool_message,
+        team_result=team_result,
+        random_pick=random_pick,
+        team_state_json=json.dumps(serialize_team_result(team_result), ensure_ascii=False) if team_result else "[]",
+        team_share_url=team_share_url,
+        team_share_text=team_share_text,
+        team_qr_url=team_qr_url,
+        saved_tool_results=saved_tool_results,
+        selected_team_count=selected_team_count,
+        selected_pick_count=selected_pick_count,
+    )
+
+
+@app.route("/apps/attendance/app/attendance/check/<int:match_id>/confirm", methods=["POST"])
+@login_required
+def attendance_check_confirm_attendees(match_id):
+    selected_names = request.form.getlist("confirmed_names")
+    walkin_names = request.form.getlist("walkin_names")
+    save_confirmed_attendees(session["user_id"], match_id, selected_names, walkin_names)
+    return redirect(
+        url_for(
+            "attendance_check",
+            match_id=match_id,
+            tool_message="当日参加者を確定しました。",
+        )
+        + "#confirmed-attendees-section"
+    )
+
+
+@app.route("/apps/attendance/app/attendance/check/<int:match_id>/walkin", methods=["POST"])
+@login_required
+def attendance_check_add_walkin(match_id):
+    walkin_name = request.form.get("walkin_name", "")
+    added = add_walkin_attendee(session["user_id"], match_id, walkin_name)
+    message = "飛び入り参加者を追加しました。" if added else "飛び入り参加者名を入力してください。"
+    return redirect(url_for("attendance_check", match_id=match_id, tool_message=message) + "#confirmed-attendees-section")
+
+
+@app.route("/apps/attendance/app/attendance/check/<int:match_id>/walkin/delete", methods=["POST"])
+@login_required
+def attendance_check_delete_walkin(match_id):
+    member_name = request.form.get("member_name", "")
+    deleted = remove_walkin_attendee(session["user_id"], match_id, member_name)
+    message = "飛び入り参加者を削除しました。" if deleted else "削除対象の飛び入り参加者が見つかりませんでした。"
+    return redirect(url_for("attendance_check", match_id=match_id, tool_message=message) + "#confirmed-attendees-section")
+
+
+@app.route("/apps/attendance/app/attendance/check/<int:match_id>/tools/team-split", methods=["POST"])
+@login_required
+def attendance_check_team_split(match_id):
+    attendees = get_effective_attendees(session["user_id"], match_id)
+    if len(attendees) < 2:
+        return redirect(url_for("attendance_tools", match_id=match_id, tool_message="チーム分けには2名以上必要です。"))
+
+    team_count = _coerce_team_count(request.form.get("team_count"), default=2)
+    allocator = build_team_allocator("random")
+    teams = allocator.allocate(attendees, team_count)
+    team_state = json.dumps(serialize_team_result(teams), ensure_ascii=False)
+
+    return redirect(
+        url_for(
+            "attendance_tools",
+            match_id=match_id,
+            tool_type="team_split",
+            team_state=team_state,
+            team_count=team_count,
+            tool_message=f"{team_count}チームにランダム分けしました。",
+        )
+    )
+
+
+@app.route("/apps/attendance/app/attendance/check/<int:match_id>/tools/team-rerun", methods=["POST"])
+@login_required
+def attendance_check_team_rerun(match_id):
+    attendees = get_effective_attendees(session["user_id"], match_id)
+    team_count = _coerce_team_count(request.form.get("team_count"), default=2)
+    if len(attendees) < 2:
+        return redirect(url_for("attendance_tools", match_id=match_id, tool_message="参加者が不足しているため再実行できません。"))
+    teams = build_team_allocator("random").allocate(attendees, team_count)
+    team_state = json.dumps(serialize_team_result(teams), ensure_ascii=False)
+    return redirect(
+        url_for(
+            "attendance_tools",
+            match_id=match_id,
+            tool_type="team_split",
+            team_state=team_state,
+            team_count=team_count,
+            tool_message="チーム分けを再実行しました。",
+        )
+    )
+
+
+@app.route("/apps/attendance/app/attendance/check/<int:match_id>/tools/team-swap", methods=["POST"])
+@login_required
+def attendance_check_team_swap(match_id):
+    teams = parse_team_state_from_form(request.form.get("team_state_json", ""))
+    src_team_idx = _coerce_positive_int(request.form.get("src_team_idx"))
+    src_member_idx = _coerce_positive_int(request.form.get("src_member_idx"))
+    dst_team_idx = _coerce_positive_int(request.form.get("dst_team_idx"))
+    dst_member_idx = _coerce_positive_int(request.form.get("dst_member_idx"))
+    if None in {src_team_idx, src_member_idx, dst_team_idx, dst_member_idx}:
+        team_state = json.dumps(serialize_team_result(teams), ensure_ascii=False)
+        return redirect(
+            url_for(
+                "attendance_tools",
+                match_id=match_id,
+                tool_type="team_split",
+                team_state=team_state,
+                team_count=len(teams),
+                tool_message="入れ替え対象を選択してください。",
+            )
+        )
+    updated_teams, swap_status = swap_members_in_teams(
+        teams,
+        src_team_idx - 1,
+        src_member_idx - 1,
+        dst_team_idx - 1,
+        dst_member_idx - 1,
+    )
+    message = "メンバーを入れ替えました。" if swap_status == "swapped" else "入れ替えに失敗しました。"
+    team_state = json.dumps(serialize_team_result(updated_teams), ensure_ascii=False)
+    return redirect(
+        url_for(
+            "attendance_tools",
+            match_id=match_id,
+            tool_type="team_split",
+            team_state=team_state,
+            team_count=len(updated_teams),
+            tool_message=message,
+        )
+    )
+
+
+@app.route("/apps/attendance/app/attendance/check/<int:match_id>/tools/team-share", methods=["POST"])
+@login_required
+def attendance_check_team_share(match_id):
+    teams = parse_team_state_from_form(request.form.get("team_state_json", ""))
+    if not teams:
+        return redirect(url_for("attendance_tools", match_id=match_id, tool_message="共有するチーム分け結果がありません。"))
+    share_payload = {"teams": serialize_team_result(teams)}
+    share_id = create_attendance_tool_share(session["user_id"], match_id, "team_split", share_payload)
+    return redirect(
+        url_for(
+            "attendance_tools",
+            match_id=match_id,
+            tool_type="team_split",
+            team_state=json.dumps(share_payload["teams"], ensure_ascii=False),
+            team_count=len(share_payload["teams"]),
+            share_id=share_id,
+            tool_message="共有URLを作成しました。",
+        )
+    )
+
+
+@app.route("/apps/attendance/app/attendance/check/<int:match_id>/tools/role-assign", methods=["POST"])
+@login_required
+def attendance_check_role_assign(match_id):
+    return redirect(url_for("attendance_tools", match_id=match_id, tool_message="役割決め機能は廃止しました。"))
+
+
+@app.route("/apps/attendance/app/attendance/check/<int:match_id>/tools/random-pick", methods=["POST"])
+@login_required
+def attendance_check_random_pick(match_id):
+    attendees = get_effective_attendees(session["user_id"], match_id)
+    if not attendees:
+        return redirect(url_for("attendance_tools", match_id=match_id, tool_message="当日参加者を先に確定してください。"))
+    pick_count = _coerce_team_count(request.form.get("pick_count"), default=1, minimum=1, maximum=max(1, len(attendees)))
+    picked_names = random.sample(attendees, k=pick_count)
+    picked_label = f"{len(picked_names)}人" if len(picked_names) > 1 else "1人"
+    return redirect(
+        url_for(
+            "attendance_tools",
+            match_id=match_id,
+            tool_type="random_pick",
+            picked_names=json.dumps(picked_names, ensure_ascii=False),
+            pick_count=pick_count,
+            tool_message=f"ランダムで{picked_label}を代表者に選出しました。",
+        )
+    )
+
+
+@app.route("/apps/attendance/app/attendance/check/<int:match_id>/tools/save", methods=["POST"])
+@login_required
+def attendance_check_save_tool_result(match_id):
+    tool_type = (request.form.get("tool_type") or "").strip()
+    title = (request.form.get("title") or "").strip()
+    payload = None
+
+    if tool_type == "team_split":
+        teams = parse_team_state_from_form(request.form.get("team_state_json", ""))
+        if teams:
+            payload = {"teams": serialize_team_result(teams)}
+        if not title:
+            title = f"チーム分け {datetime.now().strftime('%m/%d %H:%M')}"
+    elif tool_type == "role_assign":
+        try:
+            role_state = json.loads(request.form.get("role_state_json", "{}"))
+        except (TypeError, ValueError, json.JSONDecodeError):
+            role_state = {}
+        if isinstance(role_state, dict) and role_state:
+            payload = role_state
+        if not title:
+            title = f"役割決め {datetime.now().strftime('%m/%d %H:%M')}"
+    elif tool_type == "random_pick":
+        picked_names = parse_random_pick_names(request.form.get("picked_names_json", ""), request.form.get("picked_name", ""))
+        if picked_names:
+            payload = {"picked_names": picked_names}
+        if not title:
+            title = f"代表者選出 {datetime.now().strftime('%m/%d %H:%M')}"
+    else:
+        return redirect(url_for("attendance_tools", match_id=match_id, tool_message="保存対象の種類が不正です。"))
+
+    if not payload:
+        return redirect(url_for("attendance_tools", match_id=match_id, tool_message="保存対象の結果がありません。"))
+
+    create_attendance_tool_saved_result(session["user_id"], match_id, tool_type, title, payload)
+    return redirect(url_for("attendance_tools", match_id=match_id, tool_message="結果を保存しました。"))
+
+
+@app.route("/apps/attendance/app/attendance/check/<int:match_id>/tools/load/<int:saved_id>", methods=["POST"])
+@login_required
+def attendance_check_load_tool_result(match_id, saved_id):
+    saved = get_attendance_tool_saved_result(session["user_id"], match_id, saved_id)
+    if not saved:
+        return redirect(url_for("attendance_tools", match_id=match_id, tool_message="保存結果が見つかりません。"))
+
+    tool_type = saved.get("tool_type")
+    payload = saved.get("payload") or {}
+    title = saved.get("title") or "保存結果"
+    if tool_type == "team_split":
+        teams = payload.get("teams") if isinstance(payload, dict) else []
+        return redirect(
+            url_for(
+                "attendance_tools",
+                match_id=match_id,
+                tool_type="team_split",
+                team_state=json.dumps(teams, ensure_ascii=False),
+                team_count=len(teams),
+                tool_message=f"{title} を再利用しました。",
+            )
+        )
+    if tool_type == "role_assign":
+        return redirect(
+            url_for(
+                "attendance_tools",
+                match_id=match_id,
+                tool_message=f"{title} は役割決め機能のため再利用できません。",
+            )
+        )
+    if tool_type == "random_pick":
+        picked_names = []
+        if isinstance(payload, dict):
+            picked_names = parse_random_pick_names(json.dumps(payload.get("picked_names", []), ensure_ascii=False), payload.get("picked_name", ""))
+        return redirect(
+            url_for(
+                "attendance_tools",
+                match_id=match_id,
+                tool_type="random_pick",
+                picked_names=json.dumps(picked_names, ensure_ascii=False),
+                pick_count=max(1, len(picked_names)),
+                tool_message=f"{title} を再利用しました。",
+            )
+        )
+    return redirect(url_for("attendance_tools", match_id=match_id, tool_message="この保存結果は再利用できません。"))
+
+
+@app.route("/apps/attendance/share/<share_id>")
+def attendance_tool_share_view(share_id):
+    share_data = get_attendance_tool_share(share_id)
+    if not share_data:
+        return "Share data not found.", 404
+    payload = share_data.get("payload") or {}
+    teams = payload.get("teams") if isinstance(payload, dict) else []
+    if not isinstance(teams, list):
+        teams = []
+    return render_template(
+        "attendance_team_share.html",
+        share_id=share_id,
+        teams=parse_team_state_from_form(json.dumps(teams, ensure_ascii=False)),
+        created_at=share_data.get("created_at"),
     )
 
 

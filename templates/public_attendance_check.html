@@ -1,4 +1,4 @@
-{% extends "attendance_base.html" %}
+﻿{% extends "attendance_base.html" %}
 
 {% block title %}出欠確認 | Mossan Store{% endblock %}
 
@@ -7,44 +7,118 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
 <style>
-.dashboard-reggae-title {
-  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
-  letter-spacing: 0.04em;
-  color: #ead7b3;
-}
-.check-table {
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  table-layout: fixed;
-  border-collapse: collapse;
-  border-spacing: 0;
-  background: #11151b;
-}
-.check-table th,
-.check-table td {
-  width: 33.3333%;
-  text-align: left;
-  vertical-align: top;
-  border: 1px solid #2f3946;
-}
-.check-table th {
-  border-color: #2f6d44;
-  background: linear-gradient(180deg, #3b8f5f 0%, #2a6d48 100%);
-  color: #f2fff6;
-  font-weight: 700;
-}
-.check-table td {
-  height: 220px;
-  background: #11151b;
-  color: #e5e7eb;
-}
-.check-table tbody tr:hover td {
-  background: #1b222c;
-}
+.dashboard-reggae-title { font-family: 'Reggae One', 'Noto Sans JP', sans-serif; letter-spacing: 0.04em; color: #ead7b3; }
+.check-table { width: 100%; min-width: 0; table-layout: fixed; border-collapse: collapse; background: #11151b; }
+.check-table th, .check-table td { width: 33.3333%; text-align: left; vertical-align: top; border: 1px solid #2f3946; }
+.check-table th { border-color: #2f6d44; background: linear-gradient(180deg, #3b8f5f 0%, #2a6d48 100%); color: #f2fff6; font-weight: 700; }
 .member-list { margin: 0; padding: 0; list-style: none; }
 .member-list li { margin: 0 0 4px; word-break: break-word; }
-.check-wrap { overflow-x: hidden; }
+.tag { display: inline-block; padding: 3px 8px; border: 1px solid #666; border-radius: 999px; font-size: 12px; margin-right: 6px; }
+.small-note { color: #c8c8c8; font-size: 13px; }
+.confirm-table { width: 100%; min-width: 0; table-layout: fixed; border-collapse: collapse; background: #11151b; }
+.confirm-table th, .confirm-table td { text-align: left; vertical-align: middle; border: 1px solid #2f3946; word-break: break-word; }
+.confirm-table th { border-color: #2f6d44; background: linear-gradient(180deg, #3b8f5f 0%, #2a6d48 100%); color: #f2fff6; font-weight: 700; }
+.confirm-table .col-select,
+.confirm-table th.col-select,
+.confirm-table td.col-select {
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+  text-align: center;
+}
+.confirm-table .col-name,
+.confirm-table th.col-name,
+.confirm-table td.col-name {
+  width: auto;
+}
+.confirm-table .col-action,
+.confirm-table th.col-action,
+.confirm-table td.col-action {
+  width: 84px;
+  min-width: 84px;
+  max-width: 84px;
+  text-align: center;
+  white-space: nowrap;
+}
+.confirm-table td.col-action {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.confirm-table .action-cell {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.confirm-table .action-cell form {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.confirm-table tr.walkin-row td {
+  background: rgba(159, 224, 177, 0.14);
+}
+.confirm-table .btn.compact {
+  padding: 4px 10px;
+  font-size: 12px;
+  line-height: 1.2;
+}
+.walkin-form {
+  align-items: center;
+}
+.walkin-form input[type="text"] {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.fancy-maroon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 41px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  border: 1px solid #78172d;
+  color: #ffe9ee;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.32);
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.05) 0 3px,
+      rgba(0, 0, 0, 0.1) 3px 6px
+    ),
+    linear-gradient(180deg, #9d1f3c 0%, #681328 100%);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+.fancy-maroon-btn::before,
+.fancy-maroon-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(22, 24, 27, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.fancy-maroon-btn::before {
+  left: 8px;
+}
+.fancy-maroon-btn::after {
+  right: 8px;
+}
+.fancy-maroon-btn:hover {
+  filter: brightness(1.06) contrast(1.04);
+}
+.fancy-maroon-btn:active {
+  transform: translateY(0);
+}
 </style>
 {% endblock %}
 
@@ -52,21 +126,64 @@
 <h1 class="page-title dashboard-reggae-title">出欠確認</h1>
 <section class="panel">
   <div>{{ match["date_label"] }} {{ match["start_time"] }}〜{{ match["end_time"] }}</div>
-  <div>{{ match["opponent"] }}@{{ match["place"] }}</div>
+  <div>{{ match["opponent"] }} @ {{ match["place"] }}</div>
 </section>
+
+{% if tool_message %}<section class="panel"><div class="notice success">{{ tool_message }}</div></section>{% endif %}
+
 <section class="panel">
-  <div class="table-wrap check-wrap">
+  <div class="table-wrap">
     <table class="check-table">
       <thead><tr><th>参加</th><th>不参加</th><th>未定</th></tr></thead>
-      <tbody>
-        <tr>
-          <td>{% if join_members %}<ul class="member-list">{% for name in join_members %}<li>{{ name }}</li>{% endfor %}</ul>{% else %}-{% endif %}</td>
-          <td>{% if absent_members %}<ul class="member-list">{% for name in absent_members %}<li>{{ name }}</li>{% endfor %}</ul>{% else %}-{% endif %}</td>
-          <td>{% if undecided_members %}<ul class="member-list">{% for name in undecided_members %}<li>{{ name }}</li>{% endfor %}</ul>{% else %}-{% endif %}</td>
-        </tr>
-      </tbody>
+      <tbody><tr>
+        <td>{% if join_members %}<ul class="member-list">{% for name in join_members %}<li>{{ name }}</li>{% endfor %}</ul>{% else %}-{% endif %}</td>
+        <td>{% if absent_members %}<ul class="member-list">{% for name in absent_members %}<li>{{ name }}</li>{% endfor %}</ul>{% else %}-{% endif %}</td>
+        <td>{% if undecided_members %}<ul class="member-list">{% for name in undecided_members %}<li>{{ name }}</li>{% endfor %}</ul>{% else %}-{% endif %}</td>
+      </tr></tbody>
     </table>
   </div>
+  <p class="small-note" style="margin-top:10px;">チーム分け、代表者選出ができます。<br>参加メンバーが異なる場合は↓で調整してください。</p>
+  <div class="btn-row" style="margin-top:10px;"><a href="{{ tools_url }}" class="btn fancy-maroon-btn">参加者ツールへ</a></div>
 </section>
+
+<section id="confirmed-attendees-section" class="panel">
+  <h2>当日参加者の確定</h2>
+  <p class="small-note">当日来たメンバーを確定してから参加者ツールを使います。</p>
+  <form id="public-confirm-attendees-form" method="post" action="{{ url_for('public_attendance_check_confirm_attendees', public_id=public_id, match_id=match['id']) }}">
+    <div class="table-wrap">
+      <table class="confirm-table">
+        <thead><tr><th class="col-select">選択</th><th class="col-name">メンバー名</th><th class="col-action">操作</th></tr></thead>
+        <tbody>
+          {% for name in candidate_names %}
+          {% set is_walkin = (name in walkin_names) %}
+          <tr{% if is_walkin %} class="walkin-row"{% endif %}>
+            <td class="col-select">{% if is_walkin %}<input type="hidden" name="walkin_names" value="{{ name }}">{% endif %}<input type="checkbox" name="confirmed_names" value="{{ name }}" {% if name in confirmed_names or (not has_confirmed_today and name in join_members) %}checked{% endif %}></td>
+            <td class="col-name">{{ name }}</td>
+            <td class="col-action">
+              <div class="action-cell">
+              {% if is_walkin %}
+              <form method="post" action="{{ url_for('public_attendance_check_delete_walkin', public_id=public_id, match_id=match['id']) }}">
+                <input type="hidden" name="member_name" value="{{ name }}">
+                <button type="submit" class="btn secondary compact">削除</button>
+              </form>
+              {% else %}
+              -
+              {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </form>
+
+  <form method="post" action="{{ url_for('public_attendance_check_add_walkin', public_id=public_id, match_id=match['id']) }}" class="btn-row walkin-form" style="margin-top:10px;">
+    <input type="text" name="walkin_name" placeholder="飛び入り参加者名">
+    <button type="submit" class="btn secondary">飛び入り追加</button>
+  </form>
+  <div class="btn-row" style="margin-top:10px;"><button type="submit" form="public-confirm-attendees-form" class="btn fancy-maroon-btn">当日参加者を確定</button></div>
+</section>
+
 <div class="btn-row" style="margin-top:16px;"><a href="{{ url_for('member_team_page', public_id=public_id) }}" class="btn secondary">戻る</a></div>
 {% endblock %}
