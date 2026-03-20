@@ -1487,6 +1487,13 @@ def init_db_sqlite():
     )
     """
     )
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_portal_actual_attendees_event_team ON portal_actual_attendees(team_id, event_id)"
+    )
+    c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_portal_tool_shares_share_id ON portal_tool_shares(share_id)")
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_portal_tool_saved_results_event_team ON portal_tool_saved_results(team_id, event_id, tool_type)"
+    )
 
     c.execute("PRAGMA table_info(admins)")
     admin_columns = [row[1] for row in c.fetchall()]
@@ -1521,13 +1528,6 @@ def init_db_sqlite():
     c.execute("CREATE INDEX IF NOT EXISTS idx_portal_members_team_id ON portal_members(team_id)")
     c.execute(
         "CREATE INDEX IF NOT EXISTS idx_portal_members_team_display_order ON portal_members(team_id, display_order)"
-    )
-    c.execute(
-        "CREATE INDEX IF NOT EXISTS idx_portal_actual_attendees_event_team ON portal_actual_attendees(team_id, event_id)"
-    )
-    c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_portal_tool_shares_share_id ON portal_tool_shares(share_id)")
-    c.execute(
-        "CREATE INDEX IF NOT EXISTS idx_portal_tool_saved_results_event_team ON portal_tool_saved_results(team_id, event_id, tool_type)"
     )
     c.execute(
         """
@@ -1878,10 +1878,6 @@ def init_db_postgres():
         "CREATE INDEX IF NOT EXISTS idx_portal_members_team_display_order ON portal_members(team_id, display_order)"
     )
     c.execute(
-        "CREATE INDEX IF NOT EXISTS idx_portal_actual_attendees_event_team ON portal_actual_attendees(team_id, event_id)"
-    )
-    c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_portal_tool_shares_share_id ON portal_tool_shares(share_id)")
-    c.execute(
         """
         UPDATE portal_members
         SET is_active = COALESCE(is_active, 1),
@@ -1977,6 +1973,10 @@ def init_db_postgres():
     )
     """
     )
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_portal_actual_attendees_event_team ON portal_actual_attendees(team_id, event_id)"
+    )
+    c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_portal_tool_shares_share_id ON portal_tool_shares(share_id)")
     c.execute(
         """
     CREATE TABLE IF NOT EXISTS matches (
