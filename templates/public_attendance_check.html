@@ -162,10 +162,14 @@
             <td class="col-action">
               <div class="action-cell">
               {% if is_walkin %}
-              <form method="post" action="{{ url_for('public_attendance_check_delete_walkin', public_id=public_id, match_id=match['id']) }}">
-                <input type="hidden" name="member_name" value="{{ name }}">
-                <button type="submit" class="btn secondary compact">削除</button>
-              </form>
+              <button
+                type="submit"
+                name="member_name"
+                value="{{ name }}"
+                formaction="{{ url_for('public_attendance_check_delete_walkin', public_id=public_id, match_id=match['id']) }}"
+                formmethod="post"
+                class="btn secondary compact"
+              >削除</button>
               {% else %}
               -
               {% endif %}

@@ -150,8 +150,8 @@
   flex-wrap: wrap;
 }
 .btn.bulk-check {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
+  background: #b91c1c;
+  border-color: #b91c1c;
 }
 .btn.bulk-duplicate {
   background: #15803d;
@@ -216,7 +216,7 @@
   right: 8px;
 }
 .wild-action-btn.bulk-check {
-  border-color: #555d66;
+  border-color: #b91c1c;
   color: #f4f8fc;
   background:
     repeating-linear-gradient(
@@ -224,7 +224,7 @@
       rgba(255, 255, 255, 0.05) 0 3px,
       rgba(0, 0, 0, 0.08) 3px 6px
     ),
-    linear-gradient(180deg, #66707a 0%, #454c55 100%);
+    linear-gradient(180deg, #b91c1c 0%, #991b1b 100%);
 }
 .wild-action-btn.csv-export-btn {
   border-color: #2f5b3f;
@@ -506,12 +506,22 @@
   const attendanceInlineSelects = document.querySelectorAll('.attendance-inline-select');
   const initialMonth = '{{ active_month|default("", true) }}';
   const storageKey = `team-top-scroll:${location.pathname}:${location.search}`;
+  const horizontalStorageKey = `team-table-scroll:${location.pathname}:${location.search}`;
 
   const savedY = sessionStorage.getItem(storageKey);
+  const savedX = sessionStorage.getItem(horizontalStorageKey);
   if (savedY !== null) {
     sessionStorage.removeItem(storageKey);
     window.scrollTo(0, Number(savedY) || 0);
   }
+  const restoreHorizontalScroll = () => {
+    if (savedX === null) return;
+    const activePane = document.querySelector('.month-pane.active');
+    const tableWrap = activePane ? activePane.querySelector('.table-wrap') : null;
+    if (!tableWrap) return;
+    tableWrap.scrollLeft = Number(savedX) || 0;
+    sessionStorage.removeItem(horizontalStorageKey);
+  };
 
   const slideTabsForMonth = (month, { isInitial = false } = {}) => {
     if (!tabsContainer || !tabsTrack) return;
@@ -568,6 +578,13 @@
   attendanceInlineSelects.forEach((select) => {
     select.addEventListener('change', () => {
       sessionStorage.setItem(storageKey, String(window.scrollY));
+      const activePane = document.querySelector('.month-pane.active');
+      const tableWrap = activePane ? activePane.querySelector('.table-wrap') : null;
+      if (tableWrap) {
+        sessionStorage.setItem(horizontalStorageKey, String(tableWrap.scrollLeft));
+      } else {
+        sessionStorage.removeItem(horizontalStorageKey);
+      }
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = '{{ url_for("member_team_page", public_id=public_id) }}';
@@ -593,6 +610,7 @@
   if (tabs.length) {
     const target = Array.from(tabs).find((tab) => tab.dataset.month === initialMonth);
     activate((target || tabs[0]).dataset.month, { isInitial: true });
+    restoreHorizontalScroll();
   }
   updateBulkButtons();
 })();
