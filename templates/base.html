@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}Mossan Store{% endblock %}</title>
 {% set is_attendance_brand = request.path.startswith('/admin') or request.path.startswith('/team/') or request.path.startswith('/apps/attendance/app/') %}
+{% set hide_footer = is_attendance_brand %}
 {% set favicon_filename = 'attendance-board-favicon.svg' if is_attendance_brand else 'favicon.ico' %}
 {% set favicon_type = 'image/svg+xml' if is_attendance_brand else 'image/x-icon' %}
 <link rel="icon" href="{{ url_for('static', filename=favicon_filename) }}" type="{{ favicon_type }}">
@@ -486,7 +487,9 @@ th { background: #1b1b1b; color: #ffcbcb; }
 <main class="page-wrap">
 {% block content %}{% endblock %}
 </main>
+{% if not hide_footer %}
 <footer class="site-footer">&copy; 2026 Mossan Store All Rights Reserved.</footer>
+{% endif %}
 <script>
 (() => {
   const toggle = document.querySelector('.menu-toggle');
