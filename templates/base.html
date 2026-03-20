@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}Mossan Store{% endblock %}</title>
-<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+{% set is_attendance_brand = request.path.startswith('/admin') or request.path.startswith('/team/') or request.path.startswith('/apps/attendance/app/') %}
+{% set favicon_filename = 'attendance-board-favicon.svg' if is_attendance_brand else 'favicon.ico' %}
+{% set favicon_type = 'image/svg+xml' if is_attendance_brand else 'image/x-icon' %}
+<link rel="icon" href="{{ url_for('static', filename=favicon_filename) }}" type="{{ favicon_type }}">
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+JP:wght@400;700;900&family=Yomogi&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -234,23 +237,40 @@ a { color: inherit; }
 .top-nav a:hover { color: #ff8a8a; border-bottom-color: #ff8a8a; }
 .menu-toggle {
   display: none;
-  width: 42px;
-  height: 42px;
+  width: 46px;
+  height: 40px;
   padding: 0;
-  border: 1px solid #3a3a3a;
+  border: 1px solid rgba(177, 43, 75, 0.58);
   border-radius: 10px;
-  background: #111;
+  background: linear-gradient(180deg, rgba(177, 43, 75, 0.22) 0%, rgba(123, 30, 53, 0.18) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 4px 10px rgba(0, 0, 0, 0.22);
   cursor: pointer;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
   flex-direction: column;
+  position: relative;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+.menu-toggle:hover {
+  filter: brightness(1.04);
 }
 .menu-toggle span {
   width: 18px;
   height: 2px;
   border-radius: 999px;
-  background: #f5f5f5;
+  background: #ffe7ec;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+  transition: transform 0.22s ease, opacity 0.18s ease;
+}
+.menu-toggle[aria-expanded="true"] span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+.menu-toggle[aria-expanded="true"] span:nth-child(2) {
+  opacity: 0;
+}
+.menu-toggle[aria-expanded="true"] span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
 }
 .user-chip {
   color: var(--muted);
@@ -404,9 +424,14 @@ th { background: #1b1b1b; color: #ffcbcb; }
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
   }
   .top-nav.open {
     display: flex;
+    opacity: 1;
+    transform: translateY(0);
   }
   .top-nav a {
     width: 100%;
@@ -417,7 +442,7 @@ th { background: #1b1b1b; color: #ffcbcb; }
 }
 </style>
 {% block head_extra %}{% endblock %}
-{% if request.path.startswith('/admin') or request.path.startswith('/team/') %}
+{% if is_attendance_brand %}
 <style>
   .top-nav a[href="{{ url_for('attendance_description') }}"] { display: none; }
 </style>
@@ -426,7 +451,6 @@ th { background: #1b1b1b; color: #ffcbcb; }
 <body>
 <header class="site-header">
   <div class="header-inner">
-    {% set is_attendance_brand = request.path.startswith('/admin') or request.path.startswith('/team/') %}
     {% set logo_variant = request.args.get('logo_variant', 'v2') %}
     <a class="logo-area" href="{{ url_for('attendance_description') if (request.path.startswith('/admin') or request.path.startswith('/team/')) else url_for('home') }}">
       <span class="logo-text{% if is_attendance_brand %} attendance-brand brand-{{ logo_variant }}{% endif %}">
@@ -479,6 +503,12 @@ th { background: #1b1b1b; color: #ffcbcb; }
     toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
   });
 
+  document.addEventListener('click', (event) => {
+    if (!nav.classList.contains('open')) return;
+    if (nav.contains(event.target) || toggle.contains(event.target)) return;
+    closeNav();
+  });
+
   nav.querySelectorAll('a').forEach((link) => {
     link.addEventListener('click', closeNav);
   });
@@ -489,6 +519,15 @@ th { background: #1b1b1b; color: #ffcbcb; }
 
 })();
 </script>
+{% if is_attendance_brand %}
+<script>
+(() => {
+  if (document.title.endsWith('Mossan Store')) {
+    document.title = document.title.replace(/Mossan Store$/, '出欠ボード＋');
+  }
+})();
+</script>
+{% endif %}
 {% block scripts %}{% endblock %}
 </body>
 </html>
