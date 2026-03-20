@@ -26,6 +26,7 @@
 .inline-submit-row select { width: 96px; margin: 0; }
 .inline-submit-label { font-size: 16px; font-weight: 800; letter-spacing: 0.04em; }
 .inline-submit-row .btn { white-space: nowrap; }
+.inline-submit-row .fancy-maroon-btn { flex: 1 1 auto; min-width: 0; }
 .fancy-maroon-btn {
   position: relative;
   display: inline-flex;
@@ -76,8 +77,12 @@
 }
 @media (max-width: 520px) {
   .inline-submit-row {
-    flex-wrap: wrap;
+    gap: 6px;
+    flex-wrap: nowrap;
   }
+  .inline-submit-row select { width: 72px; padding: 8px 8px; font-size: 14px; }
+  .inline-submit-label { font-size: 14px; letter-spacing: 0; }
+  .inline-submit-row .fancy-maroon-btn { padding: 8px 10px; font-size: 13px; }
 }
 </style>
 <script>
@@ -114,7 +119,7 @@ document.addEventListener("DOMContentLoaded", function () {
           <option value="{{ count }}" {% if count == selected_team_count %}selected{% endif %}>{{ count }}</option>
           {% endfor %}
         </select>
-        <button type="submit" class="btn fancy-maroon-btn">自動チーム分け</button>
+        <button type="submit" class="btn fancy-maroon-btn">チーム分け</button>
       </div>
     </form>
     <form method="post" action="{{ url_for('attendance_check_random_pick', match_id=match['id']) }}" class="tool-form" data-preserve-scroll="true">
