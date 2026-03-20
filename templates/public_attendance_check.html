@@ -182,7 +182,7 @@
     </div>
   </form>
 
-  <form method="post" action="{{ url_for('public_attendance_check_add_walkin', public_id=public_id, match_id=match['id']) }}" class="btn-row walkin-form" style="margin-top:10px;">
+  <form id="public-add-walkin-form" method="post" action="{{ url_for('public_attendance_check_add_walkin', public_id=public_id, match_id=match['id']) }}" class="btn-row walkin-form" style="margin-top:10px;">
     <input type="text" name="walkin_name" placeholder="飛び入り参加者名">
     <button type="submit" class="btn secondary">飛び入り追加</button>
   </form>
@@ -195,7 +195,7 @@
 {% block scripts %}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-  const storageKey = "public-attendance-check-scroll:" + window.location.pathname + window.location.search;
+  const storageKey = "public-attendance-check-scroll:" + window.location.pathname;
   const savedPosition = window.sessionStorage.getItem(storageKey);
   if (savedPosition !== null) {
     window.scrollTo(0, Number(savedPosition) || 0);
@@ -205,6 +205,13 @@ document.addEventListener("DOMContentLoaded", function () {
   const confirmForm = document.getElementById("public-confirm-attendees-form");
   if (confirmForm) {
     confirmForm.addEventListener("submit", function () {
+      window.sessionStorage.setItem(storageKey, String(window.scrollY));
+    });
+  }
+
+  const addWalkinForm = document.getElementById("public-add-walkin-form");
+  if (addWalkinForm) {
+    addWalkinForm.addEventListener("submit", function () {
       window.sessionStorage.setItem(storageKey, String(window.scrollY));
     });
   }
