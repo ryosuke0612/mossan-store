@@ -1,0 +1,111 @@
+{% extends "admin_base_clean.html" %}
+
+{% block title %}チーム詳細 | Mossan Store{% endblock %}
+
+{% block header_nav_items %}
+<a href="{{ url_for('admin_dashboard') }}">ダッシュボード</a>
+{% if session.get('is_site_admin') %}
+<a href="{{ url_for('site_admin_dashboard') }}">サイト運営者ページ</a>
+{% endif %}
+{% if session.get('admin_id') %}
+<a href="{{ url_for('admin_logout') }}">ログアウト</a>
+{% else %}
+<a href="{{ url_for('admin_login_entry') }}">管理者ログイン</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<style>
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+  }
+
+  .info-card {
+    padding: 16px;
+    border: 1px solid #2f3946;
+    border-radius: 14px;
+    background: #11151b;
+  }
+
+  .info-card label {
+    display: block;
+    margin-bottom: 8px;
+    color: #9fb0c5;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .info-card .value {
+    color: #f3f6fa;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .action-links {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .action-links a {
+    color: #bcd2ff;
+    font-weight: 700;
+    text-decoration: none;
+  }
+</style>
+
+<a href="{{ url_for('site_admin_admin_detail', admin_id=team['admin_id']) }}">← 管理者詳細へ戻る</a>
+<h1 class="page-title">チーム詳細</h1>
+
+{% if error_message %}
+<div class="notice error">{{ error_message }}</div>
+{% endif %}
+{% if success_message %}
+<div class="notice success">{{ success_message }}</div>
+{% endif %}
+
+<section class="panel">
+  <h2 style="margin-top: 0;">基本情報</h2>
+  <div class="info-grid">
+    <div class="info-card">
+      <label>チーム名</label>
+      <div class="value">{{ team["name"] }}</div>
+    </div>
+    <div class="info-card">
+      <label>管理者</label>
+      <div class="value">{{ admin["email"] if admin else "-" }}</div>
+    </div>
+    <div class="info-card">
+      <label>登録日</label>
+      <div class="value">{{ team["registered_date"] }}</div>
+    </div>
+    <div class="info-card">
+      <label>イベント数</label>
+      <div class="value">{{ team["event_count"] }}</div>
+    </div>
+    <div class="info-card">
+      <label>メンバー数</label>
+      <div class="value">{{ team["member_count"] }}</div>
+    </div>
+    <div class="info-card">
+      <label>公開ID</label>
+      <div class="value">{{ team["public_id"] or "-" }}</div>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2 style="margin-top: 0;">リンク</h2>
+  <div class="action-links">
+    {% if public_team_url %}
+    <a href="{{ public_team_url }}" target="_blank" rel="noopener noreferrer">公開チームページを開く</a>
+    {% endif %}
+    {% if team["public_id"] %}
+    <a href="{{ url_for('public_attendance_month', public_id=team['public_id']) }}" target="_blank" rel="noopener noreferrer">公開出欠ページを開く</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

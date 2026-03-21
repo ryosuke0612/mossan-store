@@ -86,70 +86,57 @@
     align-items: center;
   }
 
-  .team-accordion {
-    min-width: 120px;
+  .meta-text {
+    display: block;
+    margin-top: 4px;
+    color: #a6b2c1;
+    font-size: 12px;
+    white-space: normal;
   }
 
-  .team-accordion summary {
+  .status-text {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border: 1px solid #2f6d44;
-    border-radius: 999px;
-    background: #163121;
-    color: #f2fff6;
+    justify-content: center;
+    font-size: 13px;
     font-weight: 700;
-    cursor: pointer;
-    list-style: none;
+    letter-spacing: 0.02em;
   }
 
-  .team-accordion summary::-webkit-details-marker {
-    display: none;
+  .status-text.free { color: #7fb0ff; }
+  .status-text.paid { color: #7edb96; }
+  .status-text.expired { color: #ffd4ad; }
+  .status-text.suspended { color: #ff9a9a; }
+
+  .account-state {
+    font-size: 13px;
+    font-weight: 700;
   }
 
-  .team-accordion summary:hover {
-    background: #1f432e;
+  .account-state.active {
+    color: #7edb96;
   }
 
-  .team-accordion[open] .team-toggle-icon {
-    transform: rotate(180deg);
+  .account-state.suspended {
+    color: #ff8d8d;
   }
 
-  .team-toggle-icon {
-    display: inline-block;
-    transition: transform 0.2s ease;
-  }
-
-  .team-accordion-panel {
-    margin-top: 12px;
-    padding: 18px;
-    background: linear-gradient(180deg, rgba(35, 55, 44, 0.88) 0%, rgba(15, 22, 30, 0.98) 100%);
+  .detail-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 88px;
+    padding: 8px 12px;
     border: 1px solid #355043;
-    border-radius: 16px;
+    border-radius: 10px;
+    color: #e5f7ec;
+    background: #173122;
+    font-weight: 700;
+    text-decoration: none;
   }
 
-  .team-detail-table {
-    width: 100%;
-    border-collapse: collapse;
-    border-spacing: 0;
-  }
-
-  .team-detail-table th,
-  .team-detail-table td {
-    padding: 10px 12px;
-    border: 1px solid #355043;
-    color: #e5e7eb;
-    text-align: left;
-  }
-
-  .team-detail-table thead th {
-    background: rgba(59, 143, 95, 0.18);
-  }
-
-  .team-empty-text {
-    margin: 0;
-    color: #cfe5d7;
+  .detail-link:hover {
+    background: #214631;
   }
 </style>
 
@@ -161,7 +148,7 @@
     <span class="admin-total-badge">合計 {{ admin_rows|length }} 人</span>
   </h2>
   <p style="margin-top: 0; color: var(--muted);">
-    メールアドレス、作成チーム数、利用開始日、利用日数、利用期限、残り日数を表示しています。
+    一覧では管理者の状態を確認し、詳細ページでチーム内訳や課金情報、削除操作までまとめて行えます。
   </p>
 
   {% if error_message %}
@@ -176,82 +163,34 @@
     <table class="admin-list-table">
       <thead>
         <tr>
+          <th>詳細</th>
           <th>メールアドレス</th>
-          <th>作成チーム数</th>
           <th>利用開始日</th>
-          <th>利用日数</th>
-          <th>利用期限</th>
-          <th>残り日数</th>
-          <th>延長操作</th>
-          <th>削除</th>
+          <th>有効期限</th>
+          <th>最終ログイン日</th>
+          <th>作成チーム数</th>
+          <th>ステータス</th>
+          <th>利用停止 / 再開</th>
+          <th>累計課金額</th>
         </tr>
       </thead>
         <tbody>
           {% for row in admin_rows %}
         <tr>
-          <td>{{ row["email"] }}</td>
           <td>
-            {% if row["team_details"] %}
-            <details class="team-accordion">
-              <summary>
-                <span>{{ row["team_count"] }}チーム</span>
-                <span class="team-toggle-icon">▼</span>
-              </summary>
-              <div class="team-accordion-panel">
-                <table class="team-detail-table">
-                  <thead>
-                    <tr>
-                      <th>チーム名</th>
-                      <th>登録日</th>
-                      <th>登録メンバー数</th>
-                      <th>登録イベント数</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for team in row["team_details"] %}
-                    <tr>
-                      <td>{{ team["name"] }}</td>
-                      <td>{{ team["registered_date"] }}</td>
-                      <td>{{ team["member_count"] }}</td>
-                      <td>{{ team["event_count"] }}</td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            </details>
-            {% else %}
-            0チーム
-            {% endif %}
+            <a class="detail-link" href="{{ url_for('site_admin_admin_detail', admin_id=row['id']) }}">詳細を見る</a>
           </td>
+          <td>{{ row["email"] }}</td>
           <td>{{ row["start_date"] }}</td>
-          <td>{{ row["usage_days_text"] }}</td>
-          <td>{{ row["expiry_date"] }}</td>
-          <td>{{ row["remaining_days_text"] }}</td>
-          <td class="extend-cell">
-            <form
-              class="extend-form"
-              method="POST"
-              action="{{ url_for('site_admin_extend_admin', admin_id=row['id']) }}"
-            >
-              <select name="extend_days" aria-label="延長日数">
-                <option value="7">7日延長</option>
-                <option value="30" selected>30日延長</option>
-                <option value="60">60日延長</option>
-                <option value="unlimited">無期限</option>
-              </select>
-              <button class="btn" type="submit">Extend</button>
-            </form>
+          <td>
+            {{ row["expiry_date"] }}
+            <span class="meta-text">{% if row["remaining_days_text"] not in ["-", "無期限"] and "期限切れ" not in row["remaining_days_text"] %}残り{% endif %}{{ row["remaining_days_text"] }}</span>
           </td>
-          <td class="delete-cell">
-            <form
-              method="POST"
-              action="{{ url_for('site_admin_delete_admin', admin_id=row['id']) }}"
-              onsubmit="return confirm('この管理者を削除します。管理しているチーム、メンバー情報、出欠データも削除されます。実行しますか？');"
-            >
-              <button class="btn danger" type="submit">削除</button>
-            </form>
-          </td>
+          <td>{{ row["last_login_date"] }}</td>
+          <td>{{ row["team_count"] }}チーム</td>
+          <td><span class="status-text {{ row['status_code'] }}">{{ row["status_text"] }}</span></td>
+          <td><span class="account-state {{ row['account_status'] }}">{{ row["account_status_text"] }}</span></td>
+          <td>{{ row["total_billing_amount_text"] }}</td>
         </tr>
         {% endfor %}
       </tbody>

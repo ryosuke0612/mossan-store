@@ -281,6 +281,29 @@
   color: #666 !important;
   cursor: not-allowed;
 }
+.wild-action-btn.locked-action {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.03) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #4b5563 0%, #374151 100%);
+  border-color: #4b5563 !important;
+  color: #cbd5e1 !important;
+  cursor: help;
+  opacity: 0.78;
+  text-decoration: none;
+}
+.wild-action-btn.locked-action:hover {
+  filter: none;
+}
+.plan-inline-note {
+  margin-top: 6px;
+  color: #9fb0c5;
+  font-size: 12px;
+  line-height: 1.5;
+}
 .member-filter-form {
   display: flex;
   gap: 8px;
@@ -370,11 +393,25 @@
 {% block content %}
 <h1 class="page-title dashboard-reggae-title">{{ team_name or "Guest" }}</h1>
 
+{% if error_message %}
+<section class="panel"><div class="notice error">{{ error_message }}</div></section>
+{% endif %}
+
 <section class="panel">
   <form method="POST" action="{{ url_for('public_bulk_match_action', public_id=public_id) }}" id="bulk-action-form">
     <input type="hidden" name="current_month" id="current-month-input" value="{{ active_month or '' }}">
     <div class="action-rows">
       <div class="action-row top-controls">
+        {% if can_use_attendance_check %}
+        <button type="submit" name="action" value="attendance_check" class="btn bulk-action-btn bulk-check wild-action-btn" disabled title="イベントを選択してください">出欠確認</button>
+        {% else %}
+        <span class="btn bulk-action-btn bulk-check wild-action-btn locked-action" role="button" aria-disabled="true" title="この機能は有料プランで使用可能です。">出欠確認</span>
+        {% endif %}
+        {% if months and can_use_csv_export %}
+        <a id="csv-export-link" href="{{ url_for('public_export_attendance_csv', public_id=public_id) }}?month={{ active_month or months[0] }}" class="btn csv-export-btn wild-action-btn">CSV出力</a>
+        {% elif months %}
+        <span class="btn csv-export-btn wild-action-btn locked-action" role="button" aria-disabled="true" title="この機能は有料プランで使用可能です。">CSV出力</span>
+        {% endif %}
         <div class="member-filter-form">
           <div class="field">
             <label>メンバー表示</label>
@@ -386,11 +423,12 @@
             </select>
           </div>
         </div>
-        <button type="submit" name="action" value="attendance_check" class="btn bulk-action-btn bulk-check wild-action-btn" disabled title="イベントを選択してください">出欠確認</button>
-        {% if months %}
-        <a id="csv-export-link" href="{{ url_for('public_export_attendance_csv', public_id=public_id) }}?month={{ active_month or months[0] }}" class="btn csv-export-btn wild-action-btn">CSV出力</a>
-        {% endif %}
       </div>
+      {% if not can_use_attendance_check or not can_use_csv_export %}
+      <div class="plan-inline-note">
+        出欠確認、CSV出力は有料プランで利用できます。
+      </div>
+      {% endif %}
     </div>
 
     {% if months %}

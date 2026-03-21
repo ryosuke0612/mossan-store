@@ -297,7 +297,17 @@
           <label for="team_name">新しいチーム名</label>
           <input id="team_name" type="text" name="team_name" placeholder="Aチーム" required>
         </div>
-        <button class="btn fancy-admin-btn maroon create-team-btn" type="submit">チームを作成する</button>
+        {% if current_plan_type == "free" %}
+        <div class="notice">
+          {{ team_limit_message }}
+          {% if can_create_team %}
+          <br>現在 {{ teams|length }} / {{ free_team_limit }} チームです。
+          {% else %}
+          <br>現在 {{ teams|length }} チーム登録済みのため、新規作成はできません。既存チームはそのまま利用できます。
+          {% endif %}
+        </div>
+        {% endif %}
+        <button class="btn fancy-admin-btn maroon create-team-btn" type="submit" {% if not can_create_team %}disabled{% endif %}>チームを作成する</button>
       </form>
     </section>
   </div>

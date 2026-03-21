@@ -8,6 +8,7 @@ import sqlite3
 from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from flask import Flask, Response, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -40,6 +41,66 @@ RENDER_ENV = os.environ.get("RENDER", "").strip().lower() == "true"
 PORTAL_JSON_MIGRATION_ENABLED = os.environ.get("PORTAL_JSON_MIGRATION_ENABLED", "").strip() == "1"
 ADMIN_TRIAL_DAYS = 30
 ADMIN_EXPIRY_UNLIMITED = "UNLIMITED"
+ADMIN_STATUS_FREE = "free"
+ADMIN_STATUS_PAID = "paid"
+ADMIN_STATUS_EXPIRED = "expired"
+ADMIN_STATUS_SUSPENDED = "suspended"
+ADMIN_PLAN_FREE = "free"
+ADMIN_PLAN_PAID = "paid"
+ADMIN_ACCOUNT_STATUS_ACTIVE = "active"
+ADMIN_ACCOUNT_STATUS_SUSPENDED = "suspended"
+ADMIN_ACCOUNT_STATUS_EXPIRED = "expired"
+ADMIN_BILLING_STATUS_UNPAID = "unpaid"
+ADMIN_BILLING_STATUS_PAID = "paid"
+ADMIN_FREE_TEAM_LIMIT = 2
+PLAN_FEATURE_TEAM_CREATE = "team_create"
+PLAN_FEATURE_CSV_EXPORT = "csv_export"
+PLAN_FEATURE_ATTENDANCE_CHECK = "attendance_check"
+PLAN_FEATURE_TEAM_SPLIT = "team_split"
+PLAN_FEATURE_RANDOM_PICK = "random_pick"
+ADMIN_SELECT_COLUMNS = """
+id,
+email,
+password_hash,
+created_at,
+expires_at,
+status,
+plan_type,
+account_status,
+billing_status,
+last_billed_at,
+total_billing_amount,
+billing_count,
+last_login_at,
+last_attendance_updated_at,
+admin_memo
+"""
+ADMIN_PLAN_LABELS = {
+    ADMIN_PLAN_FREE: "無料",
+    ADMIN_PLAN_PAID: "有料",
+}
+ADMIN_ACCOUNT_STATUS_LABELS = {
+    ADMIN_ACCOUNT_STATUS_ACTIVE: "利用中",
+    ADMIN_ACCOUNT_STATUS_SUSPENDED: "停止中",
+    ADMIN_ACCOUNT_STATUS_EXPIRED: "期限切れ",
+}
+ADMIN_STATUS_LABELS = {
+    ADMIN_STATUS_FREE: "無料",
+    ADMIN_STATUS_PAID: "有料",
+    ADMIN_STATUS_EXPIRED: "期限切れ",
+    ADMIN_STATUS_SUSPENDED: "停止中",
+}
+ADMIN_BILLING_STATUS_LABELS = {
+    ADMIN_BILLING_STATUS_UNPAID: "未課金",
+    ADMIN_BILLING_STATUS_PAID: "課金済",
+}
+PLAN_RESTRICTION_MESSAGES = {
+    PLAN_FEATURE_TEAM_CREATE: f"無料プランではチームは{ADMIN_FREE_TEAM_LIMIT}つまで作成できます。",
+    PLAN_FEATURE_CSV_EXPORT: "CSV出力は有料プランで利用できます。",
+    PLAN_FEATURE_ATTENDANCE_CHECK: "出欠確認は有料プランで利用できます。",
+    PLAN_FEATURE_TEAM_SPLIT: "自動チーム分けは有料プランで利用できます。",
+    PLAN_FEATURE_RANDOM_PICK: "代表者選出は有料プランで利用できます。",
+}
 
 
 def parse_email_allowlist(raw_value):
@@ -159,28 +220,39 @@ def rows_to_dict(rows):
     return [dict(row) for row in rows]
 
 
+def append_query_params(url, **params):
+    split = urlsplit(url)
+    current_params = dict(parse_qsl(split.query, keep_blank_values=True))
+    for key, value in params.items():
+        if value is None:
+            current_params.pop(key, None)
+        else:
+            current_params[key] = value
+    return urlunsplit((split.scheme, split.netloc, split.path, urlencode(current_params), split.fragment))
+
+
 def portal_get_admin_by_email(email):
     conn = get_db_connection()
     c = conn.cursor()
     c.execute(
-        "SELECT id, email, password_hash, created_at, expires_at FROM admins WHERE email=?",
+        f"SELECT {ADMIN_SELECT_COLUMNS} FROM admins WHERE email=?",
         (email,),
     )
     admin = row_to_dict(c.fetchone())
     conn.close()
-    return admin
+    return sync_admin_plan_by_expiry(admin)
 
 
 def portal_get_admin(admin_id):
     conn = get_db_connection()
     c = conn.cursor()
     c.execute(
-        "SELECT id, email, password_hash, created_at, expires_at FROM admins WHERE id=?",
+        f"SELECT {ADMIN_SELECT_COLUMNS} FROM admins WHERE id=?",
         (admin_id,),
     )
     admin = row_to_dict(c.fetchone())
     conn.close()
-    return admin
+    return sync_admin_plan_by_expiry(admin)
 
 
 def portal_get_admin_summaries():
@@ -194,16 +266,41 @@ def portal_get_admin_summaries():
             a.password_hash,
             a.created_at,
             a.expires_at,
+            a.status,
+            a.plan_type,
+            a.account_status,
+            a.billing_status,
+            a.last_billed_at,
+            a.total_billing_amount,
+            a.billing_count,
+            a.last_login_at,
+            a.last_attendance_updated_at,
+            a.admin_memo,
             COUNT(t.id) AS team_count
         FROM admins a
         LEFT JOIN teams t ON t.admin_id = a.id
-        GROUP BY a.id, a.email, a.password_hash, a.created_at, a.expires_at
+        GROUP BY
+            a.id,
+            a.email,
+            a.password_hash,
+            a.created_at,
+            a.expires_at,
+            a.status,
+            a.plan_type,
+            a.account_status,
+            a.billing_status,
+            a.last_billed_at,
+            a.total_billing_amount,
+            a.billing_count,
+            a.last_login_at,
+            a.last_attendance_updated_at,
+            a.admin_memo
         ORDER BY a.created_at ASC, a.id ASC
         """
     )
     admins = rows_to_dict(c.fetchall())
     conn.close()
-    return admins
+    return [sync_admin_plan_by_expiry(admin) for admin in admins]
 
 
 def portal_get_team_details_by_admin():
@@ -226,7 +323,19 @@ def portal_get_team_details_by_admin():
                 SELECT COUNT(1)
                 FROM portal_events pe
                 WHERE pe.team_id = t.id
-            ) AS event_count
+            ) AS event_count,
+            (
+                SELECT MAX(updated_value)
+                FROM (
+                    SELECT pa.updated_at AS updated_value
+                    FROM portal_attendance pa
+                    WHERE pa.team_id = t.id
+                    UNION ALL
+                    SELECT paa.confirmed_at AS updated_value
+                    FROM portal_actual_attendees paa
+                    WHERE paa.team_id = t.id
+                ) attendance_updates
+            ) AS last_attendance_updated_at
         FROM teams t
         ORDER BY t.created_at ASC, t.id ASC
         """
@@ -238,6 +347,10 @@ def portal_get_team_details_by_admin():
     for row in rows:
         grouped.setdefault(row["admin_id"], []).append(row)
     return grouped
+
+
+def portal_get_team_details_for_admin(admin_id):
+    return portal_get_team_details_by_admin().get(admin_id, [])
 
 
 def portal_find_or_create_admin(email):
@@ -257,7 +370,7 @@ def portal_find_or_create_admin(email):
     )
     conn.commit()
     c.execute(
-        "SELECT id, email, password_hash, created_at, expires_at FROM admins WHERE email=?",
+        f"SELECT {ADMIN_SELECT_COLUMNS} FROM admins WHERE email=?",
         (email,),
     )
     admin = row_to_dict(c.fetchone())
@@ -284,7 +397,7 @@ def portal_save_admin(updated_admin):
     )
     conn.commit()
     c.execute(
-        "SELECT id, email, password_hash, created_at, expires_at FROM admins WHERE id=?",
+        f"SELECT {ADMIN_SELECT_COLUMNS} FROM admins WHERE id=?",
         (updated_admin.get("id"),),
     )
     admin = row_to_dict(c.fetchone())
@@ -329,7 +442,7 @@ def portal_create_admin(email, password):
     )
     conn.commit()
     c.execute(
-        "SELECT id, email, password_hash, created_at, expires_at FROM admins WHERE email=?",
+        f"SELECT {ADMIN_SELECT_COLUMNS} FROM admins WHERE email=?",
         (email,),
     )
     admin = c.fetchone()
@@ -378,6 +491,7 @@ def portal_delete_admin(admin_id, current_password):
     for team_id in team_ids:
         delete_team_related_records(c, team_id)
     c.execute("DELETE FROM teams WHERE admin_id=?", (admin_id,))
+    c.execute("DELETE FROM admin_billing_history WHERE admin_id=?", (admin_id,))
     c.execute("DELETE FROM admins WHERE id=?", (admin_id,))
     conn.commit()
     conn.close()
@@ -392,6 +506,7 @@ def portal_force_delete_admin(admin_id):
     for team_id in team_ids:
         delete_team_related_records(c, team_id)
     c.execute("DELETE FROM teams WHERE admin_id=?", (admin_id,))
+    c.execute("DELETE FROM admin_billing_history WHERE admin_id=?", (admin_id,))
     c.execute("DELETE FROM admins WHERE id=?", (admin_id,))
     deleted = c.rowcount > 0
     conn.commit()
@@ -407,6 +522,112 @@ def portal_set_admin_expiry(admin_id, expires_at_text):
     conn.commit()
     conn.close()
     return updated
+
+
+def portal_update_admin_profile_fields(admin_id, **fields):
+    allowed_fields = {
+        "status",
+        "plan_type",
+        "account_status",
+        "billing_status",
+        "last_billed_at",
+        "total_billing_amount",
+        "billing_count",
+        "last_login_at",
+        "last_attendance_updated_at",
+        "admin_memo",
+    }
+    updates = []
+    params = []
+    for field_name, value in fields.items():
+        if field_name not in allowed_fields:
+            continue
+        updates.append(f"{field_name}=?")
+        params.append(value)
+    if not updates:
+        return False
+
+    params.append(admin_id)
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(f"UPDATE admins SET {', '.join(updates)} WHERE id=?", params)
+    updated = c.rowcount > 0
+    conn.commit()
+    if not updated:
+        c.execute("SELECT 1 FROM admins WHERE id=?", (admin_id,))
+        updated = c.fetchone() is not None
+    conn.close()
+    return updated
+
+
+def portal_touch_admin_last_login(admin_id):
+    return portal_update_admin_profile_fields(admin_id, last_login_at=portal_now_text())
+
+
+def portal_touch_admin_last_attendance_updated_by_team(team_id):
+    team = portal_get_team(team_id)
+    if not team or not team.get("admin_id"):
+        return False
+    return portal_update_admin_profile_fields(team["admin_id"], last_attendance_updated_at=portal_now_text())
+
+
+def portal_record_admin_billing_history(
+    admin_id,
+    billing_status,
+    billed_at,
+    amount,
+    total_amount,
+    billing_count,
+    note="",
+):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        INSERT INTO admin_billing_history (
+            admin_id,
+            billing_status,
+            billed_at,
+            amount,
+            total_amount,
+            billing_count,
+            note,
+            created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            admin_id,
+            billing_status,
+            billed_at,
+            amount,
+            total_amount,
+            billing_count,
+            note,
+            portal_now_text(),
+        ),
+    )
+    conn.commit()
+    conn.close()
+    return True
+
+
+def portal_get_admin_billing_history(admin_id, limit=20):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT id, admin_id, billing_status, billed_at, amount, total_amount, billing_count, note, created_at
+        FROM admin_billing_history
+        WHERE admin_id=?
+        ORDER BY COALESCE(NULLIF(billed_at, ''), created_at) DESC, id DESC
+        LIMIT ?
+        """,
+        (admin_id, limit),
+    )
+    rows = rows_to_dict(c.fetchall())
+    conn.close()
+    return rows
 
 
 def portal_get_teams_for_admin(admin_id):
@@ -1021,6 +1242,7 @@ def portal_upsert_attendance(team_id, event_id, member_name, status):
     )
     conn.commit()
     conn.close()
+    portal_touch_admin_last_attendance_updated_by_team(team_id)
 
 
 def portal_get_attendance(team_id):
@@ -1152,6 +1374,8 @@ def portal_build_event_list_csv_response(team_id, month="all"):
 
 
 def build_member_legacy_index_context(team, active_month="", selected_member=""):
+    owner_admin = get_team_owner_admin(team)
+    can_use_paid_features = is_paid_plan_admin(owner_admin)
     events = portal_get_events([team["id"]])
     attendance_rows = portal_get_attendance(team["id"])
     attendance_rows.sort(key=lambda item: item["id"])
@@ -1192,6 +1416,10 @@ def build_member_legacy_index_context(team, active_month="", selected_member="")
         "member_options": active_member_names,
         "selected_member_filter": selected_member,
         "public_id": team["public_id"],
+        "can_use_attendance_check": can_use_paid_features,
+        "can_use_csv_export": can_use_paid_features,
+        "plan_csv_message": get_plan_restriction_message(PLAN_FEATURE_CSV_EXPORT),
+        "plan_attendance_check_message": get_plan_restriction_message(PLAN_FEATURE_ATTENDANCE_CHECK),
     }
 
 
@@ -1383,7 +1611,33 @@ def init_db_sqlite():
         email TEXT NOT NULL UNIQUE,
         password_hash TEXT,
         created_at TEXT NOT NULL,
-        expires_at TEXT
+        expires_at TEXT,
+        status TEXT NOT NULL DEFAULT 'free',
+        plan_type TEXT NOT NULL DEFAULT 'paid',
+        account_status TEXT NOT NULL DEFAULT 'active',
+        billing_status TEXT NOT NULL DEFAULT 'unpaid',
+        last_billed_at TEXT,
+        total_billing_amount INTEGER NOT NULL DEFAULT 0,
+        billing_count INTEGER NOT NULL DEFAULT 0,
+        last_login_at TEXT,
+        last_attendance_updated_at TEXT,
+        admin_memo TEXT
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS admin_billing_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        admin_id INTEGER NOT NULL,
+        billing_status TEXT NOT NULL,
+        billed_at TEXT,
+        amount INTEGER NOT NULL DEFAULT 0,
+        total_amount INTEGER NOT NULL DEFAULT 0,
+        billing_count INTEGER NOT NULL DEFAULT 0,
+        note TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY(admin_id) REFERENCES admins(id)
     )
     """
     )
@@ -1528,6 +1782,9 @@ def init_db_sqlite():
     c.execute(
         "CREATE INDEX IF NOT EXISTS idx_portal_tool_saved_results_event_team ON portal_tool_saved_results(team_id, event_id, tool_type)"
     )
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_admin_billing_history_admin_created ON admin_billing_history(admin_id, created_at)"
+    )
 
     c.execute("PRAGMA table_info(admins)")
     admin_columns = [row[1] for row in c.fetchall()]
@@ -1539,6 +1796,59 @@ def init_db_sqlite():
         c.execute("ALTER TABLE admins ADD COLUMN created_at TEXT")
     if "expires_at" not in admin_columns:
         c.execute("ALTER TABLE admins ADD COLUMN expires_at TEXT")
+    if "status" not in admin_columns:
+        c.execute(f"ALTER TABLE admins ADD COLUMN status TEXT NOT NULL DEFAULT '{ADMIN_STATUS_FREE}'")
+    if "plan_type" not in admin_columns:
+        c.execute(f"ALTER TABLE admins ADD COLUMN plan_type TEXT NOT NULL DEFAULT '{ADMIN_PLAN_PAID}'")
+    if "account_status" not in admin_columns:
+        c.execute(
+            f"ALTER TABLE admins ADD COLUMN account_status TEXT NOT NULL DEFAULT '{ADMIN_ACCOUNT_STATUS_ACTIVE}'"
+        )
+    if "billing_status" not in admin_columns:
+        c.execute(
+            f"ALTER TABLE admins ADD COLUMN billing_status TEXT NOT NULL DEFAULT '{ADMIN_BILLING_STATUS_UNPAID}'"
+        )
+    if "last_billed_at" not in admin_columns:
+        c.execute("ALTER TABLE admins ADD COLUMN last_billed_at TEXT")
+    if "total_billing_amount" not in admin_columns:
+        c.execute("ALTER TABLE admins ADD COLUMN total_billing_amount INTEGER NOT NULL DEFAULT 0")
+    if "billing_count" not in admin_columns:
+        c.execute("ALTER TABLE admins ADD COLUMN billing_count INTEGER NOT NULL DEFAULT 0")
+    if "last_login_at" not in admin_columns:
+        c.execute("ALTER TABLE admins ADD COLUMN last_login_at TEXT")
+    if "last_attendance_updated_at" not in admin_columns:
+        c.execute("ALTER TABLE admins ADD COLUMN last_attendance_updated_at TEXT")
+    if "admin_memo" not in admin_columns:
+        c.execute("ALTER TABLE admins ADD COLUMN admin_memo TEXT")
+    c.execute(
+        """
+        UPDATE admins
+        SET status = COALESCE(NULLIF(status, ''), ?),
+            plan_type = CASE
+                WHEN COALESCE(NULLIF(plan_type, ''), '') != '' THEN plan_type
+                WHEN status = ? THEN ?
+                ELSE ?
+            END,
+            account_status = CASE
+                WHEN COALESCE(NULLIF(account_status, ''), '') != '' THEN account_status
+                WHEN status IN (?, ?) THEN status
+                ELSE ?
+            END,
+            billing_status = COALESCE(NULLIF(billing_status, ''), ?),
+            total_billing_amount = COALESCE(total_billing_amount, 0),
+            billing_count = COALESCE(billing_count, 0)
+        """,
+        (
+            ADMIN_STATUS_FREE,
+            ADMIN_STATUS_FREE,
+            ADMIN_PLAN_FREE,
+            ADMIN_PLAN_PAID,
+            ADMIN_STATUS_SUSPENDED,
+            ADMIN_STATUS_EXPIRED,
+            ADMIN_ACCOUNT_STATUS_ACTIVE,
+            ADMIN_BILLING_STATUS_UNPAID,
+        ),
+    )
 
     c.execute("PRAGMA table_info(teams)")
     team_columns = [row[1] for row in c.fetchall()]
@@ -1839,7 +2149,32 @@ def init_db_postgres():
         email TEXT NOT NULL UNIQUE,
         password_hash TEXT,
         created_at TEXT NOT NULL,
-        expires_at TEXT
+        expires_at TEXT,
+        status TEXT NOT NULL DEFAULT 'free',
+        plan_type TEXT NOT NULL DEFAULT 'paid',
+        account_status TEXT NOT NULL DEFAULT 'active',
+        billing_status TEXT NOT NULL DEFAULT 'unpaid',
+        last_billed_at TEXT,
+        total_billing_amount INTEGER NOT NULL DEFAULT 0,
+        billing_count INTEGER NOT NULL DEFAULT 0,
+        last_login_at TEXT,
+        last_attendance_updated_at TEXT,
+        admin_memo TEXT
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS admin_billing_history (
+        id SERIAL PRIMARY KEY,
+        admin_id INTEGER NOT NULL REFERENCES admins(id),
+        billing_status TEXT NOT NULL,
+        billed_at TEXT,
+        amount INTEGER NOT NULL DEFAULT 0,
+        total_amount INTEGER NOT NULL DEFAULT 0,
+        billing_count INTEGER NOT NULL DEFAULT 0,
+        note TEXT,
+        created_at TEXT NOT NULL
     )
     """
     )
@@ -2092,6 +2427,49 @@ def init_db_postgres():
     c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS password_hash TEXT")
     c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS created_at TEXT")
     c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS expires_at TEXT")
+    c.execute(f"ALTER TABLE admins ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT '{ADMIN_STATUS_FREE}'")
+    c.execute(f"ALTER TABLE admins ADD COLUMN IF NOT EXISTS plan_type TEXT NOT NULL DEFAULT '{ADMIN_PLAN_PAID}'")
+    c.execute(
+        f"ALTER TABLE admins ADD COLUMN IF NOT EXISTS account_status TEXT NOT NULL DEFAULT '{ADMIN_ACCOUNT_STATUS_ACTIVE}'"
+    )
+    c.execute(
+        f"ALTER TABLE admins ADD COLUMN IF NOT EXISTS billing_status TEXT NOT NULL DEFAULT '{ADMIN_BILLING_STATUS_UNPAID}'"
+    )
+    c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS last_billed_at TEXT")
+    c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS total_billing_amount INTEGER NOT NULL DEFAULT 0")
+    c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS billing_count INTEGER NOT NULL DEFAULT 0")
+    c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS last_login_at TEXT")
+    c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS last_attendance_updated_at TEXT")
+    c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS admin_memo TEXT")
+    c.execute(
+        """
+        UPDATE admins
+        SET status = COALESCE(NULLIF(status, ''), %s),
+            plan_type = CASE
+                WHEN COALESCE(NULLIF(plan_type, ''), '') != '' THEN plan_type
+                WHEN status = %s THEN %s
+                ELSE %s
+            END,
+            account_status = CASE
+                WHEN COALESCE(NULLIF(account_status, ''), '') != '' THEN account_status
+                WHEN status IN (%s, %s) THEN status
+                ELSE %s
+            END,
+            billing_status = COALESCE(NULLIF(billing_status, ''), %s),
+            total_billing_amount = COALESCE(total_billing_amount, 0),
+            billing_count = COALESCE(billing_count, 0)
+        """,
+        (
+            ADMIN_STATUS_FREE,
+            ADMIN_STATUS_FREE,
+            ADMIN_PLAN_FREE,
+            ADMIN_PLAN_PAID,
+            ADMIN_STATUS_SUSPENDED,
+            ADMIN_STATUS_EXPIRED,
+            ADMIN_ACCOUNT_STATUS_ACTIVE,
+            ADMIN_BILLING_STATUS_UNPAID,
+        ),
+    )
     c.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT")
     c.execute("ALTER TABLE teams ADD COLUMN IF NOT EXISTS admin_id INTEGER")
     c.execute("ALTER TABLE teams ADD COLUMN IF NOT EXISTS public_id TEXT")
@@ -2099,6 +2477,9 @@ def init_db_postgres():
     c.execute("ALTER TABLE matches ADD COLUMN IF NOT EXISTS user_id INTEGER NOT NULL DEFAULT 0")
     c.execute("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS user_id INTEGER NOT NULL DEFAULT 0")
     c.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS user_id INTEGER NOT NULL DEFAULT 0")
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_admin_billing_history_admin_created ON admin_billing_history(admin_id, created_at)"
+    )
     c.execute(
         "CREATE INDEX IF NOT EXISTS idx_attendance_actual_attendees_match_user ON attendance_actual_attendees(user_id, match_id)"
     )
@@ -2192,17 +2573,6 @@ def bootstrap_admin_from_env():
         app.logger.warning("Admin bootstrap could not create admin: %s", email)
 
 
-try:
-    init_db()
-    if PORTAL_JSON_MIGRATION_ENABLED:
-        migrate_portal_json_to_db()
-    bootstrap_admin_from_env()
-except DatabaseError:
-    app.logger.exception("Database initialization failed.")
-    if RENDER_ENV:
-        raise
-
-
 def login_required(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -2292,6 +2662,235 @@ def format_usage_days(created_at):
         return "-"
     usage_days = max(0, (datetime.now().date() - parsed.date()).days)
     return f"{usage_days}日"
+
+
+def sync_admin_plan_by_expiry(admin_row):
+    if not admin_row:
+        return admin_row
+
+    plan_type = normalize_admin_plan_type(admin_row.get("plan_type")) or (
+        ADMIN_PLAN_FREE if normalize_admin_status(admin_row.get("status")) == ADMIN_STATUS_FREE else ADMIN_PLAN_PAID
+    )
+    account_status = normalize_admin_account_status(admin_row.get("account_status")) or ADMIN_ACCOUNT_STATUS_ACTIVE
+    effective_expiry = resolve_admin_expiry_datetime(admin_row.get("created_at"), admin_row.get("expires_at"))
+    today = datetime.now().date()
+
+    updates = {}
+    should_record_history = False
+    history_note = ""
+
+    if account_status == ADMIN_ACCOUNT_STATUS_EXPIRED:
+        account_status = ADMIN_ACCOUNT_STATUS_ACTIVE
+        updates["account_status"] = account_status
+
+    if plan_type == ADMIN_PLAN_PAID and effective_expiry and effective_expiry.date() < today:
+        plan_type = ADMIN_PLAN_FREE
+        updates["plan_type"] = plan_type
+        if account_status == ADMIN_ACCOUNT_STATUS_EXPIRED:
+            account_status = ADMIN_ACCOUNT_STATUS_ACTIVE
+            updates["account_status"] = account_status
+        should_record_history = True
+        history_note = "利用期限切れにより無料プランへ自動切替"
+
+    desired_status = ADMIN_STATUS_SUSPENDED if account_status == ADMIN_ACCOUNT_STATUS_SUSPENDED else (
+        ADMIN_STATUS_PAID if plan_type == ADMIN_PLAN_PAID else ADMIN_STATUS_FREE
+    )
+    if normalize_admin_status(admin_row.get("status")) != desired_status:
+        updates["status"] = desired_status
+
+    if updates:
+        portal_update_admin_profile_fields(admin_row["id"], **updates)
+        admin_row.update(updates)
+        if should_record_history:
+            portal_record_admin_billing_history(
+                admin_id=admin_row["id"],
+                billing_status=normalize_admin_billing_status(admin_row.get("billing_status")) or ADMIN_BILLING_STATUS_UNPAID,
+                billed_at=portal_now_text(),
+                amount=0,
+                total_amount=int(admin_row.get("total_billing_amount") or 0),
+                billing_count=int(admin_row.get("billing_count") or 0),
+                note=history_note,
+            )
+
+    admin_row["plan_type"] = plan_type
+    admin_row["account_status"] = account_status
+    admin_row["status"] = desired_status
+    return admin_row
+
+
+def resolve_admin_status(admin_row):
+    stored_plan_type = (admin_row.get("plan_type") or "").strip().lower()
+    stored_account_status = (admin_row.get("account_status") or "").strip().lower()
+    legacy_status = (admin_row.get("status") or "").strip().lower()
+    if stored_account_status == ADMIN_ACCOUNT_STATUS_SUSPENDED or legacy_status == ADMIN_STATUS_SUSPENDED:
+        return ADMIN_STATUS_SUSPENDED
+    if stored_plan_type == ADMIN_PLAN_PAID or legacy_status == ADMIN_STATUS_PAID:
+        return ADMIN_STATUS_PAID
+    return ADMIN_STATUS_FREE
+
+
+def format_admin_status(admin_row):
+    return ADMIN_STATUS_LABELS.get(resolve_admin_status(admin_row), "無料")
+
+
+def format_admin_billing_status(value):
+    normalized = (value or "").strip().lower()
+    return ADMIN_BILLING_STATUS_LABELS.get(normalized, "未課金")
+
+
+def normalize_admin_status(value):
+    normalized = (value or "").strip().lower()
+    return normalized if normalized in ADMIN_STATUS_LABELS else ""
+
+
+def normalize_admin_plan_type(value):
+    normalized = (value or "").strip().lower()
+    return normalized if normalized in ADMIN_PLAN_LABELS else ""
+
+
+def normalize_admin_account_status(value):
+    normalized = (value or "").strip().lower()
+    return normalized if normalized in ADMIN_ACCOUNT_STATUS_LABELS else ""
+
+
+def get_admin_plan_type(admin_row):
+    if not admin_row:
+        return ADMIN_PLAN_PAID
+    normalized = normalize_admin_plan_type(admin_row.get("plan_type"))
+    if normalized:
+        return normalized
+    legacy_status = normalize_admin_status(admin_row.get("status"))
+    if legacy_status == ADMIN_STATUS_FREE:
+        return ADMIN_PLAN_FREE
+    return ADMIN_PLAN_PAID
+
+
+def is_paid_plan_admin(admin_row):
+    return get_admin_plan_type(admin_row) == ADMIN_PLAN_PAID
+
+
+def get_plan_restriction_message(feature_key):
+    return PLAN_RESTRICTION_MESSAGES.get(feature_key, "この機能は有料プランで利用できます。")
+
+
+def can_admin_create_team(admin_row, existing_team_count=0):
+    if is_paid_plan_admin(admin_row):
+        return True
+    return existing_team_count < ADMIN_FREE_TEAM_LIMIT
+
+
+def get_team_owner_admin(team):
+    if not team:
+        return None
+    admin_id = team.get("admin_id")
+    if not admin_id:
+        return None
+    return portal_get_admin(admin_id)
+
+
+def can_team_use_paid_feature(team):
+    return is_paid_plan_admin(get_team_owner_admin(team))
+
+
+def build_member_page_notice_redirect(public_id, message, month="", name=""):
+    params = {"public_id": public_id}
+    if month:
+        params["month"] = month
+    if name:
+        params["name"] = name
+    if message:
+        params["error_message"] = message
+    return redirect(url_for("member_team_page", **params))
+
+
+def normalize_admin_billing_status(value):
+    normalized = (value or "").strip().lower()
+    return normalized if normalized in ADMIN_BILLING_STATUS_LABELS else ""
+
+
+def format_portal_date(value):
+    parsed = parse_portal_datetime(value)
+    if not parsed:
+        return "-"
+    return parsed.strftime("%Y-%m-%d")
+
+
+def format_currency_yen(value):
+    try:
+        amount = int(value or 0)
+    except (TypeError, ValueError):
+        amount = 0
+    return f"¥{amount:,}"
+
+
+def format_billing_history_amount(value):
+    try:
+        amount = int(value or 0)
+    except (TypeError, ValueError):
+        amount = 0
+    if amount > 0:
+        return f"+{format_currency_yen(amount)}"
+    if amount < 0:
+        return f"-{format_currency_yen(abs(amount))}"
+    return format_currency_yen(0)
+
+
+def build_public_team_url(team):
+    public_id = (team.get("public_id") or "").strip()
+    if not public_id:
+        return ""
+    return url_for("member_team_page", public_id=public_id)
+
+
+def enrich_team_detail_row(team):
+    team["registered_date"] = format_start_date(team.get("created_at"))
+    team["last_attendance_updated_date"] = format_portal_date(team.get("last_attendance_updated_at"))
+    team["public_url"] = build_public_team_url(team)
+    return team
+
+
+def enrich_site_admin_row(row, team_details=None):
+    row["start_date"] = format_start_date(row.get("created_at"))
+    if is_unlimited_expiry(row.get("expires_at")):
+        row["effective_expiry"] = ADMIN_EXPIRY_UNLIMITED
+    else:
+        effective_expiry = resolve_admin_expiry_datetime(row.get("created_at"), row.get("expires_at"))
+        row["effective_expiry"] = effective_expiry.strftime("%Y-%m-%d %H:%M:%S") if effective_expiry else ""
+    row["expiry_date"] = format_expiry_date(row.get("effective_expiry"))
+    row["remaining_days_text"] = format_remaining_days(row.get("effective_expiry"))
+    row["plan_type"] = normalize_admin_plan_type(row.get("plan_type")) or (
+        ADMIN_PLAN_FREE if (row.get("status") or "").strip().lower() == ADMIN_STATUS_FREE else ADMIN_PLAN_PAID
+    )
+    row["account_status"] = normalize_admin_account_status(row.get("account_status")) or (
+        (row.get("status") or "").strip().lower()
+        if (row.get("status") or "").strip().lower() in {ADMIN_STATUS_SUSPENDED, ADMIN_STATUS_EXPIRED}
+        else ADMIN_ACCOUNT_STATUS_ACTIVE
+    )
+    row["plan_type_text"] = ADMIN_PLAN_LABELS.get(row["plan_type"], "有料")
+    row["account_status_text"] = ADMIN_ACCOUNT_STATUS_LABELS.get(row["account_status"], "利用中")
+    row["status_code"] = resolve_admin_status(row)
+    row["status_text"] = ADMIN_STATUS_LABELS.get(row["status_code"], "無料")
+    row["billing_status_text"] = format_admin_billing_status(row.get("billing_status"))
+    row["last_login_date"] = format_portal_date(row.get("last_login_at"))
+    row["last_billed_date"] = format_portal_date(row.get("last_billed_at"))
+    row["last_billed_input"] = row["last_billed_date"] if row["last_billed_date"] != "-" else ""
+    row["total_billing_amount_text"] = format_currency_yen(row.get("total_billing_amount"))
+    if team_details is not None:
+        row["team_details"] = [enrich_team_detail_row(team) for team in team_details]
+        row["team_count"] = len(row["team_details"])
+    return row
+
+
+def enrich_admin_billing_history_rows(rows):
+    enriched_rows = []
+    for row in rows:
+        row["billing_status_text"] = format_admin_billing_status(row.get("billing_status"))
+        row["billed_date"] = format_portal_date(row.get("billed_at"))
+        row["created_date"] = format_portal_date(row.get("created_at"))
+        row["amount_text"] = format_billing_history_amount(row.get("amount"))
+        row["total_amount_text"] = format_currency_yen(row.get("total_amount"))
+        enriched_rows.append(row)
+    return enriched_rows
 
 
 def format_expiry_date(expires_at):
@@ -2501,8 +3100,11 @@ def create_attendance_tool_share(user_id, match_id, tool_type, payload):
             portal_now_text(),
         ),
     )
+    deleted = c.rowcount > 0
     conn.commit()
     conn.close()
+    if deleted:
+        portal_touch_admin_last_attendance_updated_by_team(team_id)
     return share_id
 
 
@@ -2908,6 +3510,7 @@ def save_portal_confirmed_attendees(team_id, event_id, selected_names, walkin_na
         )
     conn.commit()
     conn.close()
+    portal_touch_admin_last_attendance_updated_by_team(team_id)
     return names_to_keep
 
 
@@ -2928,6 +3531,7 @@ def add_portal_walkin_attendee(team_id, event_id, member_name):
     )
     conn.commit()
     conn.close()
+    portal_touch_admin_last_attendance_updated_by_team(team_id)
     return True
 
 
@@ -2947,6 +3551,8 @@ def remove_portal_walkin_attendee(team_id, event_id, member_name):
     deleted = c.rowcount > 0
     conn.commit()
     conn.close()
+    if deleted:
+        portal_touch_admin_last_attendance_updated_by_team(team_id)
     return deleted
 
 
@@ -3167,6 +3773,7 @@ def admin_login_entry():
             if existing_admin:
                 admin, auth_status = portal_authenticate_admin(email, password)
                 if admin:
+                    portal_touch_admin_last_login(admin["id"])
                     session["admin_id"] = admin["id"]
                     session["admin_email"] = admin["email"]
                     session["is_site_admin"] = is_site_admin_email(admin["email"])
@@ -3182,6 +3789,7 @@ def admin_login_entry():
             else:
                 admin = portal_create_admin(email, password)
                 if admin:
+                    portal_touch_admin_last_login(admin["id"])
                     session["admin_id"] = admin["id"]
                     session["admin_email"] = admin["email"]
                     session["is_site_admin"] = is_site_admin_email(admin["email"])
@@ -3207,23 +3815,37 @@ def admin_login_entry():
 @app.route("/admin/dashboard", methods=["GET", "POST"])
 @admin_login_required
 def admin_dashboard():
+    admin = portal_get_admin(session["admin_id"])
+    if not admin:
+        session.pop("admin_id", None)
+        session.pop("admin_email", None)
+        session.pop("is_site_admin", None)
+        return redirect(url_for("admin_login_entry"))
     teams = get_teams_for_admin(session["admin_id"])
     error_message = request.args.get("error_message", "").strip()
     success_message = request.args.get("success_message", "").strip()
+    can_create_team = can_admin_create_team(admin, len(teams))
 
     if request.method == "POST":
         team_name = request.form.get("team_name", "").strip()
         if not team_name:
             error_message = "チーム名を入力してください。"
+        elif not can_admin_create_team(admin, len(teams)):
+            error_message = get_plan_restriction_message(PLAN_FEATURE_TEAM_CREATE)
         else:
             portal_create_team(session["admin_id"], team_name)
             success_message = "チームを作成しました。"
             teams = get_teams_for_admin(session["admin_id"])
+            can_create_team = can_admin_create_team(admin, len(teams))
 
     return render_template(
         "admin_dashboard_cards_v2.html",
         admin_email=session.get("admin_email", ""),
         teams=teams,
+        can_create_team=can_create_team,
+        team_limit_message=get_plan_restriction_message(PLAN_FEATURE_TEAM_CREATE),
+        free_team_limit=ADMIN_FREE_TEAM_LIMIT,
+        current_plan_type=get_admin_plan_type(admin),
         error_message=error_message,
         success_message=success_message,
     )
@@ -3234,25 +3856,10 @@ def admin_dashboard():
 @site_admin_required
 def site_admin_dashboard():
     admin_rows = portal_get_admin_summaries()
-    team_details_by_admin = portal_get_team_details_by_admin()
     error_message = request.args.get("error_message", "").strip()
     success_message = request.args.get("success_message", "").strip()
     for row in admin_rows:
-        row["start_date"] = format_start_date(row.get("created_at"))
-        row["usage_days_text"] = format_usage_days(row.get("created_at"))
-        team_details = team_details_by_admin.get(row["id"], [])
-        row["team_details"] = team_details
-        if is_unlimited_expiry(row.get("expires_at")):
-            row["effective_expiry"] = ADMIN_EXPIRY_UNLIMITED
-        else:
-            effective_expiry = resolve_admin_expiry_datetime(row.get("created_at"), row.get("expires_at"))
-            row["effective_expiry"] = (
-                effective_expiry.strftime("%Y-%m-%d %H:%M:%S") if effective_expiry else ""
-            )
-        row["expiry_date"] = format_expiry_date(row.get("effective_expiry"))
-        row["remaining_days_text"] = format_remaining_days(row.get("effective_expiry"))
-        for team in team_details:
-            team["registered_date"] = format_start_date(team.get("created_at"))
+        enrich_site_admin_row(row)
 
     return render_template(
         "site_admin_dashboard.html",
@@ -3261,6 +3868,216 @@ def site_admin_dashboard():
         success_message=success_message,
         site_admin_emails=sorted(SITE_ADMIN_EMAILS),
     )
+
+
+@app.route("/site-admin/admins/<int:admin_id>")
+@site_admin_required
+def site_admin_admin_detail(admin_id):
+    admin = portal_get_admin(admin_id)
+    if not admin:
+        return redirect(url_for("site_admin_dashboard", error_message="対象の管理者が見つかりません。"))
+
+    team_details = portal_get_team_details_for_admin(admin_id)
+    billing_history = enrich_admin_billing_history_rows(portal_get_admin_billing_history(admin_id, limit=20))
+    enrich_site_admin_row(admin, team_details=team_details)
+    return render_template(
+        "site_admin_admin_detail.html",
+        admin=admin,
+        billing_history=billing_history,
+        free_team_limit=ADMIN_FREE_TEAM_LIMIT,
+        error_message=request.args.get("error_message", "").strip(),
+        success_message=request.args.get("success_message", "").strip(),
+    )
+
+
+@app.route("/site-admin/admins/<int:admin_id>/plan", methods=["POST"])
+@site_admin_required
+def site_admin_update_admin_plan(admin_id):
+    admin = portal_get_admin(admin_id)
+    if not admin:
+        return redirect(url_for("site_admin_dashboard", error_message="対象の管理者が見つかりません。"))
+
+    plan_type = normalize_admin_plan_type(request.form.get("plan_type"))
+    if not plan_type:
+        return redirect(
+            url_for("site_admin_admin_detail", admin_id=admin_id, error_message="プランの値が不正です。")
+        )
+
+    legacy_status = ADMIN_STATUS_PAID if plan_type == ADMIN_PLAN_PAID else ADMIN_STATUS_FREE
+    current_account_status = normalize_admin_account_status(admin.get("account_status")) or ADMIN_ACCOUNT_STATUS_ACTIVE
+    if current_account_status in {ADMIN_ACCOUNT_STATUS_SUSPENDED, ADMIN_ACCOUNT_STATUS_EXPIRED}:
+        legacy_status = current_account_status
+    if portal_update_admin_profile_fields(admin_id, plan_type=plan_type, status=legacy_status):
+        return redirect(
+            url_for("site_admin_admin_detail", admin_id=admin_id, success_message="プランを更新しました。")
+        )
+    return redirect(
+        url_for("site_admin_admin_detail", admin_id=admin_id, error_message="プランを更新できませんでした。")
+    )
+
+
+@app.route("/site-admin/admins/<int:admin_id>/account-status", methods=["POST"])
+@site_admin_required
+def site_admin_update_admin_account_status(admin_id):
+    admin = portal_get_admin(admin_id)
+    if not admin:
+        return redirect(url_for("site_admin_dashboard", error_message="対象の管理者が見つかりません。"))
+
+    next_url = request.form.get("next_url", "").strip()
+    fallback_url = url_for("site_admin_admin_detail", admin_id=admin_id)
+    redirect_target = next_url or fallback_url
+
+    account_status = normalize_admin_account_status(request.form.get("account_status"))
+    if not account_status or account_status == ADMIN_ACCOUNT_STATUS_EXPIRED:
+        return redirect(
+            append_query_params(redirect_target, error_message="利用状態の値が不正です。")
+        )
+
+    plan_type = normalize_admin_plan_type(admin.get("plan_type")) or ADMIN_PLAN_PAID
+    legacy_status = account_status
+    if account_status == ADMIN_ACCOUNT_STATUS_ACTIVE:
+        legacy_status = ADMIN_STATUS_PAID if plan_type == ADMIN_PLAN_PAID else ADMIN_STATUS_FREE
+    if portal_update_admin_profile_fields(admin_id, account_status=account_status, status=legacy_status):
+        return redirect(
+            append_query_params(redirect_target, success_message="利用状態を更新しました。")
+        )
+    return redirect(
+        append_query_params(redirect_target, error_message="利用状態を更新できませんでした。")
+    )
+
+
+@app.route("/site-admin/admins/<int:admin_id>/billing", methods=["POST"])
+@site_admin_required
+def site_admin_update_admin_billing(admin_id):
+    admin = portal_get_admin(admin_id)
+    if not admin:
+        return redirect(url_for("site_admin_dashboard", error_message="対象の管理者が見つかりません。"))
+
+    billing_status = normalize_admin_billing_status(request.form.get("billing_status"))
+    if not billing_status:
+        return redirect(
+            url_for("site_admin_admin_detail", admin_id=admin_id, error_message="課金ステータスの値が不正です。")
+        )
+
+    total_billing_amount_raw = request.form.get("total_billing_amount", "").strip()
+    billing_count_raw = request.form.get("billing_count", "").strip()
+    last_billed_at_raw = request.form.get("last_billed_at", "").strip()
+    billing_note = request.form.get("billing_note", "").strip()
+
+    try:
+        total_billing_amount = int(total_billing_amount_raw or "0")
+    except ValueError:
+        return redirect(
+            url_for("site_admin_admin_detail", admin_id=admin_id, error_message="累計課金額は整数で入力してください。")
+        )
+    if total_billing_amount < 0:
+        return redirect(
+            url_for("site_admin_admin_detail", admin_id=admin_id, error_message="累計課金額は0以上で入力してください。")
+        )
+
+    try:
+        billing_count = int(billing_count_raw or "0")
+    except ValueError:
+        return redirect(
+            url_for("site_admin_admin_detail", admin_id=admin_id, error_message="課金回数は整数で入力してください。")
+        )
+    if billing_count < 0:
+        return redirect(
+            url_for("site_admin_admin_detail", admin_id=admin_id, error_message="課金回数は0以上で入力してください。")
+        )
+    if len(billing_note) > 500:
+        return redirect(
+            url_for("site_admin_admin_detail", admin_id=admin_id, error_message="課金メモは500文字以内で入力してください。")
+        )
+
+    last_billed_at = ""
+    if last_billed_at_raw:
+        parsed = parse_portal_datetime(last_billed_at_raw)
+        if not parsed:
+            return redirect(
+                url_for("site_admin_admin_detail", admin_id=admin_id, error_message="最終課金日の形式が不正です。")
+        )
+        last_billed_at = parsed.strftime("%Y-%m-%d %H:%M:%S")
+
+    old_total_billing_amount = int(admin.get("total_billing_amount") or 0)
+    old_billing_count = int(admin.get("billing_count") or 0)
+    old_billing_status = normalize_admin_billing_status(admin.get("billing_status")) or ADMIN_BILLING_STATUS_UNPAID
+    old_last_billed_at = admin.get("last_billed_at") or ""
+    billing_amount_delta = total_billing_amount - old_total_billing_amount
+    billing_changed = any(
+        [
+            billing_status != old_billing_status,
+            total_billing_amount != old_total_billing_amount,
+            billing_count != old_billing_count,
+            last_billed_at != old_last_billed_at,
+            bool(billing_note),
+        ]
+    )
+
+    if portal_update_admin_profile_fields(
+        admin_id,
+        billing_status=billing_status,
+        total_billing_amount=total_billing_amount,
+        billing_count=billing_count,
+        last_billed_at=last_billed_at,
+    ):
+        if billing_changed:
+            portal_record_admin_billing_history(
+                admin_id=admin_id,
+                billing_status=billing_status,
+                billed_at=last_billed_at,
+                amount=billing_amount_delta,
+                total_amount=total_billing_amount,
+                billing_count=billing_count,
+                note=billing_note,
+            )
+        return redirect(
+            url_for("site_admin_admin_detail", admin_id=admin_id, success_message="課金情報を更新しました。")
+        )
+    return redirect(
+        url_for("site_admin_admin_detail", admin_id=admin_id, error_message="課金情報を更新できませんでした。")
+    )
+
+
+@app.route("/site-admin/admins/<int:admin_id>/memo", methods=["POST"])
+@site_admin_required
+def site_admin_update_admin_memo(admin_id):
+    admin = portal_get_admin(admin_id)
+    if not admin:
+        return redirect(url_for("site_admin_dashboard", error_message="対象の管理者が見つかりません。"))
+
+    admin_memo = request.form.get("admin_memo", "").strip()
+    if len(admin_memo) > 5000:
+        return redirect(
+            url_for("site_admin_admin_detail", admin_id=admin_id, error_message="メモは5000文字以内で入力してください。")
+        )
+
+    if portal_update_admin_profile_fields(admin_id, admin_memo=admin_memo):
+        return redirect(url_for("site_admin_admin_detail", admin_id=admin_id, success_message="メモを保存しました。"))
+    return redirect(url_for("site_admin_admin_detail", admin_id=admin_id, error_message="メモを保存できませんでした。"))
+
+
+@app.route("/site-admin/admins/<int:admin_id>/delete-confirmed", methods=["POST"])
+@site_admin_required
+def site_admin_delete_admin_confirmed(admin_id):
+    admin = portal_get_admin(admin_id)
+    if not admin:
+        return redirect(url_for("site_admin_dashboard", error_message="対象の管理者が見つかりません。"))
+
+    confirm_email = request.form.get("confirm_email", "").strip().lower()
+    if confirm_email != (admin.get("email") or "").strip().lower():
+        return redirect(
+            url_for(
+                "site_admin_admin_detail",
+                admin_id=admin_id,
+                error_message="削除確認のメールアドレスが一致しません。",
+            )
+        )
+
+    deleted = portal_force_delete_admin(admin_id)
+    if deleted:
+        return redirect(url_for("site_admin_dashboard", success_message="管理者を削除しました。"))
+    return redirect(url_for("site_admin_admin_detail", admin_id=admin_id, error_message="管理者を削除できませんでした。"))
 
 
 @app.route("/site-admin/admins/<int:admin_id>/delete", methods=["POST"])
@@ -3824,7 +4641,16 @@ def admin_logout():
 def member_team_page(public_id):
     team = get_team_by_public_id(public_id)
     if not team:
-        return render_template("public_index_v2.html", team_name="Guest", months=[]), 404
+        return render_template(
+            "public_index_v2.html",
+            team_name="Guest",
+            months=[],
+            can_use_attendance_check=True,
+            can_use_csv_export=True,
+            plan_attendance_check_message=get_plan_restriction_message(PLAN_FEATURE_ATTENDANCE_CHECK),
+            plan_csv_message=get_plan_restriction_message(PLAN_FEATURE_CSV_EXPORT),
+            error_message="",
+        ), 404
 
     active_members = portal_get_members_for_team(team["id"], include_inactive=False)
     active_member_names = [member.get("name") for member in active_members if member.get("name")]
@@ -3850,6 +4676,7 @@ def member_team_page(public_id):
     active_month = request.args.get("month", "").strip()
     selected_member = request.args.get("name", "").strip()
     context = build_member_legacy_index_context(team, active_month, selected_member)
+    context["error_message"] = request.args.get("error_message", "").strip()
     return render_template("public_index_v2.html", **context)
 
 
@@ -3893,6 +4720,12 @@ def public_bulk_match_action(public_id):
     if action == "edit":
         return redirect_to_team_month(public_id, current_month)
     if action == "attendance_check":
+        if not can_team_use_paid_feature(team):
+            return build_member_page_notice_redirect(
+                public_id,
+                get_plan_restriction_message(PLAN_FEATURE_ATTENDANCE_CHECK),
+                month=current_month,
+            )
         return redirect(url_for("public_attendance_check", public_id=public_id, match_id=target_ids[0], month=current_month))
     if action in {"duplicate", "delete"}:
         return redirect_to_team_month(public_id, current_month)
@@ -3905,6 +4738,8 @@ def public_attendance_check(public_id, match_id):
     team = get_team_by_public_id(public_id)
     if not team:
         return redirect(url_for("attendance_description"))
+    if not can_team_use_paid_feature(team):
+        return build_member_page_notice_redirect(public_id, get_plan_restriction_message(PLAN_FEATURE_ATTENDANCE_CHECK))
 
     match = portal_get_event(team["id"], match_id)
     if not match:
@@ -3949,6 +4784,8 @@ def public_attendance_tools(public_id, match_id):
     team = get_team_by_public_id(public_id)
     if not team:
         return redirect(url_for("attendance_description"))
+    if not can_team_use_paid_feature(team):
+        return build_member_page_notice_redirect(public_id, get_plan_restriction_message(PLAN_FEATURE_TEAM_SPLIT))
     match = portal_get_event(team["id"], match_id)
     if not match:
         return redirect(url_for("member_team_page", public_id=public_id))
@@ -4001,6 +4838,8 @@ def public_attendance_check_confirm_attendees(public_id, match_id):
     team = get_team_by_public_id(public_id)
     if not team:
         return redirect(url_for("attendance_description"))
+    if not can_team_use_paid_feature(team):
+        return build_member_page_notice_redirect(public_id, get_plan_restriction_message(PLAN_FEATURE_ATTENDANCE_CHECK))
     selected_names = request.form.getlist("confirmed_names")
     walkin_names = request.form.getlist("walkin_names")
     save_portal_confirmed_attendees(team["id"], match_id, selected_names, walkin_names)
@@ -4019,6 +4858,8 @@ def public_attendance_check_add_walkin(public_id, match_id):
     team = get_team_by_public_id(public_id)
     if not team:
         return redirect(url_for("attendance_description"))
+    if not can_team_use_paid_feature(team):
+        return build_member_page_notice_redirect(public_id, get_plan_restriction_message(PLAN_FEATURE_ATTENDANCE_CHECK))
     walkin_name = request.form.get("walkin_name", "")
     added = add_portal_walkin_attendee(team["id"], match_id, walkin_name)
     message = "飛び入り参加者を追加しました。" if added else "飛び入り参加者名を入力してください。"
@@ -4030,6 +4871,8 @@ def public_attendance_check_delete_walkin(public_id, match_id):
     team = get_team_by_public_id(public_id)
     if not team:
         return redirect(url_for("attendance_description"))
+    if not can_team_use_paid_feature(team):
+        return build_member_page_notice_redirect(public_id, get_plan_restriction_message(PLAN_FEATURE_ATTENDANCE_CHECK))
     member_name = request.form.get("member_name", "")
     deleted = remove_portal_walkin_attendee(team["id"], match_id, member_name)
     message = "飛び入り参加者を削除しました。" if deleted else "削除対象の飛び入り参加者が見つかりませんでした。"
@@ -4041,6 +4884,8 @@ def public_attendance_check_team_split(public_id, match_id):
     team = get_team_by_public_id(public_id)
     if not team:
         return redirect(url_for("attendance_description"))
+    if not can_team_use_paid_feature(team):
+        return build_member_page_notice_redirect(public_id, get_plan_restriction_message(PLAN_FEATURE_TEAM_SPLIT))
     attendees = get_portal_effective_attendees(team["id"], match_id)
     if len(attendees) < 2:
         return redirect(url_for("public_attendance_tools", public_id=public_id, match_id=match_id, tool_message="チーム分けには2名以上必要です。"))
@@ -4064,6 +4909,8 @@ def public_attendance_check_team_rerun(public_id, match_id):
     team = get_team_by_public_id(public_id)
     if not team:
         return redirect(url_for("attendance_description"))
+    if not can_team_use_paid_feature(team):
+        return build_member_page_notice_redirect(public_id, get_plan_restriction_message(PLAN_FEATURE_TEAM_SPLIT))
     attendees = get_portal_effective_attendees(team["id"], match_id)
     team_count = _coerce_team_count(request.form.get("team_count"), default=2)
     if len(attendees) < 2:
@@ -4087,6 +4934,8 @@ def public_attendance_check_team_swap(public_id, match_id):
     team = get_team_by_public_id(public_id)
     if not team:
         return redirect(url_for("attendance_description"))
+    if not can_team_use_paid_feature(team):
+        return build_member_page_notice_redirect(public_id, get_plan_restriction_message(PLAN_FEATURE_TEAM_SPLIT))
     teams = parse_team_state_from_form(request.form.get("team_state_json", ""))
     src_team_idx = _coerce_positive_int(request.form.get("src_team_idx"))
     src_member_idx = _coerce_positive_int(request.form.get("src_member_idx"))
@@ -4130,6 +4979,8 @@ def public_attendance_check_team_share(public_id, match_id):
     team = get_team_by_public_id(public_id)
     if not team:
         return redirect(url_for("attendance_description"))
+    if not can_team_use_paid_feature(team):
+        return build_member_page_notice_redirect(public_id, get_plan_restriction_message(PLAN_FEATURE_TEAM_SPLIT))
     teams = parse_team_state_from_form(request.form.get("team_state_json", ""))
     if not teams:
         return redirect(url_for("public_attendance_tools", public_id=public_id, match_id=match_id, tool_message="共有するチーム分け結果がありません。"))
@@ -4151,6 +5002,11 @@ def public_attendance_check_team_share(public_id, match_id):
 
 @app.route("/team/<public_id>/attendance/check/<int:match_id>/tools/role-assign", methods=["POST"])
 def public_attendance_check_role_assign(public_id, match_id):
+    team = get_team_by_public_id(public_id)
+    if not team:
+        return redirect(url_for("attendance_description"))
+    if not can_team_use_paid_feature(team):
+        return build_member_page_notice_redirect(public_id, get_plan_restriction_message(PLAN_FEATURE_RANDOM_PICK))
     return redirect(url_for("public_attendance_tools", public_id=public_id, match_id=match_id, tool_message="役割決め機能は廃止しました。"))
 
 
@@ -4159,6 +5015,8 @@ def public_attendance_check_random_pick(public_id, match_id):
     team = get_team_by_public_id(public_id)
     if not team:
         return redirect(url_for("attendance_description"))
+    if not can_team_use_paid_feature(team):
+        return build_member_page_notice_redirect(public_id, get_plan_restriction_message(PLAN_FEATURE_RANDOM_PICK))
     attendees = get_portal_effective_attendees(team["id"], match_id)
     if not attendees:
         return redirect(url_for("public_attendance_tools", public_id=public_id, match_id=match_id, tool_message="当日参加者を先に確定してください。"))
@@ -4183,6 +5041,8 @@ def public_attendance_check_save_tool_result(public_id, match_id):
     team = get_team_by_public_id(public_id)
     if not team:
         return redirect(url_for("attendance_description"))
+    if not can_team_use_paid_feature(team):
+        return build_member_page_notice_redirect(public_id, get_plan_restriction_message(PLAN_FEATURE_TEAM_SPLIT))
 
     tool_type = (request.form.get("tool_type") or "").strip()
     title = (request.form.get("title") or "").strip()
@@ -4224,6 +5084,8 @@ def public_attendance_check_load_tool_result(public_id, match_id, saved_id):
     team = get_team_by_public_id(public_id)
     if not team:
         return redirect(url_for("attendance_description"))
+    if not can_team_use_paid_feature(team):
+        return build_member_page_notice_redirect(public_id, get_plan_restriction_message(PLAN_FEATURE_TEAM_SPLIT))
     saved = get_portal_tool_saved_result(team["id"], match_id, saved_id)
     if not saved:
         return redirect(url_for("public_attendance_tools", public_id=public_id, match_id=match_id, tool_message="保存結果が見つかりません。"))
@@ -4397,6 +5259,8 @@ def public_export_attendance_csv(public_id):
     team = get_team_by_public_id(public_id)
     if not team:
         return redirect(url_for("attendance_description"))
+    if not can_team_use_paid_feature(team):
+        return build_member_page_notice_redirect(public_id, get_plan_restriction_message(PLAN_FEATURE_CSV_EXPORT))
 
     month = request.args.get("month", "all").strip() or "all"
     return portal_build_event_list_csv_response(team["id"], month)
@@ -5297,6 +6161,17 @@ def robots():
 Allow: /
 Sitemap: https://mossan-store.com/sitemap.xml"""
     return Response(robots_txt, content_type="text/plain; charset=utf-8")
+
+
+try:
+    init_db()
+    if PORTAL_JSON_MIGRATION_ENABLED:
+        migrate_portal_json_to_db()
+    bootstrap_admin_from_env()
+except DatabaseError:
+    app.logger.exception("Database initialization failed.")
+    if RENDER_ENV:
+        raise
 
 
 if __name__ == "__main__":
