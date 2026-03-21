@@ -2,8 +2,49 @@
 
 {% block title %}サイト運営者ページ | Mossan Store{% endblock %}
 
+{% block header_nav_items %}
+<a href="{{ url_for('admin_dashboard') }}">ダッシュボード</a>
+{% if session.get('is_site_admin') %}
+<a href="{{ url_for('site_admin_dashboard') }}">サイト運営者ページ</a>
+{% endif %}
+{% if session.get('admin_id') %}
+<a href="{{ url_for('admin_logout') }}">ログアウト</a>
+{% else %}
+<a href="{{ url_for('admin_login_entry') }}">管理者ログイン</a>
+{% endif %}
+{% endblock %}
+
 {% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
 <style>
+  .dashboard-reggae-title {
+    font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+    letter-spacing: 0.04em;
+    color: #ead7b3;
+  }
+
+  .dashboard-reggae-heading {
+    font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+    letter-spacing: 0.04em;
+    color: #ead7b3;
+  }
+
+  .admin-total-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 10px;
+    padding: 6px 12px;
+    border: 1px solid rgba(234, 215, 179, 0.45);
+    border-radius: 999px;
+    color: #ead7b3;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    vertical-align: middle;
+    background: rgba(234, 215, 179, 0.08);
+  }
   .admin-list-table {
     width: 100%;
     border-collapse: collapse;
@@ -44,14 +85,83 @@
     gap: 8px;
     align-items: center;
   }
+
+  .team-accordion {
+    min-width: 120px;
+  }
+
+  .team-accordion summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid #2f6d44;
+    border-radius: 999px;
+    background: #163121;
+    color: #f2fff6;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .team-accordion summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .team-accordion summary:hover {
+    background: #1f432e;
+  }
+
+  .team-accordion[open] .team-toggle-icon {
+    transform: rotate(180deg);
+  }
+
+  .team-toggle-icon {
+    display: inline-block;
+    transition: transform 0.2s ease;
+  }
+
+  .team-accordion-panel {
+    margin-top: 12px;
+    padding: 18px;
+    background: linear-gradient(180deg, rgba(35, 55, 44, 0.88) 0%, rgba(15, 22, 30, 0.98) 100%);
+    border: 1px solid #355043;
+    border-radius: 16px;
+  }
+
+  .team-detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+  }
+
+  .team-detail-table th,
+  .team-detail-table td {
+    padding: 10px 12px;
+    border: 1px solid #355043;
+    color: #e5e7eb;
+    text-align: left;
+  }
+
+  .team-detail-table thead th {
+    background: rgba(59, 143, 95, 0.18);
+  }
+
+  .team-empty-text {
+    margin: 0;
+    color: #cfe5d7;
+  }
 </style>
 
-<h1 class="page-title">サイト運営者ページ</h1>
+<h1 class="page-title dashboard-reggae-title">サイト運営者ページ</h1>
 
 <section class="panel">
-  <h2 style="margin-top: 0;">登録済み管理者一覧</h2>
+  <h2 class="dashboard-reggae-heading" style="margin-top: 0;">
+    登録済み管理者一覧
+    <span class="admin-total-badge">合計 {{ admin_rows|length }} 人</span>
+  </h2>
   <p style="margin-top: 0; color: var(--muted);">
-    メールアドレス、作成チーム数、利用開始日、利用期限、残り日数を表示しています。
+    メールアドレス、作成チーム数、利用開始日、利用日数、利用期限、残り日数を表示しています。
   </p>
 
   {% if error_message %}
@@ -69,18 +179,53 @@
           <th>メールアドレス</th>
           <th>作成チーム数</th>
           <th>利用開始日</th>
+          <th>利用日数</th>
           <th>利用期限</th>
           <th>残り日数</th>
           <th>延長操作</th>
           <th>削除</th>
         </tr>
       </thead>
-      <tbody>
-        {% for row in admin_rows %}
+        <tbody>
+          {% for row in admin_rows %}
         <tr>
           <td>{{ row["email"] }}</td>
-          <td>{{ row["team_count"] }}</td>
+          <td>
+            {% if row["team_details"] %}
+            <details class="team-accordion">
+              <summary>
+                <span>{{ row["team_count"] }}チーム</span>
+                <span class="team-toggle-icon">▼</span>
+              </summary>
+              <div class="team-accordion-panel">
+                <table class="team-detail-table">
+                  <thead>
+                    <tr>
+                      <th>チーム名</th>
+                      <th>登録日</th>
+                      <th>登録メンバー数</th>
+                      <th>登録イベント数</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for team in row["team_details"] %}
+                    <tr>
+                      <td>{{ team["name"] }}</td>
+                      <td>{{ team["registered_date"] }}</td>
+                      <td>{{ team["member_count"] }}</td>
+                      <td>{{ team["event_count"] }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+            {% else %}
+            0チーム
+            {% endif %}
+          </td>
           <td>{{ row["start_date"] }}</td>
+          <td>{{ row["usage_days_text"] }}</td>
           <td>{{ row["expiry_date"] }}</td>
           <td>{{ row["remaining_days_text"] }}</td>
           <td class="extend-cell">

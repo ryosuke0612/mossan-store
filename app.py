@@ -206,6 +206,40 @@ def portal_get_admin_summaries():
     return admins
 
 
+def portal_get_team_details_by_admin():
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT
+            t.id,
+            t.admin_id,
+            t.name,
+            t.public_id,
+            t.created_at,
+            (
+                SELECT COUNT(1)
+                FROM portal_members pm
+                WHERE pm.team_id = t.id
+            ) AS member_count,
+            (
+                SELECT COUNT(1)
+                FROM portal_events pe
+                WHERE pe.team_id = t.id
+            ) AS event_count
+        FROM teams t
+        ORDER BY t.created_at ASC, t.id ASC
+        """
+    )
+    rows = rows_to_dict(c.fetchall())
+    conn.close()
+
+    grouped = {}
+    for row in rows:
+        grouped.setdefault(row["admin_id"], []).append(row)
+    return grouped
+
+
 def portal_find_or_create_admin(email):
     existing = portal_get_admin_by_email(email)
     if existing:
@@ -2252,6 +2286,14 @@ def format_start_date(created_at):
     return raw[:10]
 
 
+def format_usage_days(created_at):
+    parsed = parse_portal_datetime(created_at)
+    if not parsed:
+        return "-"
+    usage_days = max(0, (datetime.now().date() - parsed.date()).days)
+    return f"{usage_days}日"
+
+
 def format_expiry_date(expires_at):
     if is_unlimited_expiry(expires_at):
         return "無期限"
@@ -3192,10 +3234,14 @@ def admin_dashboard():
 @site_admin_required
 def site_admin_dashboard():
     admin_rows = portal_get_admin_summaries()
+    team_details_by_admin = portal_get_team_details_by_admin()
     error_message = request.args.get("error_message", "").strip()
     success_message = request.args.get("success_message", "").strip()
     for row in admin_rows:
         row["start_date"] = format_start_date(row.get("created_at"))
+        row["usage_days_text"] = format_usage_days(row.get("created_at"))
+        team_details = team_details_by_admin.get(row["id"], [])
+        row["team_details"] = team_details
         if is_unlimited_expiry(row.get("expires_at")):
             row["effective_expiry"] = ADMIN_EXPIRY_UNLIMITED
         else:
@@ -3205,6 +3251,8 @@ def site_admin_dashboard():
             )
         row["expiry_date"] = format_expiry_date(row.get("effective_expiry"))
         row["remaining_days_text"] = format_remaining_days(row.get("effective_expiry"))
+        for team in team_details:
+            team["registered_date"] = format_start_date(team.get("created_at"))
 
     return render_template(
         "site_admin_dashboard.html",
