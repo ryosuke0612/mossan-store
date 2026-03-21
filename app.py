@@ -53,6 +53,26 @@ ADMIN_ACCOUNT_STATUS_EXPIRED = "expired"
 ADMIN_BILLING_STATUS_UNPAID = "unpaid"
 ADMIN_BILLING_STATUS_PAID = "paid"
 ADMIN_FREE_TEAM_LIMIT = 2
+ADMIN_PLAN_REQUEST_STATUS_PENDING = "pending"
+ADMIN_PLAN_REQUEST_STATUS_APPROVED = "approved"
+ADMIN_PLAN_REQUEST_STATUS_REJECTED = "rejected"
+ADMIN_PLAN_REQUEST_TYPE_PAID_30_DAYS = "paid_plan_30_days"
+ADMIN_PLAN_REQUEST_PAYMENT_METHOD_PAYPAY = "paypay"
+ADMIN_PLAN_REQUEST_TYPE_LABELS = {
+    ADMIN_PLAN_REQUEST_TYPE_PAID_30_DAYS: "+30日",
+}
+ADMIN_PLAN_REQUEST_PAYMENT_AMOUNT_OPTIONS = [500, 1000, 1500]
+ADMIN_PLAN_REQUEST_EXTENSION_DAYS = {
+    ADMIN_PLAN_REQUEST_TYPE_PAID_30_DAYS: 30,
+}
+ADMIN_PLAN_REQUEST_PAYMENT_METHOD_LABELS = {
+    ADMIN_PLAN_REQUEST_PAYMENT_METHOD_PAYPAY: "PayPay",
+}
+ADMIN_PLAN_REQUEST_STATUS_LABELS = {
+    ADMIN_PLAN_REQUEST_STATUS_PENDING: "申請中",
+    ADMIN_PLAN_REQUEST_STATUS_APPROVED: "承認済み",
+    ADMIN_PLAN_REQUEST_STATUS_REJECTED: "却下",
+}
 PLAN_FEATURE_TEAM_CREATE = "team_create"
 PLAN_FEATURE_CSV_EXPORT = "csv_export"
 PLAN_FEATURE_ATTENDANCE_CHECK = "attendance_check"
@@ -253,6 +273,151 @@ def portal_get_admin(admin_id):
     admin = row_to_dict(c.fetchone())
     conn.close()
     return sync_admin_plan_by_expiry(admin)
+
+
+def portal_get_admin_plan_request(request_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT
+            apr.id,
+            apr.admin_id,
+            apr.request_type,
+            apr.payment_method,
+            apr.payment_amount,
+            apr.payment_date,
+            apr.payment_reference,
+            apr.request_note,
+            apr.status,
+            apr.review_note,
+            apr.reviewed_by_admin_id,
+            apr.reviewed_at,
+            apr.created_at,
+            apr.updated_at,
+            a.email AS admin_email,
+            reviewer.email AS reviewer_email
+        FROM admin_plan_requests apr
+        INNER JOIN admins a ON a.id = apr.admin_id
+        LEFT JOIN admins reviewer ON reviewer.id = apr.reviewed_by_admin_id
+        WHERE apr.id=?
+        """,
+        (request_id,),
+    )
+    row = row_to_dict(c.fetchone())
+    conn.close()
+    return row
+
+
+def portal_get_pending_admin_plan_request_by_admin(admin_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT
+            id,
+            admin_id,
+            request_type,
+            payment_method,
+            payment_amount,
+            payment_date,
+            payment_reference,
+            request_note,
+            status,
+            review_note,
+            reviewed_by_admin_id,
+            reviewed_at,
+            created_at,
+            updated_at
+        FROM admin_plan_requests
+        WHERE admin_id=? AND status=?
+        ORDER BY created_at DESC, id DESC
+        LIMIT 1
+        """,
+        (admin_id, ADMIN_PLAN_REQUEST_STATUS_PENDING),
+    )
+    row = row_to_dict(c.fetchone())
+    conn.close()
+    return row
+
+
+def portal_get_admin_plan_request_history(admin_id, limit=20):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT
+            apr.id,
+            apr.admin_id,
+            apr.request_type,
+            apr.payment_method,
+            apr.payment_amount,
+            apr.payment_date,
+            apr.payment_reference,
+            apr.request_note,
+            apr.status,
+            apr.review_note,
+            apr.reviewed_by_admin_id,
+            apr.reviewed_at,
+            apr.created_at,
+            apr.updated_at,
+            reviewer.email AS reviewer_email
+        FROM admin_plan_requests apr
+        LEFT JOIN admins reviewer ON reviewer.id = apr.reviewed_by_admin_id
+        WHERE apr.admin_id=?
+        ORDER BY apr.created_at DESC, apr.id DESC
+        LIMIT ?
+        """,
+        (admin_id, limit),
+    )
+    rows = rows_to_dict(c.fetchall())
+    conn.close()
+    return rows
+
+
+def portal_get_admin_plan_requests(status=None, limit=200):
+    conn = get_db_connection()
+    c = conn.cursor()
+    params = []
+    where_clause = ""
+    if status:
+        where_clause = "WHERE apr.status=?"
+        params.append(status)
+    params.append(limit)
+    c.execute(
+        f"""
+        SELECT
+            apr.id,
+            apr.admin_id,
+            apr.request_type,
+            apr.payment_method,
+            apr.payment_amount,
+            apr.payment_date,
+            apr.payment_reference,
+            apr.request_note,
+            apr.status,
+            apr.review_note,
+            apr.reviewed_by_admin_id,
+            apr.reviewed_at,
+            apr.created_at,
+            apr.updated_at,
+            a.email AS admin_email,
+            reviewer.email AS reviewer_email
+        FROM admin_plan_requests apr
+        INNER JOIN admins a ON a.id = apr.admin_id
+        LEFT JOIN admins reviewer ON reviewer.id = apr.reviewed_by_admin_id
+        {where_clause}
+        ORDER BY
+            CASE WHEN apr.status = '{ADMIN_PLAN_REQUEST_STATUS_PENDING}' THEN 0 ELSE 1 END,
+            apr.created_at DESC,
+            apr.id DESC
+        LIMIT ?
+        """,
+        tuple(params),
+    )
+    rows = rows_to_dict(c.fetchall())
+    conn.close()
+    return rows
 
 
 def portal_get_admin_summaries():
@@ -610,6 +775,66 @@ def portal_record_admin_billing_history(
     conn.commit()
     conn.close()
     return True
+
+
+def portal_create_admin_plan_request(
+    admin_id,
+    request_type,
+    payment_method,
+    payment_amount,
+    payment_date,
+    payment_reference,
+    request_note="",
+):
+    now_text = portal_now_text()
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        "SELECT 1 FROM admin_plan_requests WHERE admin_id=? AND status=? LIMIT 1",
+        (admin_id, ADMIN_PLAN_REQUEST_STATUS_PENDING),
+    )
+    if c.fetchone():
+        conn.close()
+        return False, "pending_exists"
+
+    c.execute(
+        """
+        INSERT INTO admin_plan_requests (
+            admin_id,
+            request_type,
+            payment_method,
+            payment_amount,
+            payment_date,
+            payment_reference,
+            request_note,
+            status,
+            review_note,
+            reviewed_by_admin_id,
+            reviewed_at,
+            created_at,
+            updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            admin_id,
+            request_type,
+            payment_method,
+            payment_amount,
+            payment_date,
+            payment_reference,
+            request_note,
+            ADMIN_PLAN_REQUEST_STATUS_PENDING,
+            "",
+            None,
+            None,
+            now_text,
+            now_text,
+        ),
+    )
+    conn.commit()
+    conn.close()
+    return True, "created"
 
 
 def portal_get_admin_billing_history(admin_id, limit=20):
@@ -1641,6 +1866,28 @@ def init_db_sqlite():
     )
     """
     )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS admin_plan_requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        admin_id INTEGER NOT NULL,
+        request_type TEXT NOT NULL,
+        payment_method TEXT NOT NULL,
+        payment_amount INTEGER NOT NULL DEFAULT 0,
+        payment_date TEXT NOT NULL,
+        payment_reference TEXT,
+        request_note TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
+        review_note TEXT,
+        reviewed_by_admin_id INTEGER,
+        reviewed_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY(admin_id) REFERENCES admins(id),
+        FOREIGN KEY(reviewed_by_admin_id) REFERENCES admins(id)
+    )
+    """
+    )
 
     c.execute(
         """
@@ -1785,6 +2032,12 @@ def init_db_sqlite():
     c.execute(
         "CREATE INDEX IF NOT EXISTS idx_admin_billing_history_admin_created ON admin_billing_history(admin_id, created_at)"
     )
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_admin_plan_requests_admin_created ON admin_plan_requests(admin_id, created_at)"
+    )
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_admin_plan_requests_status_created ON admin_plan_requests(status, created_at)"
+    )
 
     c.execute("PRAGMA table_info(admins)")
     admin_columns = [row[1] for row in c.fetchall()]
@@ -1820,6 +2073,63 @@ def init_db_sqlite():
         c.execute("ALTER TABLE admins ADD COLUMN last_attendance_updated_at TEXT")
     if "admin_memo" not in admin_columns:
         c.execute("ALTER TABLE admins ADD COLUMN admin_memo TEXT")
+    c.execute("PRAGMA table_info(admin_plan_requests)")
+    admin_plan_request_columns = [row[1] for row in c.fetchall()]
+    if "admin_id" not in admin_plan_request_columns:
+        c.execute("ALTER TABLE admin_plan_requests ADD COLUMN admin_id INTEGER")
+    if "request_type" not in admin_plan_request_columns:
+        c.execute(
+            f"ALTER TABLE admin_plan_requests ADD COLUMN request_type TEXT NOT NULL DEFAULT '{ADMIN_PLAN_REQUEST_TYPE_PAID_30_DAYS}'"
+        )
+    if "payment_method" not in admin_plan_request_columns:
+        c.execute(
+            f"ALTER TABLE admin_plan_requests ADD COLUMN payment_method TEXT NOT NULL DEFAULT '{ADMIN_PLAN_REQUEST_PAYMENT_METHOD_PAYPAY}'"
+        )
+    if "payment_amount" not in admin_plan_request_columns:
+        c.execute("ALTER TABLE admin_plan_requests ADD COLUMN payment_amount INTEGER NOT NULL DEFAULT 0")
+    if "payment_date" not in admin_plan_request_columns:
+        c.execute("ALTER TABLE admin_plan_requests ADD COLUMN payment_date TEXT")
+    if "payment_reference" not in admin_plan_request_columns:
+        c.execute("ALTER TABLE admin_plan_requests ADD COLUMN payment_reference TEXT")
+    if "request_note" not in admin_plan_request_columns:
+        c.execute("ALTER TABLE admin_plan_requests ADD COLUMN request_note TEXT")
+    if "status" not in admin_plan_request_columns:
+        c.execute(
+            f"ALTER TABLE admin_plan_requests ADD COLUMN status TEXT NOT NULL DEFAULT '{ADMIN_PLAN_REQUEST_STATUS_PENDING}'"
+        )
+    if "review_note" not in admin_plan_request_columns:
+        c.execute("ALTER TABLE admin_plan_requests ADD COLUMN review_note TEXT")
+    if "reviewed_by_admin_id" not in admin_plan_request_columns:
+        c.execute("ALTER TABLE admin_plan_requests ADD COLUMN reviewed_by_admin_id INTEGER")
+    if "reviewed_at" not in admin_plan_request_columns:
+        c.execute("ALTER TABLE admin_plan_requests ADD COLUMN reviewed_at TEXT")
+    if "created_at" not in admin_plan_request_columns:
+        c.execute("ALTER TABLE admin_plan_requests ADD COLUMN created_at TEXT")
+    if "updated_at" not in admin_plan_request_columns:
+        c.execute("ALTER TABLE admin_plan_requests ADD COLUMN updated_at TEXT")
+    c.execute(
+        """
+        UPDATE admin_plan_requests
+        SET request_type = COALESCE(NULLIF(request_type, ''), ?),
+            payment_method = COALESCE(NULLIF(payment_method, ''), ?),
+            payment_amount = COALESCE(payment_amount, 0),
+            payment_date = COALESCE(NULLIF(payment_date, ''), created_at, ?),
+            status = COALESCE(NULLIF(status, ''), ?),
+            review_note = COALESCE(review_note, ''),
+            payment_reference = COALESCE(payment_reference, ''),
+            request_note = COALESCE(request_note, ''),
+            created_at = COALESCE(NULLIF(created_at, ''), ?),
+            updated_at = COALESCE(NULLIF(updated_at, ''), created_at, ?)
+        """,
+        (
+            ADMIN_PLAN_REQUEST_TYPE_PAID_30_DAYS,
+            ADMIN_PLAN_REQUEST_PAYMENT_METHOD_PAYPAY,
+            portal_now_text(),
+            ADMIN_PLAN_REQUEST_STATUS_PENDING,
+            portal_now_text(),
+            portal_now_text(),
+        ),
+    )
     c.execute(
         """
         UPDATE admins
@@ -2180,6 +2490,26 @@ def init_db_postgres():
     )
     c.execute(
         """
+    CREATE TABLE IF NOT EXISTS admin_plan_requests (
+        id SERIAL PRIMARY KEY,
+        admin_id INTEGER NOT NULL REFERENCES admins(id),
+        request_type TEXT NOT NULL,
+        payment_method TEXT NOT NULL,
+        payment_amount INTEGER NOT NULL DEFAULT 0,
+        payment_date TEXT NOT NULL,
+        payment_reference TEXT,
+        request_note TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
+        review_note TEXT,
+        reviewed_by_admin_id INTEGER REFERENCES admins(id),
+        reviewed_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    )
+    """
+    )
+    c.execute(
+        """
     CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         username TEXT NOT NULL UNIQUE,
@@ -2441,6 +2771,48 @@ def init_db_postgres():
     c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS last_login_at TEXT")
     c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS last_attendance_updated_at TEXT")
     c.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS admin_memo TEXT")
+    c.execute("ALTER TABLE admin_plan_requests ADD COLUMN IF NOT EXISTS admin_id INTEGER")
+    c.execute(
+        f"ALTER TABLE admin_plan_requests ADD COLUMN IF NOT EXISTS request_type TEXT NOT NULL DEFAULT '{ADMIN_PLAN_REQUEST_TYPE_PAID_30_DAYS}'"
+    )
+    c.execute(
+        f"ALTER TABLE admin_plan_requests ADD COLUMN IF NOT EXISTS payment_method TEXT NOT NULL DEFAULT '{ADMIN_PLAN_REQUEST_PAYMENT_METHOD_PAYPAY}'"
+    )
+    c.execute("ALTER TABLE admin_plan_requests ADD COLUMN IF NOT EXISTS payment_amount INTEGER NOT NULL DEFAULT 0")
+    c.execute("ALTER TABLE admin_plan_requests ADD COLUMN IF NOT EXISTS payment_date TEXT")
+    c.execute("ALTER TABLE admin_plan_requests ADD COLUMN IF NOT EXISTS payment_reference TEXT")
+    c.execute("ALTER TABLE admin_plan_requests ADD COLUMN IF NOT EXISTS request_note TEXT")
+    c.execute(
+        f"ALTER TABLE admin_plan_requests ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT '{ADMIN_PLAN_REQUEST_STATUS_PENDING}'"
+    )
+    c.execute("ALTER TABLE admin_plan_requests ADD COLUMN IF NOT EXISTS review_note TEXT")
+    c.execute("ALTER TABLE admin_plan_requests ADD COLUMN IF NOT EXISTS reviewed_by_admin_id INTEGER")
+    c.execute("ALTER TABLE admin_plan_requests ADD COLUMN IF NOT EXISTS reviewed_at TEXT")
+    c.execute("ALTER TABLE admin_plan_requests ADD COLUMN IF NOT EXISTS created_at TEXT")
+    c.execute("ALTER TABLE admin_plan_requests ADD COLUMN IF NOT EXISTS updated_at TEXT")
+    c.execute(
+        """
+        UPDATE admin_plan_requests
+        SET request_type = COALESCE(NULLIF(request_type, ''), %s),
+            payment_method = COALESCE(NULLIF(payment_method, ''), %s),
+            payment_amount = COALESCE(payment_amount, 0),
+            payment_date = COALESCE(NULLIF(payment_date, ''), created_at, %s),
+            status = COALESCE(NULLIF(status, ''), %s),
+            review_note = COALESCE(review_note, ''),
+            payment_reference = COALESCE(payment_reference, ''),
+            request_note = COALESCE(request_note, ''),
+            created_at = COALESCE(NULLIF(created_at, ''), %s),
+            updated_at = COALESCE(NULLIF(updated_at, ''), created_at, %s)
+        """,
+        (
+            ADMIN_PLAN_REQUEST_TYPE_PAID_30_DAYS,
+            ADMIN_PLAN_REQUEST_PAYMENT_METHOD_PAYPAY,
+            portal_now_text(),
+            ADMIN_PLAN_REQUEST_STATUS_PENDING,
+            portal_now_text(),
+            portal_now_text(),
+        ),
+    )
     c.execute(
         """
         UPDATE admins
@@ -2479,6 +2851,12 @@ def init_db_postgres():
     c.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS user_id INTEGER NOT NULL DEFAULT 0")
     c.execute(
         "CREATE INDEX IF NOT EXISTS idx_admin_billing_history_admin_created ON admin_billing_history(admin_id, created_at)"
+    )
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_admin_plan_requests_admin_created ON admin_plan_requests(admin_id, created_at)"
+    )
+    c.execute(
+        "CREATE INDEX IF NOT EXISTS idx_admin_plan_requests_status_created ON admin_plan_requests(status, created_at)"
     )
     c.execute(
         "CREATE INDEX IF NOT EXISTS idx_attendance_actual_attendees_match_user ON attendance_actual_attendees(user_id, match_id)"
@@ -2835,6 +3213,72 @@ def format_billing_history_amount(value):
     return format_currency_yen(0)
 
 
+def normalize_admin_plan_request_status(value):
+    normalized = (value or "").strip().lower()
+    return normalized if normalized in ADMIN_PLAN_REQUEST_STATUS_LABELS else ""
+
+
+def normalize_admin_plan_request_type(value):
+    normalized = (value or "").strip().lower()
+    return normalized if normalized in ADMIN_PLAN_REQUEST_TYPE_LABELS else ""
+
+
+def normalize_admin_plan_request_payment_method(value):
+    normalized = (value or "").strip().lower()
+    return normalized if normalized in ADMIN_PLAN_REQUEST_PAYMENT_METHOD_LABELS else ""
+
+
+def enrich_admin_plan_request_row(row):
+    normalized_status = normalize_admin_plan_request_status(row.get("status")) or ADMIN_PLAN_REQUEST_STATUS_PENDING
+    normalized_request_type = (
+        normalize_admin_plan_request_type(row.get("request_type")) or ADMIN_PLAN_REQUEST_TYPE_PAID_30_DAYS
+    )
+    normalized_payment_method = (
+        normalize_admin_plan_request_payment_method(row.get("payment_method"))
+        or ADMIN_PLAN_REQUEST_PAYMENT_METHOD_PAYPAY
+    )
+    row["status"] = normalized_status
+    row["status_text"] = ADMIN_PLAN_REQUEST_STATUS_LABELS.get(normalized_status, "申請中")
+    row["request_type"] = normalized_request_type
+    row["request_type_text"] = ADMIN_PLAN_REQUEST_TYPE_LABELS.get(normalized_request_type, "有料プラン申請")
+    row["payment_method"] = normalized_payment_method
+    row["payment_method_text"] = ADMIN_PLAN_REQUEST_PAYMENT_METHOD_LABELS.get(normalized_payment_method, "PayPay")
+    row["payment_amount_text"] = format_currency_yen(row.get("payment_amount"))
+    row["payment_date_text"] = format_portal_date(row.get("payment_date"))
+    row["created_date"] = format_portal_date(row.get("created_at"))
+    row["reviewed_date"] = format_portal_date(row.get("reviewed_at"))
+    return row
+
+
+def enrich_admin_plan_request_rows(rows):
+    return [enrich_admin_plan_request_row(row) for row in rows]
+
+
+def build_admin_plan_request_page_context(admin):
+    pending_plan_request_raw = portal_get_pending_admin_plan_request_by_admin(admin["id"])
+    pending_plan_request = enrich_admin_plan_request_row(pending_plan_request_raw) if pending_plan_request_raw else None
+    plan_request_history = enrich_admin_plan_request_rows(portal_get_admin_plan_request_history(admin["id"], limit=20))
+    effective_expiry = resolve_admin_expiry_datetime(admin.get("created_at"), admin.get("expires_at"))
+    effective_expiry_text = (
+        ADMIN_EXPIRY_UNLIMITED
+        if is_unlimited_expiry(admin.get("expires_at"))
+        else (effective_expiry.strftime("%Y-%m-%d %H:%M:%S") if effective_expiry else "")
+    )
+    return {
+        "admin": admin,
+        "admin_email": admin["email"],
+        "current_plan_type": get_admin_plan_type(admin),
+        "current_plan_label": ADMIN_PLAN_LABELS.get(get_admin_plan_type(admin), "有料"),
+        "current_expiry_date": format_expiry_date(effective_expiry_text),
+        "current_remaining_days": format_remaining_days(effective_expiry_text),
+        "pending_plan_request": pending_plan_request,
+        "plan_request_history": plan_request_history,
+        "plan_request_type_options": ADMIN_PLAN_REQUEST_TYPE_LABELS,
+        "payment_method_options": ADMIN_PLAN_REQUEST_PAYMENT_METHOD_LABELS,
+        "payment_amount_options": ADMIN_PLAN_REQUEST_PAYMENT_AMOUNT_OPTIONS,
+    }
+
+
 def build_public_team_url(team):
     public_id = (team.get("public_id") or "").strip()
     if not public_id:
@@ -3007,6 +3451,169 @@ def parse_team_state_from_form(raw_value):
         team_name = (raw_team.get("name") or f"Team {index}").strip() or f"Team {index}"
         teams.append({"name": team_name, "members": _normalize_name_list(raw_team.get("members", []))})
     return teams
+
+
+def build_admin_plan_request_expiry(admin_row, request_type, approved_at_text):
+    if is_unlimited_expiry(admin_row.get("expires_at")):
+        return ADMIN_EXPIRY_UNLIMITED
+    extend_days = ADMIN_PLAN_REQUEST_EXTENSION_DAYS.get(request_type, 30)
+    approved_at_dt = parse_portal_datetime(approved_at_text) or datetime.now()
+    effective_expiry = resolve_admin_expiry_datetime(admin_row.get("created_at"), admin_row.get("expires_at"))
+    base_dt = effective_expiry if (effective_expiry and effective_expiry > approved_at_dt) else approved_at_dt
+    return (base_dt + timedelta(days=extend_days)).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def build_admin_plan_request_billing_note(request_row):
+    parts = [f"有料プラン申請承認 #{request_row['id']}"]
+    payment_reference = (request_row.get("payment_reference") or "").strip()
+    if payment_reference:
+        parts.append(f"識別情報: {payment_reference}")
+    request_note = (request_row.get("request_note") or "").strip()
+    if request_note:
+        parts.append(f"申請メモ: {request_note}")
+    return " / ".join(parts)
+
+
+def portal_review_admin_plan_request(request_id, reviewer_admin_id, decision, review_note=""):
+    if decision not in {ADMIN_PLAN_REQUEST_STATUS_APPROVED, ADMIN_PLAN_REQUEST_STATUS_REJECTED}:
+        return False, "invalid_decision"
+
+    review_timestamp = portal_now_text()
+    conn = get_db_connection()
+    c = conn.cursor()
+    try:
+        c.execute(
+            """
+            SELECT
+                id,
+                admin_id,
+                request_type,
+                payment_method,
+                payment_amount,
+                payment_date,
+                payment_reference,
+                request_note,
+                status,
+                review_note,
+                reviewed_by_admin_id,
+                reviewed_at,
+                created_at,
+                updated_at
+            FROM admin_plan_requests
+            WHERE id=?
+            """,
+            (request_id,),
+        )
+        request_row = row_to_dict(c.fetchone())
+        if not request_row:
+            conn.close()
+            return False, "not_found"
+        if request_row.get("status") != ADMIN_PLAN_REQUEST_STATUS_PENDING:
+            conn.close()
+            return False, "already_reviewed"
+
+        c.execute(
+            """
+            UPDATE admin_plan_requests
+            SET status=?, review_note=?, reviewed_by_admin_id=?, reviewed_at=?, updated_at=?
+            WHERE id=? AND status=?
+            """,
+            (
+                decision,
+                review_note,
+                reviewer_admin_id,
+                review_timestamp,
+                review_timestamp,
+                request_id,
+                ADMIN_PLAN_REQUEST_STATUS_PENDING,
+            ),
+        )
+        if c.rowcount <= 0:
+            conn.rollback()
+            conn.close()
+            return False, "already_reviewed"
+
+        if decision == ADMIN_PLAN_REQUEST_STATUS_APPROVED:
+            c.execute(f"SELECT {ADMIN_SELECT_COLUMNS} FROM admins WHERE id=?", (request_row["admin_id"],))
+            admin_row = row_to_dict(c.fetchone())
+            if not admin_row:
+                conn.rollback()
+                conn.close()
+                return False, "admin_not_found"
+
+            payment_amount = int(request_row.get("payment_amount") or 0)
+            total_billing_amount = int(admin_row.get("total_billing_amount") or 0) + payment_amount
+            billing_count = int(admin_row.get("billing_count") or 0) + 1
+            expires_at = build_admin_plan_request_expiry(admin_row, request_row.get("request_type"), review_timestamp)
+            current_account_status = normalize_admin_account_status(admin_row.get("account_status")) or ADMIN_ACCOUNT_STATUS_ACTIVE
+            account_status = (
+                ADMIN_ACCOUNT_STATUS_SUSPENDED
+                if current_account_status == ADMIN_ACCOUNT_STATUS_SUSPENDED
+                else ADMIN_ACCOUNT_STATUS_ACTIVE
+            )
+            legacy_status = (
+                ADMIN_STATUS_SUSPENDED if account_status == ADMIN_ACCOUNT_STATUS_SUSPENDED else ADMIN_STATUS_PAID
+            )
+
+            c.execute(
+                """
+                UPDATE admins
+                SET plan_type=?,
+                    billing_status=?,
+                    total_billing_amount=?,
+                    billing_count=?,
+                    last_billed_at=?,
+                    expires_at=?,
+                    account_status=?,
+                    status=?
+                WHERE id=?
+                """,
+                (
+                    ADMIN_PLAN_PAID,
+                    ADMIN_BILLING_STATUS_PAID,
+                    total_billing_amount,
+                    billing_count,
+                    request_row.get("payment_date"),
+                    expires_at,
+                    account_status,
+                    legacy_status,
+                    request_row["admin_id"],
+                ),
+            )
+            c.execute(
+                """
+                INSERT INTO admin_billing_history (
+                    admin_id,
+                    billing_status,
+                    billed_at,
+                    amount,
+                    total_amount,
+                    billing_count,
+                    note,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    request_row["admin_id"],
+                    ADMIN_BILLING_STATUS_PAID,
+                    request_row.get("payment_date"),
+                    payment_amount,
+                    total_billing_amount,
+                    billing_count,
+                    build_admin_plan_request_billing_note(request_row),
+                    review_timestamp,
+                ),
+            )
+
+        conn.commit()
+    except DatabaseError:
+        conn.rollback()
+        conn.close()
+        return False, "database_error"
+
+    conn.close()
+    return True, decision
 
 
 def parse_random_pick_names(raw_value="", single_value=""):
@@ -3856,6 +4463,7 @@ def admin_dashboard():
 @site_admin_required
 def site_admin_dashboard():
     admin_rows = portal_get_admin_summaries()
+    pending_plan_request_count = len(portal_get_admin_plan_requests(status=ADMIN_PLAN_REQUEST_STATUS_PENDING, limit=500))
     error_message = request.args.get("error_message", "").strip()
     success_message = request.args.get("success_message", "").strip()
     for row in admin_rows:
@@ -3867,7 +4475,48 @@ def site_admin_dashboard():
         error_message=error_message,
         success_message=success_message,
         site_admin_emails=sorted(SITE_ADMIN_EMAILS),
+        pending_plan_request_count=pending_plan_request_count,
     )
+
+
+@app.route("/site-admin/plan-requests")
+@site_admin_required
+def site_admin_plan_requests():
+    request_rows = enrich_admin_plan_request_rows(portal_get_admin_plan_requests(limit=300))
+    pending_count = len(portal_get_admin_plan_requests(status=ADMIN_PLAN_REQUEST_STATUS_PENDING, limit=500))
+    return render_template(
+        "site_admin_plan_requests.html",
+        request_rows=request_rows,
+        pending_count=pending_count,
+        error_message=request.args.get("error_message", "").strip(),
+        success_message=request.args.get("success_message", "").strip(),
+    )
+
+
+@app.route("/site-admin/plan-requests/<int:request_id>/review", methods=["POST"])
+@site_admin_required
+def site_admin_review_plan_request(request_id):
+    decision = normalize_admin_plan_request_status(request.form.get("decision"))
+    if decision not in {ADMIN_PLAN_REQUEST_STATUS_APPROVED, ADMIN_PLAN_REQUEST_STATUS_REJECTED}:
+        return redirect(url_for("site_admin_plan_requests", error_message="判定の値が不正です。"))
+
+    review_note = request.form.get("review_note", "").strip()
+    if len(review_note) > 1000:
+        return redirect(url_for("site_admin_plan_requests", error_message="審査メモは1000文字以内で入力してください。"))
+
+    reviewed, status = portal_review_admin_plan_request(request_id, session["admin_id"], decision, review_note)
+    if reviewed:
+        message = "申請を承認しました。" if decision == ADMIN_PLAN_REQUEST_STATUS_APPROVED else "申請を却下しました。"
+        return redirect(url_for("site_admin_plan_requests", success_message=message))
+
+    error_message = "申請を更新できませんでした。"
+    if status == "already_reviewed":
+        error_message = "この申請はすでに処理済みです。"
+    elif status == "not_found":
+        error_message = "申請が見つかりません。"
+    elif status == "admin_not_found":
+        error_message = "対象の管理者が見つかりません。"
+    return redirect(url_for("site_admin_plan_requests", error_message=error_message))
 
 
 @app.route("/site-admin/admins/<int:admin_id>")
@@ -3943,99 +4592,6 @@ def site_admin_update_admin_account_status(admin_id):
         )
     return redirect(
         append_query_params(redirect_target, error_message="利用状態を更新できませんでした。")
-    )
-
-
-@app.route("/site-admin/admins/<int:admin_id>/billing", methods=["POST"])
-@site_admin_required
-def site_admin_update_admin_billing(admin_id):
-    admin = portal_get_admin(admin_id)
-    if not admin:
-        return redirect(url_for("site_admin_dashboard", error_message="対象の管理者が見つかりません。"))
-
-    billing_status = normalize_admin_billing_status(request.form.get("billing_status"))
-    if not billing_status:
-        return redirect(
-            url_for("site_admin_admin_detail", admin_id=admin_id, error_message="課金ステータスの値が不正です。")
-        )
-
-    total_billing_amount_raw = request.form.get("total_billing_amount", "").strip()
-    billing_count_raw = request.form.get("billing_count", "").strip()
-    last_billed_at_raw = request.form.get("last_billed_at", "").strip()
-    billing_note = request.form.get("billing_note", "").strip()
-
-    try:
-        total_billing_amount = int(total_billing_amount_raw or "0")
-    except ValueError:
-        return redirect(
-            url_for("site_admin_admin_detail", admin_id=admin_id, error_message="累計課金額は整数で入力してください。")
-        )
-    if total_billing_amount < 0:
-        return redirect(
-            url_for("site_admin_admin_detail", admin_id=admin_id, error_message="累計課金額は0以上で入力してください。")
-        )
-
-    try:
-        billing_count = int(billing_count_raw or "0")
-    except ValueError:
-        return redirect(
-            url_for("site_admin_admin_detail", admin_id=admin_id, error_message="課金回数は整数で入力してください。")
-        )
-    if billing_count < 0:
-        return redirect(
-            url_for("site_admin_admin_detail", admin_id=admin_id, error_message="課金回数は0以上で入力してください。")
-        )
-    if len(billing_note) > 500:
-        return redirect(
-            url_for("site_admin_admin_detail", admin_id=admin_id, error_message="課金メモは500文字以内で入力してください。")
-        )
-
-    last_billed_at = ""
-    if last_billed_at_raw:
-        parsed = parse_portal_datetime(last_billed_at_raw)
-        if not parsed:
-            return redirect(
-                url_for("site_admin_admin_detail", admin_id=admin_id, error_message="最終課金日の形式が不正です。")
-        )
-        last_billed_at = parsed.strftime("%Y-%m-%d %H:%M:%S")
-
-    old_total_billing_amount = int(admin.get("total_billing_amount") or 0)
-    old_billing_count = int(admin.get("billing_count") or 0)
-    old_billing_status = normalize_admin_billing_status(admin.get("billing_status")) or ADMIN_BILLING_STATUS_UNPAID
-    old_last_billed_at = admin.get("last_billed_at") or ""
-    billing_amount_delta = total_billing_amount - old_total_billing_amount
-    billing_changed = any(
-        [
-            billing_status != old_billing_status,
-            total_billing_amount != old_total_billing_amount,
-            billing_count != old_billing_count,
-            last_billed_at != old_last_billed_at,
-            bool(billing_note),
-        ]
-    )
-
-    if portal_update_admin_profile_fields(
-        admin_id,
-        billing_status=billing_status,
-        total_billing_amount=total_billing_amount,
-        billing_count=billing_count,
-        last_billed_at=last_billed_at,
-    ):
-        if billing_changed:
-            portal_record_admin_billing_history(
-                admin_id=admin_id,
-                billing_status=billing_status,
-                billed_at=last_billed_at,
-                amount=billing_amount_delta,
-                total_amount=total_billing_amount,
-                billing_count=billing_count,
-                note=billing_note,
-            )
-        return redirect(
-            url_for("site_admin_admin_detail", admin_id=admin_id, success_message="課金情報を更新しました。")
-        )
-    return redirect(
-        url_for("site_admin_admin_detail", admin_id=admin_id, error_message="課金情報を更新できませんでした。")
     )
 
 
@@ -4184,6 +4740,69 @@ def admin_account_settings():
         error_message=error_message,
         success_message=success_message,
     )
+
+
+@app.route("/admin/plan-requests", methods=["GET", "POST"])
+@admin_login_required
+def admin_create_plan_request():
+    admin = portal_get_admin(session["admin_id"])
+    if not admin:
+        session.pop("admin_id", None)
+        session.pop("admin_email", None)
+        return redirect(url_for("admin_login_entry"))
+
+    if request.method == "GET":
+        context = build_admin_plan_request_page_context(admin)
+        context["error_message"] = request.args.get("error_message", "").strip()
+        context["success_message"] = request.args.get("success_message", "").strip()
+        return render_template("admin_plan_requests.html", **context)
+
+    if portal_get_pending_admin_plan_request_by_admin(session["admin_id"]):
+        return redirect(url_for("admin_create_plan_request", error_message="申請中の有料プラン申請があるため、新規申請できません。"))
+
+    request_type = normalize_admin_plan_request_type(request.form.get("request_type"))
+    payment_method = normalize_admin_plan_request_payment_method(request.form.get("payment_method"))
+    payment_amount_raw = request.form.get("payment_amount", "").strip()
+    payment_date_raw = request.form.get("payment_date", "").strip()
+    payment_reference = request.form.get("payment_reference", "").strip()
+    request_note = request.form.get("request_note", "").strip()
+
+    if not request_type:
+        return redirect(url_for("admin_create_plan_request", error_message="申請種別を選択してください。"))
+    if not payment_method:
+        return redirect(url_for("admin_create_plan_request", error_message="支払方法を選択してください。"))
+    try:
+        payment_amount = int(payment_amount_raw or "0")
+    except ValueError:
+        return redirect(url_for("admin_create_plan_request", error_message="支払金額は整数で入力してください。"))
+    if payment_amount not in ADMIN_PLAN_REQUEST_PAYMENT_AMOUNT_OPTIONS:
+        return redirect(url_for("admin_create_plan_request", error_message="支払金額の選択肢が不正です。"))
+    payment_date = parse_portal_datetime(payment_date_raw)
+    if not payment_date:
+        return redirect(url_for("admin_create_plan_request", error_message="支払日の形式が不正です。"))
+    if not payment_reference:
+        return redirect(url_for("admin_create_plan_request", error_message="識別情報を入力してください。"))
+    if len(payment_reference) > 255:
+        return redirect(url_for("admin_create_plan_request", error_message="識別情報は255文字以内で入力してください。"))
+    if len(request_note) > 1000:
+        return redirect(url_for("admin_create_plan_request", error_message="申請メモは1000文字以内で入力してください。"))
+
+    created, status = portal_create_admin_plan_request(
+        admin_id=session["admin_id"],
+        request_type=request_type,
+        payment_method=payment_method,
+        payment_amount=payment_amount,
+        payment_date=payment_date.strftime("%Y-%m-%d %H:%M:%S"),
+        payment_reference=payment_reference,
+        request_note=request_note,
+    )
+    if created:
+        return redirect(url_for("admin_create_plan_request", success_message="有料プラン申請を送信しました。承認までお待ちください。"))
+
+    error_message = "有料プラン申請を送信できませんでした。"
+    if status == "pending_exists":
+        error_message = "申請中の有料プラン申請があるため、新規申請できません。"
+    return redirect(url_for("admin_create_plan_request", error_message=error_message))
 
 
 @app.route("/admin/account/delete", methods=["POST"])

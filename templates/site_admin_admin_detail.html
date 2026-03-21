@@ -223,7 +223,7 @@
   }
 </style>
 
-<a class="back-link" href="{{ url_for('site_admin_dashboard') }}">← 一覧へ戻る</a>
+<a class="back-link" href="{{ url_for('site_admin_dashboard') }}">← サイト運営者ページへ戻る</a>
 <h1 class="page-title detail-title">管理者詳細</h1>
 
 {% if error_message %}
@@ -234,7 +234,7 @@
 {% endif %}
 
 <section class="panel">
-  <h2 style="margin-top: 0;">基本情報</h2>
+  <h2 class="detail-title" style="margin-top: 0;">基本情報</h2>
   <div class="basic-info-grid">
     <div class="basic-info-item">
       <label>メールアドレス</label>
@@ -264,7 +264,7 @@
 </section>
 
 <section class="panel">
-  <h2 style="margin-top: 0;">管理操作</h2>
+  <h2 class="detail-title" style="margin-top: 0;">管理操作</h2>
   <div class="info-grid">
     <div class="info-card">
       <label>プラン変更</label>
@@ -315,41 +315,7 @@
 </section>
 
 <section class="panel">
-  <h2 style="margin-top: 0;">課金情報の更新</h2>
-  <form class="admin-form" method="POST" action="{{ url_for('site_admin_update_admin_billing', admin_id=admin['id']) }}">
-    <div class="admin-form-grid">
-      <div>
-        <label for="billing_status">課金ステータス</label>
-        <select id="billing_status" name="billing_status">
-          <option value="unpaid" {% if admin["billing_status"] == "unpaid" %}selected{% endif %}>未課金</option>
-          <option value="paid" {% if admin["billing_status"] == "paid" %}selected{% endif %}>課金済</option>
-        </select>
-      </div>
-      <div>
-        <label for="last_billed_at">最終課金日</label>
-        <input id="last_billed_at" type="date" name="last_billed_at" value="{{ admin['last_billed_input'] }}">
-      </div>
-      <div>
-        <label for="total_billing_amount">累計課金額</label>
-        <input id="total_billing_amount" type="number" min="0" step="1" name="total_billing_amount" value="{{ admin['total_billing_amount'] or 0 }}">
-      </div>
-      <div>
-        <label for="billing_count">課金回数</label>
-        <input id="billing_count" type="number" min="0" step="1" name="billing_count" value="{{ admin['billing_count'] or 0 }}">
-      </div>
-      <div style="grid-column: 1 / -1;">
-        <label for="billing_note">課金メモ</label>
-        <input id="billing_note" type="text" name="billing_note" maxlength="500" placeholder="例: 2026年4月分 月額更新">
-      </div>
-    </div>
-    <div class="form-actions">
-      <button class="btn" type="submit">課金情報を保存</button>
-    </div>
-  </form>
-</section>
-
-<section class="panel">
-  <h2 style="margin-top: 0;">課金履歴</h2>
+  <h2 class="detail-title" style="margin-top: 0;">課金履歴</h2>
   <p class="sub-note" style="margin-top: 0;">現在の課金状況の確認もこの履歴欄で行います。最新行に自動切替や直近の更新内容が表示されます。</p>
   {% if billing_history %}
   <div class="table-wrap">
@@ -386,7 +352,7 @@
 </section>
 
 <section class="panel">
-  <h2 style="margin-top: 0;">利用チーム情報</h2>
+  <h2 class="detail-title" style="margin-top: 0;">利用チーム情報</h2>
   <p style="margin-top: 0; color: var(--muted);">作成チーム数: {{ admin["team_count"] }}チーム</p>
   {% if admin["plan_type"] == "free" and admin["team_count"] > free_team_limit %}
   <div class="notice">無料プランの上限は {{ free_team_limit }} チームです。既存チームは維持されますが、新規作成は上限以下になるまでできません。</div>
@@ -422,7 +388,7 @@
 </section>
 
 <section class="panel">
-  <h2 style="margin-top: 0;">管理用メモ</h2>
+  <h2 class="detail-title" style="margin-top: 0;">管理用メモ</h2>
   <form class="admin-form" method="POST" action="{{ url_for('site_admin_update_admin_memo', admin_id=admin['id']) }}">
     <textarea name="admin_memo" aria-label="管理用メモ">{{ admin["admin_memo"] or "" }}</textarea>
     <div class="form-actions">
@@ -433,7 +399,7 @@
 </section>
 
 <section class="panel danger-panel">
-  <h2 style="margin-top: 0;">危険操作</h2>
+  <h2 class="detail-title" style="margin-top: 0;">危険操作</h2>
   <p class="danger-text">管理者と関連するチーム、メンバー、出欠、課金履歴を削除します。削除前にメールアドレスを再入力してください。</p>
   <form class="admin-form" method="POST" action="{{ url_for('site_admin_delete_admin_confirmed', admin_id=admin['id']) }}">
     <div>

@@ -1,0 +1,188 @@
+{% extends "admin_base_clean.html" %}
+
+{% block title %}有料プラン申請 | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<style>
+.request-note-textarea {
+  width: 100%;
+  min-height: 140px;
+  padding: 10px 12px;
+  border: 1px solid #33404f;
+  border-radius: 10px;
+  background: #11151b;
+  color: #f3f6fa;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.wild-admin-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 170px;
+  min-height: 41px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  border: 1px solid #8a1f35;
+  color: #fff0f3;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.32);
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #b12b4b 0%, #7b1e35 100%);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+
+.wild-admin-btn::before,
+.wild-admin-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(22, 24, 27, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.wild-admin-btn::before { left: 8px; }
+.wild-admin-btn::after { right: 8px; }
+
+.wild-admin-btn:hover {
+  filter: brightness(1.06) contrast(1.04);
+}
+
+.wild-admin-btn:active {
+  transform: translateY(0);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">有料プラン申請</h1>
+
+<section class="panel" style="max-width: 920px;">
+  {% if error_message %}
+  <div class="notice error">{{ error_message }}</div>
+  {% endif %}
+  {% if success_message %}
+  <div class="notice success">{{ success_message }}</div>
+  {% endif %}
+
+  <div class="field">
+    <label>現在のプラン</label>
+    <div>{{ current_plan_label }}</div>
+  </div>
+  <div class="field">
+    <label>現在の有効期限</label>
+    <div>{{ current_expiry_date }}{% if current_remaining_days and current_remaining_days != "-" %} <span style="color: var(--muted);">({{ current_remaining_days }})</span>{% endif %}</div>
+  </div>
+  <div class="field">
+    <label>申請状況</label>
+    <div>
+      {% if pending_plan_request %}
+      <strong>{{ pending_plan_request["status_text"] }}</strong>
+      <span style="color: var(--muted);">申請日: {{ pending_plan_request["created_date"] }}</span>
+      {% else %}
+      申請中の案件はありません。
+      {% endif %}
+    </div>
+  </div>
+
+  {% if pending_plan_request %}
+  <div class="notice">申請中の有料プラン申請があるため、新規申請はできません。</div>
+  {% else %}
+  <form method="POST" action="{{ url_for('admin_create_plan_request') }}">
+    <div class="field">
+      <label for="request-type">申請種別</label>
+      <select id="request-type" name="request_type" required>
+        {% for value, label in plan_request_type_options.items() %}
+        <option value="{{ value }}">有料プラン申請 {{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="payment-method">支払方法</label>
+      <select id="payment-method" name="payment_method" required>
+        {% for value, label in payment_method_options.items() %}
+        <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="payment-amount">支払金額</label>
+      <select id="payment-amount" name="payment_amount" required>
+        <option value="">選択してください</option>
+        {% for amount in payment_amount_options %}
+        <option value="{{ amount }}">{{ amount }}円</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="payment-date">支払日</label>
+      <input id="payment-date" type="date" name="payment_date" required>
+    </div>
+    <div class="field">
+      <label for="payment-reference">識別情報</label>
+      <input id="payment-reference" type="text" name="payment_reference" maxlength="255" required placeholder="PayPayの取引番号や送金者名">
+    </div>
+    <div class="field">
+      <label for="request-note">申請メモ</label>
+      <textarea class="request-note-textarea" id="request-note" name="request_note" maxlength="1000" rows="5" placeholder="審査時の確認材料として使われます。PayPayの識別情報だけで不足する補足があれば記入してください。"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn wild-admin-btn" type="submit">申請を送信する</button>
+      <a class="btn secondary" href="{{ url_for('admin_dashboard') }}">ダッシュボードへ戻る</a>
+    </div>
+  </form>
+  {% endif %}
+</section>
+
+<section class="panel" style="max-width: 920px;">
+  <h2 style="margin-top: 0;">過去の申請履歴</h2>
+  {% if plan_request_history %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>申請日</th>
+          <th>種別</th>
+          <th>支払金額</th>
+          <th>支払日</th>
+          <th>識別情報</th>
+          <th>ステータス</th>
+          <th>審査日</th>
+          <th>審査メモ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in plan_request_history %}
+        <tr>
+          <td>{{ row["created_date"] }}</td>
+          <td>{{ row["request_type_text"] }}</td>
+          <td>{{ row["payment_amount_text"] }}</td>
+          <td>{{ row["payment_date_text"] }}</td>
+          <td>{{ row["payment_reference"] or "-" }}</td>
+          <td>{{ row["status_text"] }}</td>
+          <td>{{ row["reviewed_date"] }}</td>
+          <td>{{ row["review_note"] or "-" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="notice success">申請履歴はまだありません。</div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -150,6 +150,9 @@
   <p style="margin-top: 0; color: var(--muted);">
     一覧では管理者の状態を確認し、詳細ページでチーム内訳や課金情報、削除操作までまとめて行えます。
   </p>
+  <p style="margin-top: -4px;">
+    <a class="detail-link" href="{{ url_for('site_admin_plan_requests') }}">有料プラン申請一覧を見る{% if pending_plan_request_count %}（未処理 {{ pending_plan_request_count }}件）{% endif %}</a>
+  </p>
 
   {% if error_message %}
   <div class="notice error">{{ error_message }}</div>
