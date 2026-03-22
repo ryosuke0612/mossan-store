@@ -2742,6 +2742,26 @@ def sqlite_table_exists(cursor, table_name):
     return bool(cursor.fetchone()[0])
 
 
+def first_column_value(row, default=None):
+    if row is None:
+        return default
+    if isinstance(row, dict):
+        for value in row.values():
+            return value
+        return default
+    try:
+        return row[0]
+    except (KeyError, IndexError, TypeError):
+        pass
+    for attr in ("values",):
+        method = getattr(row, attr, None)
+        if callable(method):
+            values = list(method())
+            if values:
+                return values[0]
+    return default
+
+
 def sqlite_column_names(cursor, table_name):
     cursor.execute(f"PRAGMA table_info({table_name})")
     return [row[1] for row in cursor.fetchall()]
@@ -2884,16 +2904,16 @@ def cleanup_legacy_paypay_schema_postgres(cursor):
         )
         """
     )
-    has_paypay_payment_id = bool(cursor.fetchone()[0])
+    has_paypay_payment_id = bool(first_column_value(cursor.fetchone(), False))
     cursor.execute("SELECT to_regclass('public.admin_paypay_payments')")
-    has_paypay_table = bool(cursor.fetchone()[0])
+    has_paypay_table = bool(first_column_value(cursor.fetchone(), False))
     if not has_paypay_payment_id and not has_paypay_table:
         return "not_present"
 
     linked_paypay_rows = 0
     if has_paypay_payment_id:
         cursor.execute("SELECT COUNT(*) FROM admin_plan_requests WHERE paypay_payment_id IS NOT NULL")
-        linked_paypay_rows = int(cursor.fetchone()[0] or 0)
+        linked_paypay_rows = int(first_column_value(cursor.fetchone(), 0) or 0)
 
     cursor.execute(
         """
@@ -2903,12 +2923,12 @@ def cleanup_legacy_paypay_schema_postgres(cursor):
         """,
         (ADMIN_PLAN_REQUEST_STATUS_PENDING,),
     )
-    legacy_pending_rows = int(cursor.fetchone()[0] or 0)
+    legacy_pending_rows = int(first_column_value(cursor.fetchone(), 0) or 0)
 
     paypay_table_rows = 0
     if has_paypay_table:
         cursor.execute("SELECT COUNT(*) FROM admin_paypay_payments")
-        paypay_table_rows = int(cursor.fetchone()[0] or 0)
+        paypay_table_rows = int(first_column_value(cursor.fetchone(), 0) or 0)
 
     if linked_paypay_rows or legacy_pending_rows or paypay_table_rows:
         app.logger.warning(
