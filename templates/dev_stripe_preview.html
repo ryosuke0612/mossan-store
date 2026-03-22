@@ -1,0 +1,36 @@
+{% extends "admin_base_clean.html" %}
+
+{% block title %}Stripe表示プレビュー | Mossan Store{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Stripe表示プレビュー</h1>
+
+<section class="panel" style="max-width: 920px;">
+  <div class="notice">
+    ローカル確認用のプレビューハブです。既存テンプレートへモックデータを流し込むだけなので、実決済や承認処理は実行されません。
+  </div>
+
+  <div class="field">
+    <label>管理者側</label>
+    <div class="btn-row">
+      <a class="btn" href="{{ url_for('dev_stripe_preview_admin_plan_requests', scenario='completed') }}">決済完了サンプル</a>
+      <a class="btn secondary" href="{{ url_for('dev_stripe_preview_admin_plan_requests', scenario='pending') }}">申請中サンプル</a>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>サイト運営者側</label>
+    <div class="btn-row">
+      <a class="btn" href="{{ url_for('dev_stripe_preview_site_admin_plan_requests') }}">一覧サンプル</a>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>想定URL</label>
+    <div><code>/dev/stripe-preview</code></div>
+    <div><code>/dev/stripe-preview/admin-plan-requests?scenario=completed</code></div>
+    <div><code>/dev/stripe-preview/admin-plan-requests?scenario=pending</code></div>
+    <div><code>/dev/stripe-preview/site-admin-plan-requests</code></div>
+  </div>
+</section>
+{% endblock %}

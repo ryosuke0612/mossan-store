@@ -1,4 +1,4 @@
-{% extends "admin_base_clean.html" %}
+﻿{% extends "admin_base_clean.html" %}
 
 {% block title %}有料プラン申請一覧 | Mossan Store{% endblock %}
 
@@ -88,14 +88,89 @@
     text-decoration: none;
     font-weight: 700;
   }
+
+  .sub-note {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .preview-banner {
+    margin-bottom: 18px;
+    padding: 16px 18px;
+    border: 1px solid #3d5a4d;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(24, 49, 37, 0.95) 0%, rgba(14, 28, 21, 0.98) 100%);
+  }
+
+  .preview-banner h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+  }
+
+  .preview-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 14px 0 0;
+  }
+
+  .preview-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid #527862;
+    color: #e5f7ec;
+    text-decoration: none;
+    font-weight: 700;
+    background: rgba(23, 49, 34, 0.78);
+  }
+
+  .preview-chip.active {
+    border-color: #d9f7e2;
+    color: #0d2316;
+    background: #d8f4df;
+  }
+
+  .preview-checks {
+    margin: 12px 0 0;
+    padding-left: 20px;
+    color: #d9e7de;
+  }
+
+  .preview-disabled-note {
+    margin-top: 6px;
+    color: #b8cabb;
+    font-size: 13px;
+  }
 </style>
 
 <h1 class="page-title dashboard-reggae-title">有料プラン申請一覧</h1>
-<a class="back-link" href="{{ url_for('site_admin_dashboard') }}">サイト運営者ページへ戻る</a>
+<a class="back-link" href="{{ preview_hub_url if preview_mode else url_for('site_admin_dashboard') }}">{% if preview_mode %}プレビューハブへ戻る{% else %}サイト運営者ページへ戻る{% endif %}</a>
 
 <section class="panel">
+  {% if preview_mode %}
+  <div class="preview-banner">
+    <h2>{{ preview_title }}</h2>
+    <div>{{ preview_summary }}</div>
+    {% if preview_checks %}
+    <ul class="preview-checks">
+      {% for item in preview_checks %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    <div class="preview-chip-row">
+      <a class="preview-chip" href="{{ preview_hub_url }}">プレビューハブへ戻る</a>
+      {% for link in preview_scenario_links %}
+      <a class="preview-chip {% if link['active'] %}active{% endif %}" href="{{ link['url'] }}">{{ link['label'] }}</a>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="notice">ローカル表示確認用プレビューです。承認・却下・再確認ボタンは無効化されています。</div>
+  {% endif %}
   <p style="margin-top: 0; color: var(--muted);">
-    未処理 {{ pending_count }} 件 / 全 {{ request_rows|length }} 件
+    未対応 {{ pending_count }} 件 / 全 {{ request_rows|length }} 件
   </p>
 
   {% if error_message %}
@@ -113,31 +188,72 @@
           <th>操作</th>
           <th>申請日時</th>
           <th>管理者メールアドレス</th>
+          <th>支払方法</th>
           <th>支払金額</th>
           <th>支払日</th>
           <th>識別情報</th>
           <th>ステータス</th>
+          <th>支払確認</th>
+          <th>最終確認日</th>
+          <th>決済状態</th>
         </tr>
       </thead>
       <tbody>
         {% for row in request_rows %}
         <tr>
           <td>
-            {% if row["status"] == "pending" %}
-            <form class="action-form" method="POST" action="{{ url_for('site_admin_review_plan_request', request_id=row['id']) }}">
-              <button class="detail-link" type="submit" name="decision" value="approved" onclick="return confirm('この申請を承認しますか？ 承認時のみ有料プランと課金履歴へ反映されます。');">審査する</button>
-              <button class="btn danger" type="submit" name="decision" value="rejected" onclick="return confirm('この申請を却下しますか？ プランと課金履歴は変更されません。');">却下</button>
+            {% if row["status"] == "pending" and row["payment_method"] == "stripe" %}
+            <form class="action-form" method="POST" action="{{ '#' if preview_mode else url_for('site_admin_review_plan_request', request_id=row['id']) }}">
+              {% if preview_mode %}
+              <button class="detail-link" type="button" disabled>承認する</button>
+              <button class="btn danger" type="button" disabled>却下</button>
+              <div class="preview-disabled-note">{{ preview_actions_disabled_reason }}</div>
+              {% else %}
+              <button class="detail-link" type="submit" name="decision" value="approved" onclick="return confirm('この申請を承認しますか？ 承認時にだけ有料プランと課金履歴へ反映されます。');">承認する</button>
+              <button class="btn danger" type="submit" name="decision" value="rejected" onclick="return confirm('この申請を却下しますか？');">却下</button>
+              {% endif %}
+            </form>
+            {% elif row["status"] == "pending" %}
+            <form class="action-form" method="POST" action="{{ '#' if preview_mode else url_for('site_admin_review_plan_request', request_id=row['id']) }}">
+              <span class="sub-note">旧決済方式のため承認不可</span>
+              {% if preview_mode %}
+              <button class="btn danger" type="button" disabled>却下</button>
+              <div class="preview-disabled-note">{{ preview_actions_disabled_reason }}</div>
+              {% else %}
+              <button class="btn danger" type="submit" name="decision" value="rejected" onclick="return confirm('この旧申請を却下しますか？');">却下</button>
+              {% endif %}
             </form>
             {% else %}
-            <span style="color: var(--muted);">処理済み</span>
+            <span style="color: var(--muted);">対応済み</span>
             {% endif %}
           </td>
           <td>{{ row["created_at"] }}</td>
           <td>{{ row["admin_email"] }}</td>
+          <td>{{ row["payment_method_text"] }}</td>
           <td>{{ row["payment_amount_text"] }}</td>
           <td>{{ row["payment_date_text"] }}</td>
           <td>{{ row["payment_reference"] or "-" }}</td>
           <td><span class="request-status {{ row['status'] }}">{{ row["status_text"] }}</span></td>
+          <td>{{ row["payment_verification_status_text"] }}</td>
+          <td>{{ row["payment_verified_date"] }}</td>
+          <td>
+            {% if row["payment_method"] == "stripe" %}
+            <div>{{ row.get("stripe_status_text", "-") }}</div>
+            {% if row.get("stripe_checkout_session_id") %}
+            <form method="POST" action="{{ '#' if preview_mode else url_for('admin_refresh_stripe_payment', checkout_session_id=row['stripe_checkout_session_id']) }}" style="margin-top: 8px;">
+              {% if preview_mode %}
+              <button class="btn secondary" type="button" disabled>Stripe再確認</button>
+              <div class="preview-disabled-note">{{ preview_actions_disabled_reason }}</div>
+              {% else %}
+              <button class="btn secondary" type="submit">Stripe再確認</button>
+              {% endif %}
+            </form>
+            {% endif %}
+            {% else %}
+            <div>旧決済方式</div>
+            <div class="sub-note" style="margin-top: 8px;">新規利用は終了済み</div>
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>

@@ -1,4 +1,4 @@
-{% extends "admin_base_clean.html" %}
+﻿{% extends "admin_base_clean.html" %}
 
 {% block title %}有料プラン申請 | Mossan Store{% endblock %}
 
@@ -65,6 +65,93 @@
 .wild-admin-btn:active {
   transform: translateY(0);
 }
+
+.preview-banner {
+  margin-bottom: 18px;
+  padding: 16px 18px;
+  border: 1px solid #37506b;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(29, 42, 57, 0.96) 0%, rgba(16, 24, 33, 0.98) 100%);
+}
+
+.preview-banner h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.preview-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 0;
+}
+
+.preview-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid #47627d;
+  color: #d6e9ff;
+  text-decoration: none;
+  font-weight: 700;
+  background: rgba(31, 48, 67, 0.72);
+}
+
+.preview-chip.active {
+  border-color: #b6d7ff;
+  color: #0d1a28;
+  background: #d5e8ff;
+}
+
+.preview-checks {
+  margin: 12px 0 0;
+  padding-left: 20px;
+  color: #d5dee8;
+}
+
+.preview-disabled-note {
+  margin-top: 8px;
+  color: #b7c6d6;
+  font-size: 13px;
+}
+
+.payment-entry-card {
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid #39495b;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(20, 26, 34, 0.98) 0%, rgba(13, 18, 24, 0.98) 100%);
+}
+
+.payment-entry-card h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.payment-entry-card p {
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+
+.card-brand-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.card-brand-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #495b70;
+  color: #dce8f7;
+  font-size: 13px;
+  font-weight: 700;
+  background: rgba(33, 44, 58, 0.88);
+}
 </style>
 {% endblock %}
 
@@ -72,6 +159,26 @@
 <h1 class="page-title">有料プラン申請</h1>
 
 <section class="panel" style="max-width: 920px;">
+  {% if preview_mode %}
+  <div class="preview-banner">
+    <h2>{{ preview_title }}</h2>
+    <div>{{ preview_summary }}</div>
+    {% if preview_checks %}
+    <ul class="preview-checks">
+      {% for item in preview_checks %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    <div class="preview-chip-row">
+      <a class="preview-chip" href="{{ preview_hub_url }}">プレビューハブへ戻る</a>
+      {% for link in preview_scenario_links %}
+      <a class="preview-chip {% if link['active'] %}active{% endif %}" href="{{ link['url'] }}">{{ link['label'] }}</a>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="notice">ローカル表示確認用プレビューです。ボタンは無効化され、実決済や申請送信は行われません。</div>
+  {% endif %}
   {% if error_message %}
   <div class="notice error">{{ error_message }}</div>
   {% endif %}
@@ -94,62 +201,116 @@
       <strong>{{ pending_plan_request["status_text"] }}</strong>
       <span style="color: var(--muted);">申請日: {{ pending_plan_request["created_date"] }}</span>
       {% else %}
-      申請中の案件はありません。
+      申請中の有料プラン申請はありません。
       {% endif %}
     </div>
   </div>
 
   {% if pending_plan_request %}
-  <div class="notice">申請中の有料プラン申請があるため、新規申請はできません。</div>
+  <div class="notice">申請中の有料プラン申請があるため、新しい決済や申請送信はできません。</div>
   {% else %}
-  <form method="POST" action="{{ url_for('admin_create_plan_request') }}">
+  <section class="payment-entry-card">
+    <h2>クレジットカード決済</h2>
+    <p>有料プラン申請の新規決済は Stripe を使ったクレジットカード決済です。success URL に戻っただけでは申請完了にならず、Stripe API で支払い完了を確認できた決済だけ申請に使えます。</p>
+    <div class="card-brand-row">
+      <span class="card-brand-chip">Visa</span>
+      <span class="card-brand-chip">Mastercard</span>
+      <span class="card-brand-chip">JCB</span>
+      <span class="card-brand-chip">American Express</span>
+    </div>
+    {% if stripe_is_configured %}
+    <form method="POST" action="{{ '#' if preview_mode else url_for('admin_stripe_checkout') }}" style="margin-bottom: 0;">
+      <div class="field">
+        <label for="stripe-checkout-request-type">申請種別</label>
+        <select id="stripe-checkout-request-type" name="request_type" required>
+          {% for value, label in plan_request_type_options.items() %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="stripe-checkout-payment-amount">支払金額</label>
+        <select id="stripe-checkout-payment-amount" name="payment_amount" required>
+          <option value="">選択してください</option>
+          {% for amount in payment_amount_options %}
+          <option value="{{ amount }}" {% if completed_stripe_payment and completed_stripe_payment["request_amount"] == amount %}selected{% endif %}>{{ amount }}円</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="btn-row">
+        {% if preview_mode %}
+        <button class="btn wild-admin-btn" type="button" disabled>クレジットカードで決済へ進む</button>
+        <div class="preview-disabled-note">{{ preview_actions_disabled_reason }}</div>
+        {% else %}
+        <button class="btn wild-admin-btn" type="submit">クレジットカードで決済へ進む</button>
+        {% endif %}
+      </div>
+    </form>
+    {% else %}
+    <div class="notice error" style="margin-bottom: 0;">Stripe設定が未完了のため、現在はクレジットカード決済を開始できません。</div>
+    <div class="btn-row" style="margin-top: 12px;">
+      <button class="btn wild-admin-btn" type="button" disabled>クレジットカードで決済へ進む</button>
+    </div>
+    {% endif %}
+  </section>
+
+  {% if completed_stripe_payment %}
+  <div class="notice success">
+    Stripe決済の完了を確認しました。識別情報: {{ completed_stripe_payment["payment_reference_text"] }} / 金額: {{ completed_stripe_payment["request_amount_text"] }} / 支払日: {{ completed_stripe_payment["stripe_paid_at_text"] }} / まだ有料プランには反映されていません。申請送信後、サイト運営者の承認時に反映されます。
+  </div>
+  <form method="POST" action="{{ '#' if preview_mode else url_for('admin_create_plan_request') }}" style="margin-bottom: 18px;">
+    <input type="hidden" name="stripe_payment_id" value="{{ completed_stripe_payment['id'] }}">
+    <input type="hidden" name="request_type" value="{{ completed_stripe_payment['request_type'] }}">
+    <input type="hidden" name="payment_method" value="stripe">
+    <input type="hidden" name="payment_amount" value="{{ completed_stripe_payment['request_amount'] }}">
+    <input type="hidden" name="payment_date" value="{{ completed_stripe_payment['stripe_paid_at'][:10] if completed_stripe_payment['stripe_paid_at'] else '' }}">
+    <input type="hidden" name="payment_reference" value="{{ completed_stripe_payment['payment_reference_text'] }}">
     <div class="field">
-      <label for="request-type">申請種別</label>
-      <select id="request-type" name="request_type" required>
-        {% for value, label in plan_request_type_options.items() %}
-        <option value="{{ value }}">有料プラン申請 {{ label }}</option>
-        {% endfor %}
-      </select>
+      <label>申請種別</label>
+      <div>{{ completed_stripe_payment["request_type_text"] }}</div>
     </div>
     <div class="field">
-      <label for="payment-method">支払方法</label>
-      <select id="payment-method" name="payment_method" required>
-        {% for value, label in payment_method_options.items() %}
-        <option value="{{ value }}">{{ label }}</option>
-        {% endfor %}
-      </select>
+      <label>支払方法</label>
+      <div>Stripe</div>
     </div>
     <div class="field">
-      <label for="payment-amount">支払金額</label>
-      <select id="payment-amount" name="payment_amount" required>
-        <option value="">選択してください</option>
-        {% for amount in payment_amount_options %}
-        <option value="{{ amount }}">{{ amount }}円</option>
-        {% endfor %}
-      </select>
+      <label>支払金額</label>
+      <div>{{ completed_stripe_payment["request_amount_text"] }}</div>
     </div>
     <div class="field">
-      <label for="payment-date">支払日</label>
-      <input id="payment-date" type="date" name="payment_date" required>
+      <label>支払日</label>
+      <div>{{ completed_stripe_payment["stripe_paid_at_text"] }}</div>
     </div>
     <div class="field">
-      <label for="payment-reference">識別情報</label>
-      <input id="payment-reference" type="text" name="payment_reference" maxlength="255" required placeholder="PayPayの取引番号や送金者名">
+      <label>識別情報</label>
+      <div>{{ completed_stripe_payment["payment_reference_text"] }}</div>
     </div>
     <div class="field">
-      <label for="request-note">申請メモ</label>
-      <textarea class="request-note-textarea" id="request-note" name="request_note" maxlength="1000" rows="5" placeholder="審査時の確認材料として使われます。PayPayの識別情報だけで不足する補足があれば記入してください。"></textarea>
+      <label for="stripe-request-note">申請メモ</label>
+      <textarea class="request-note-textarea" id="stripe-request-note" name="request_note" maxlength="1000" rows="5" placeholder="補足があれば入力してください。空欄でも送信できます。"></textarea>
     </div>
     <div class="btn-row">
+      {% if preview_mode %}
+      <button class="btn wild-admin-btn" type="button" disabled>申請を送信する</button>
+      <div class="preview-disabled-note">{{ preview_actions_disabled_reason }}</div>
+      {% else %}
       <button class="btn wild-admin-btn" type="submit">申請を送信する</button>
-      <a class="btn secondary" href="{{ url_for('admin_dashboard') }}">ダッシュボードへ戻る</a>
+      {% endif %}
+      <a class="btn secondary" href="{{ preview_hub_url if preview_mode else url_for('admin_dashboard') }}">{% if preview_mode %}プレビューハブへ戻る{% else %}ダッシュボードへ戻る{% endif %}</a>
     </div>
   </form>
+  {% endif %}
+
+  <div class="notice">有料プラン申請はStripe専用です。旧決済方式の新規利用は終了しています。</div>
+
+  {% if not completed_stripe_payment %}
+  <div class="notice">決済完了を確認できるまでは申請フォームは表示されません。Stripeで支払い後、必要に応じて再確認してください。</div>
+  {% endif %}
   {% endif %}
 </section>
 
 <section class="panel" style="max-width: 920px;">
-  <h2 style="margin-top: 0;">過去の申請履歴</h2>
+  <h2 style="margin-top: 0;">最近の申請履歴</h2>
   {% if plan_request_history %}
   <div class="table-wrap">
     <table>
@@ -157,7 +318,8 @@
         <tr>
           <th>申請日</th>
           <th>種別</th>
-          <th>支払金額</th>
+          <th>支払方法</th>
+          <th>金額</th>
           <th>支払日</th>
           <th>識別情報</th>
           <th>ステータス</th>
@@ -170,6 +332,7 @@
         <tr>
           <td>{{ row["created_date"] }}</td>
           <td>{{ row["request_type_text"] }}</td>
+          <td>{{ row["payment_method_text"] }}</td>
           <td>{{ row["payment_amount_text"] }}</td>
           <td>{{ row["payment_date_text"] }}</td>
           <td>{{ row["payment_reference"] or "-" }}</td>
@@ -185,4 +348,50 @@
   <div class="notice success">申請履歴はまだありません。</div>
   {% endif %}
 </section>
+
+<section class="panel" style="max-width: 920px;">
+  <h2 style="margin-top: 0;">最近のStripe決済</h2>
+  {% if recent_stripe_payments %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>開始日</th>
+          <th>種別</th>
+          <th>金額</th>
+          <th>識別情報</th>
+          <th>状態</th>
+          <th>支払日</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for payment in recent_stripe_payments %}
+        <tr>
+          <td>{{ payment["created_date"] }}</td>
+          <td>{{ payment["request_type_text"] }}</td>
+          <td>{{ payment["request_amount_text"] }}</td>
+          <td>{{ payment["payment_reference_text"] }}</td>
+          <td>{{ payment["status_text"] }}</td>
+          <td>{{ payment["stripe_paid_at_text"] }}</td>
+          <td>
+            <form method="POST" action="{{ '#' if preview_mode else url_for('admin_refresh_stripe_payment', checkout_session_id=payment['stripe_checkout_session_id']) }}">
+              {% if preview_mode %}
+              <button class="btn secondary" type="button" disabled>再確認</button>
+              <div class="preview-disabled-note">{{ preview_actions_disabled_reason }}</div>
+              {% else %}
+              <button class="btn secondary" type="submit">再確認</button>
+              {% endif %}
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="notice success">Stripe決済履歴はまだありません。</div>
+  {% endif %}
+</section>
+
 {% endblock %}
