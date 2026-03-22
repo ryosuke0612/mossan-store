@@ -322,8 +322,16 @@ def append_query_params(url, **params):
     return urlunsplit((split.scheme, split.netloc, split.path, urlencode(current_params), split.fragment))
 
 
+def stripe_checkout_is_configured():
+    return bool(STRIPE_SECRET_KEY and stripe_build_redirect_base_url())
+
+
+def stripe_webhook_is_configured():
+    return bool(STRIPE_WEBHOOK_SECRET)
+
+
 def stripe_is_configured():
-    return bool(STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET and stripe_build_redirect_base_url())
+    return bool(stripe_checkout_is_configured() and stripe_webhook_is_configured())
 
 
 def stripe_build_redirect_base_url():
@@ -4592,6 +4600,8 @@ def build_admin_plan_request_page_context(admin):
         "plan_request_type_options": ADMIN_PLAN_REQUEST_TYPE_LABELS,
         "payment_amount_options": ADMIN_PLAN_REQUEST_PAYMENT_AMOUNT_OPTIONS,
         "stripe_is_configured": stripe_is_configured(),
+        "stripe_checkout_is_configured": stripe_checkout_is_configured(),
+        "stripe_webhook_is_configured": stripe_webhook_is_configured(),
         "stripe_publishable_key": STRIPE_PUBLISHABLE_KEY,
     }
 
@@ -4782,6 +4792,8 @@ def build_local_preview_admin_plan_request_context(scenario="paid_unlinked"):
         "plan_request_type_options": ADMIN_PLAN_REQUEST_TYPE_LABELS,
         "payment_amount_options": ADMIN_PLAN_REQUEST_PAYMENT_AMOUNT_OPTIONS,
         "stripe_is_configured": True,
+        "stripe_checkout_is_configured": True,
+        "stripe_webhook_is_configured": True,
         "stripe_publishable_key": "pk_test_preview",
         "error_message": "",
         "success_message": "ローカルプレビュー表示です。実決済や申請送信は実行されません。",
@@ -6500,7 +6512,7 @@ def admin_stripe_checkout():
         session.pop("admin_email", None)
         session.pop("is_site_admin", None)
         return redirect(url_for("admin_login_entry"))
-    if not stripe_is_configured():
+    if not stripe_checkout_is_configured():
         return redirect(url_for("admin_create_plan_request", error_message="Stripe設定が未完了のため決済を開始できません。"))
     if portal_get_pending_admin_plan_request_by_admin(session["admin_id"]):
         return redirect(url_for("admin_create_plan_request", error_message="申請中の有料プラン申請があるため、新規決済を開始できません。"))

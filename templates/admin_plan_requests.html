@@ -218,7 +218,10 @@
       <span class="card-brand-chip">JCB</span>
       <span class="card-brand-chip">American Express</span>
     </div>
-    {% if stripe_is_configured %}
+    {% if stripe_checkout_is_configured %}
+    {% if not stripe_webhook_is_configured %}
+    <div class="notice" style="margin-bottom: 14px;">Stripe webhook は未設定ですが、決済開始自体は可能です。success 戻り・手動再確認・承認前確認で Stripe API を使って状態確認します。Webhook を設定すると反映監視はより安定します。</div>
+    {% endif %}
     <form method="POST" action="{{ '#' if preview_mode else url_for('admin_stripe_checkout') }}" style="margin-bottom: 0;">
       <div class="field">
         <label for="stripe-checkout-request-type">申請種別</label>
@@ -251,6 +254,7 @@
     <div class="btn-row" style="margin-top: 12px;">
       <button class="btn wild-admin-btn" type="button" disabled>クレジットカードで決済へ進む</button>
     </div>
+    <div class="preview-disabled-note">`STRIPE_SECRET_KEY` と `STRIPE_REDIRECT_BASE_URL` が必要です。</div>
     {% endif %}
   </section>
 
