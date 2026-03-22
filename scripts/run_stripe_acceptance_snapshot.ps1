@@ -96,7 +96,8 @@ if admin_id is not None:
         SELECT id, admin_id, stripe_checkout_session_id, stripe_payment_intent_id, request_type,
                request_amount, status, stripe_status, stripe_payment_status, payment_reference,
                stripe_paid_at, requested_at, returned_at, confirmed_at, last_checked_at,
-               linked_plan_request_id, last_error_code, last_error_message, created_at, updated_at
+               linked_plan_request_id, applied_at, applied_billing_history_id,
+               last_error_code, last_error_message, created_at, updated_at
         FROM admin_stripe_payments
         WHERE admin_id = ?
         ORDER BY id DESC
@@ -126,6 +127,8 @@ print_section(
         "confirmed_at",
         "last_checked_at",
         "linked_plan_request_id",
+        "applied_at",
+        "applied_billing_history_id",
         "last_error_code",
         "last_error_message",
         "created_at",
@@ -139,7 +142,8 @@ if stripe_payment_id is not None:
         """
         SELECT id, admin_id, status, stripe_status, stripe_payment_status, payment_reference,
                stripe_paid_at, requested_at, returned_at, confirmed_at, last_checked_at,
-               linked_plan_request_id, last_error_code, last_error_message, created_at, updated_at
+               linked_plan_request_id, applied_at, applied_billing_history_id,
+               last_error_code, last_error_message, created_at, updated_at
         FROM admin_stripe_payments
         WHERE id = ?
         """,
@@ -163,6 +167,8 @@ print_section(
         "confirmed_at",
         "last_checked_at",
         "linked_plan_request_id",
+        "applied_at",
+        "applied_billing_history_id",
         "last_error_code",
         "last_error_message",
         "created_at",
@@ -178,7 +184,8 @@ if admin_id is not None:
                apr.payment_date, apr.payment_reference, apr.status, apr.reviewed_by_admin_id,
                apr.reviewed_at, apr.stripe_payment_id, apr.payment_verification_status,
                apr.payment_verified_at, apr.created_at, apr.updated_at,
-               asp.status AS stripe_row_status, asp.last_checked_at, asp.linked_plan_request_id
+               asp.status AS stripe_row_status, asp.last_checked_at, asp.linked_plan_request_id,
+               asp.applied_at, asp.applied_billing_history_id
         FROM admin_plan_requests apr
         LEFT JOIN admin_stripe_payments asp ON asp.id = apr.stripe_payment_id
         WHERE apr.admin_id = ?
@@ -211,6 +218,8 @@ print_section(
         "stripe_row_status",
         "last_checked_at",
         "linked_plan_request_id",
+        "applied_at",
+        "applied_billing_history_id",
     ],
     rows,
 )
@@ -223,7 +232,8 @@ if plan_request_id is not None:
                apr.reviewed_at, apr.stripe_payment_id, apr.payment_verification_status,
                apr.payment_verified_at, apr.created_at, apr.updated_at,
                asp.status AS stripe_row_status, asp.stripe_status, asp.stripe_payment_status,
-               asp.last_checked_at, asp.linked_plan_request_id
+               asp.last_checked_at, asp.linked_plan_request_id,
+               asp.applied_at, asp.applied_billing_history_id
         FROM admin_plan_requests apr
         LEFT JOIN admin_stripe_payments asp ON asp.id = apr.stripe_payment_id
         WHERE apr.id = ?
@@ -256,6 +266,8 @@ print_section(
         "stripe_payment_status",
         "last_checked_at",
         "linked_plan_request_id",
+        "applied_at",
+        "applied_billing_history_id",
     ],
     rows,
 )

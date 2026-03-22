@@ -1,6 +1,6 @@
 ﻿{% extends "admin_base_clean.html" %}
 
-{% block title %}有料プラン申請 | Mossan Store{% endblock %}
+{% block title %}有料プラン | Mossan Store{% endblock %}
 
 {% block head_extra %}
 <style>
@@ -156,7 +156,7 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="page-title">有料プラン申請</h1>
+<h1 class="page-title">有料プラン</h1>
 
 <section class="panel" style="max-width: 920px;">
   {% if preview_mode %}
@@ -194,24 +194,9 @@
     <label>現在の有効期限</label>
     <div>{{ current_expiry_date }}{% if current_remaining_days and current_remaining_days != "-" %} <span style="color: var(--muted);">({{ current_remaining_days }})</span>{% endif %}</div>
   </div>
-  <div class="field">
-    <label>申請状況</label>
-    <div>
-      {% if pending_plan_request %}
-      <strong>{{ pending_plan_request["status_text"] }}</strong>
-      <span style="color: var(--muted);">申請日: {{ pending_plan_request["created_date"] }}</span>
-      {% else %}
-      申請中の有料プラン申請はありません。
-      {% endif %}
-    </div>
-  </div>
-
-  {% if pending_plan_request %}
-  <div class="notice">申請中の有料プラン申請があるため、新しい決済や申請送信はできません。</div>
-  {% else %}
   <section class="payment-entry-card">
     <h2>クレジットカード決済</h2>
-    <p>有料プラン申請の新規決済は Stripe を使ったクレジットカード決済です。success URL に戻っただけでは申請完了にならず、Stripe API で支払い完了を確認できた決済だけ申請に使えます。</p>
+    <p>新規の有料化は Stripe を使ったクレジットカード決済です。success URL に戻っただけでは成功扱いにせず、サーバー側で Stripe API を再確認できた決済だけ自動で反映します。</p>
     <div class="card-brand-row">
       <span class="card-brand-chip">Visa</span>
       <span class="card-brand-chip">Mastercard</span>
@@ -220,11 +205,11 @@
     </div>
     {% if stripe_checkout_is_configured %}
     {% if not stripe_webhook_is_configured %}
-    <div class="notice" style="margin-bottom: 14px;">Stripe webhook は未設定ですが、決済開始自体は可能です。success 戻り・手動再確認・承認前確認で Stripe API を使って状態確認します。Webhook を設定すると反映監視はより安定します。</div>
+    <div class="notice" style="margin-bottom: 14px;">Stripe webhook は未設定ですが、決済開始自体は可能です。success 戻り・手動再確認で Stripe API を使って状態確認し、自動反映します。Webhook を設定すると反映監視はより安定します。</div>
     {% endif %}
     <form method="POST" action="{{ '#' if preview_mode else url_for('admin_stripe_checkout') }}" style="margin-bottom: 0;">
       <div class="field">
-        <label for="stripe-checkout-request-type">申請種別</label>
+        <label for="stripe-checkout-request-type">反映種別</label>
         <select id="stripe-checkout-request-type" name="request_type" required>
           {% for value, label in plan_request_type_options.items() %}
           <option value="{{ value }}">{{ label }}</option>
@@ -257,70 +242,18 @@
     <div class="preview-disabled-note">`STRIPE_SECRET_KEY` と `STRIPE_REDIRECT_BASE_URL` が必要です。</div>
     {% endif %}
   </section>
-
-  {% if completed_stripe_payment %}
-  <div class="notice success">
-    Stripe決済の完了を確認しました。識別情報: {{ completed_stripe_payment["payment_reference_text"] }} / 金額: {{ completed_stripe_payment["request_amount_text"] }} / 支払日: {{ completed_stripe_payment["stripe_paid_at_text"] }} / まだ有料プランには反映されていません。申請送信後、サイト運営者の承認時に反映されます。
-  </div>
-  <form method="POST" action="{{ '#' if preview_mode else url_for('admin_create_plan_request') }}" style="margin-bottom: 18px;">
-    <input type="hidden" name="stripe_payment_id" value="{{ completed_stripe_payment['id'] }}">
-    <input type="hidden" name="request_type" value="{{ completed_stripe_payment['request_type'] }}">
-    <input type="hidden" name="payment_method" value="stripe">
-    <input type="hidden" name="payment_amount" value="{{ completed_stripe_payment['request_amount'] }}">
-    <input type="hidden" name="payment_date" value="{{ completed_stripe_payment['stripe_paid_at'][:10] if completed_stripe_payment['stripe_paid_at'] else '' }}">
-    <input type="hidden" name="payment_reference" value="{{ completed_stripe_payment['payment_reference_text'] }}">
-    <div class="field">
-      <label>申請種別</label>
-      <div>{{ completed_stripe_payment["request_type_text"] }}</div>
-    </div>
-    <div class="field">
-      <label>支払方法</label>
-      <div>Stripe</div>
-    </div>
-    <div class="field">
-      <label>支払金額</label>
-      <div>{{ completed_stripe_payment["request_amount_text"] }}</div>
-    </div>
-    <div class="field">
-      <label>支払日</label>
-      <div>{{ completed_stripe_payment["stripe_paid_at_text"] }}</div>
-    </div>
-    <div class="field">
-      <label>識別情報</label>
-      <div>{{ completed_stripe_payment["payment_reference_text"] }}</div>
-    </div>
-    <div class="field">
-      <label for="stripe-request-note">申請メモ</label>
-      <textarea class="request-note-textarea" id="stripe-request-note" name="request_note" maxlength="1000" rows="5" placeholder="補足があれば入力してください。空欄でも送信できます。"></textarea>
-    </div>
-    <div class="btn-row">
-      {% if preview_mode %}
-      <button class="btn wild-admin-btn" type="button" disabled>申請を送信する</button>
-      <div class="preview-disabled-note">{{ preview_actions_disabled_reason }}</div>
-      {% else %}
-      <button class="btn wild-admin-btn" type="submit">申請を送信する</button>
-      {% endif %}
-      <a class="btn secondary" href="{{ preview_hub_url if preview_mode else url_for('admin_dashboard') }}">{% if preview_mode %}プレビューハブへ戻る{% else %}ダッシュボードへ戻る{% endif %}</a>
-    </div>
-  </form>
-  {% endif %}
-
-  <div class="notice">有料プラン申請はStripe専用です。旧決済方式の新規利用は終了しています。</div>
-
-  {% if not completed_stripe_payment %}
-  <div class="notice">決済完了を確認できるまでは申請フォームは表示されません。Stripeで支払い後、必要に応じて再確認してください。</div>
-  {% endif %}
-  {% endif %}
+  <div class="notice">申請送信と site_admin 承認は不要になりました。Stripe の `completed / paid` をサーバー側で確認できた決済だけ、自動で 30 日追加されます。</div>
+  <div class="notice">既存の有効期限が未来ならその日付に 30 日加算し、期限切れまたは未設定なら現在時刻基準で 30 日加算します。旧決済方式の新規利用は終了しています。</div>
 </section>
 
 <section class="panel" style="max-width: 920px;">
-  <h2 style="margin-top: 0;">最近の申請履歴</h2>
+  <h2 style="margin-top: 0;">最近の反映・監査履歴</h2>
   {% if plan_request_history %}
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th>申請日</th>
+          <th>記録日</th>
           <th>種別</th>
           <th>支払方法</th>
           <th>金額</th>
@@ -349,7 +282,7 @@
     </table>
   </div>
   {% else %}
-  <div class="notice success">申請履歴はまだありません。</div>
+  <div class="notice success">反映・監査履歴はまだありません。</div>
   {% endif %}
 </section>
 
@@ -366,6 +299,7 @@
           <th>識別情報</th>
           <th>状態</th>
           <th>支払日</th>
+          <th>反映日</th>
           <th>操作</th>
         </tr>
       </thead>
@@ -378,6 +312,7 @@
           <td>{{ payment["payment_reference_text"] }}</td>
           <td>{{ payment["status_text"] }}</td>
           <td>{{ payment["stripe_paid_at_text"] }}</td>
+          <td>{% if payment["is_applied"] %}{{ payment["applied_at_text"] }}{% else %}<span style="color: var(--muted);">未反映</span>{% endif %}</td>
           <td>
             <form method="POST" action="{{ '#' if preview_mode else url_for('admin_refresh_stripe_payment', checkout_session_id=payment['stripe_checkout_session_id']) }}">
               {% if preview_mode %}

@@ -1208,6 +1208,8 @@ def portal_get_admin_stripe_payment_by_checkout_session_id(checkout_session_id):
             confirmed_at,
             last_checked_at,
             linked_plan_request_id,
+            applied_at,
+            applied_billing_history_id,
             last_error_code,
             last_error_message,
             raw_create_response,
@@ -1250,6 +1252,8 @@ def portal_get_admin_stripe_payment_by_payment_intent_id(payment_intent_id):
             confirmed_at,
             last_checked_at,
             linked_plan_request_id,
+            applied_at,
+            applied_billing_history_id,
             last_error_code,
             last_error_message,
             raw_create_response,
@@ -1292,6 +1296,8 @@ def portal_get_admin_stripe_payment(payment_id):
             confirmed_at,
             last_checked_at,
             linked_plan_request_id,
+            applied_at,
+            applied_billing_history_id,
             last_error_code,
             last_error_message,
             raw_create_response,
@@ -1334,6 +1340,8 @@ def portal_get_latest_unlinked_completed_admin_stripe_payment(admin_id):
             confirmed_at,
             last_checked_at,
             linked_plan_request_id,
+            applied_at,
+            applied_billing_history_id,
             last_error_code,
             last_error_message,
             raw_create_response,
@@ -1377,6 +1385,8 @@ def portal_get_admin_stripe_payments_for_admin(admin_id, limit=20):
             confirmed_at,
             last_checked_at,
             linked_plan_request_id,
+            applied_at,
+            applied_billing_history_id,
             last_error_code,
             last_error_message,
             raw_create_response,
@@ -3025,6 +3035,59 @@ def init_db_sqlite():
     )
     """
     )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS admin_stripe_payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        admin_id INTEGER NOT NULL,
+        stripe_checkout_session_id TEXT NOT NULL UNIQUE,
+        stripe_payment_intent_id TEXT,
+        request_type TEXT NOT NULL,
+        request_amount INTEGER NOT NULL DEFAULT 0,
+        currency TEXT NOT NULL DEFAULT 'JPY',
+        checkout_url TEXT,
+        status TEXT NOT NULL DEFAULT 'created',
+        stripe_status TEXT,
+        stripe_payment_status TEXT,
+        payment_reference TEXT,
+        stripe_paid_at TEXT,
+        requested_at TEXT,
+        returned_at TEXT,
+        confirmed_at TEXT,
+        last_checked_at TEXT,
+        linked_plan_request_id INTEGER,
+        applied_at TEXT,
+        applied_billing_history_id INTEGER,
+        last_error_code TEXT,
+        last_error_message TEXT,
+        raw_create_response TEXT,
+        raw_payment_details TEXT,
+        raw_last_webhook TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY(admin_id) REFERENCES admins(id),
+        FOREIGN KEY(linked_plan_request_id) REFERENCES admin_plan_requests(id),
+        FOREIGN KEY(applied_billing_history_id) REFERENCES admin_billing_history(id)
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS admin_stripe_webhook_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_id TEXT NOT NULL UNIQUE,
+        event_type TEXT NOT NULL,
+        stripe_checkout_session_id TEXT,
+        stripe_payment_intent_id TEXT,
+        payload_json TEXT,
+        processing_status TEXT NOT NULL DEFAULT 'received',
+        error_message TEXT,
+        processed_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    )
+    """
+    )
 
     c.execute(
         """
@@ -3306,6 +3369,83 @@ def init_db_sqlite():
             ADMIN_STATUS_EXPIRED,
             ADMIN_ACCOUNT_STATUS_ACTIVE,
             ADMIN_BILLING_STATUS_UNPAID,
+        ),
+    )
+
+    c.execute("PRAGMA table_info(admin_stripe_payments)")
+    admin_stripe_payment_columns = [row[1] for row in c.fetchall()]
+    if "admin_id" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN admin_id INTEGER")
+    if "stripe_checkout_session_id" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN stripe_checkout_session_id TEXT")
+    if "stripe_payment_intent_id" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN stripe_payment_intent_id TEXT")
+    if "request_type" not in admin_stripe_payment_columns:
+        c.execute(
+            f"ALTER TABLE admin_stripe_payments ADD COLUMN request_type TEXT NOT NULL DEFAULT '{ADMIN_PLAN_REQUEST_TYPE_PAID_30_DAYS}'"
+        )
+    if "request_amount" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN request_amount INTEGER NOT NULL DEFAULT 0")
+    if "currency" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN currency TEXT NOT NULL DEFAULT 'JPY'")
+    if "checkout_url" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN checkout_url TEXT")
+    if "status" not in admin_stripe_payment_columns:
+        c.execute(
+            f"ALTER TABLE admin_stripe_payments ADD COLUMN status TEXT NOT NULL DEFAULT '{ADMIN_STRIPE_STATUS_CREATED}'"
+        )
+    if "stripe_status" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN stripe_status TEXT")
+    if "stripe_payment_status" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN stripe_payment_status TEXT")
+    if "payment_reference" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN payment_reference TEXT")
+    if "stripe_paid_at" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN stripe_paid_at TEXT")
+    if "requested_at" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN requested_at TEXT")
+    if "returned_at" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN returned_at TEXT")
+    if "confirmed_at" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN confirmed_at TEXT")
+    if "last_checked_at" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN last_checked_at TEXT")
+    if "linked_plan_request_id" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN linked_plan_request_id INTEGER")
+    if "applied_at" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN applied_at TEXT")
+    if "applied_billing_history_id" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN applied_billing_history_id INTEGER")
+    if "last_error_code" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN last_error_code TEXT")
+    if "last_error_message" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN last_error_message TEXT")
+    if "raw_create_response" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN raw_create_response TEXT")
+    if "raw_payment_details" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN raw_payment_details TEXT")
+    if "raw_last_webhook" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN raw_last_webhook TEXT")
+    if "created_at" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN created_at TEXT")
+    if "updated_at" not in admin_stripe_payment_columns:
+        c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN updated_at TEXT")
+    c.execute(
+        """
+        UPDATE admin_stripe_payments
+        SET request_type = COALESCE(NULLIF(request_type, ''), ?),
+            request_amount = COALESCE(request_amount, 0),
+            currency = COALESCE(NULLIF(currency, ''), 'JPY'),
+            status = COALESCE(NULLIF(status, ''), ?),
+            payment_reference = COALESCE(payment_reference, stripe_checkout_session_id, ''),
+            created_at = COALESCE(NULLIF(created_at, ''), requested_at, ?),
+            updated_at = COALESCE(NULLIF(updated_at, ''), created_at, ?)
+        """,
+        (
+            ADMIN_PLAN_REQUEST_TYPE_PAID_30_DAYS,
+            ADMIN_STRIPE_STATUS_CREATED,
+            portal_now_text(),
+            portal_now_text(),
         ),
     )
 
@@ -3680,6 +3820,8 @@ def init_db_postgres():
         confirmed_at TEXT,
         last_checked_at TEXT,
         linked_plan_request_id INTEGER REFERENCES admin_plan_requests(id),
+        applied_at TEXT,
+        applied_billing_history_id INTEGER REFERENCES admin_billing_history(id),
         last_error_code TEXT,
         last_error_message TEXT,
         raw_create_response TEXT,
@@ -4015,6 +4157,8 @@ def init_db_postgres():
     c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN IF NOT EXISTS confirmed_at TEXT")
     c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN IF NOT EXISTS last_checked_at TEXT")
     c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN IF NOT EXISTS linked_plan_request_id INTEGER")
+    c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN IF NOT EXISTS applied_at TEXT")
+    c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN IF NOT EXISTS applied_billing_history_id INTEGER")
     c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN IF NOT EXISTS last_error_code TEXT")
     c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN IF NOT EXISTS last_error_message TEXT")
     c.execute("ALTER TABLE admin_stripe_payments ADD COLUMN IF NOT EXISTS raw_create_response TEXT")
@@ -4518,7 +4662,9 @@ def enrich_admin_stripe_payment_row(row):
     row["stripe_paid_at_text"] = format_portal_date(row.get("stripe_paid_at"))
     row["confirmed_at_text"] = format_portal_date(row.get("confirmed_at"))
     row["created_date"] = format_portal_date(row.get("created_at"))
+    row["applied_at_text"] = format_portal_date(row.get("applied_at"))
     row["is_completed"] = normalized_status == ADMIN_STRIPE_STATUS_COMPLETED
+    row["is_applied"] = bool(row.get("applied_at"))
     row["is_linked"] = bool(row.get("linked_plan_request_id"))
     row["payment_reference_text"] = stripe_extract_reference(row)
     return row
@@ -5137,7 +5283,333 @@ def build_admin_plan_request_billing_note(request_row):
     return " / ".join(parts)
 
 
-def sync_admin_stripe_payment_with_stripe(checkout_session_id, mark_returned=False):
+def build_admin_plan_request_auto_review_note(payment_row, applied_via=""):
+    parts = ["Stripe APIで支払い完了を確認後に自動反映"]
+    payment_reference = stripe_extract_reference(payment_row)
+    if payment_reference:
+        parts.append(f"識別情報: {payment_reference}")
+    if applied_via:
+        applied_via_labels = {
+            "success": "success戻り",
+            "manual_refresh": "手動再確認",
+            "webhook": "webhook受信後API確認",
+        }
+        parts.append(f"反映経路: {applied_via_labels.get(applied_via, applied_via)}")
+    return " / ".join(parts)
+
+
+def portal_auto_apply_completed_admin_stripe_payment(stripe_payment_id, applied_via=""):
+    if not stripe_payment_id:
+        return False, "stripe_payment_not_found", None
+    applied_at_text = portal_now_text()
+    conn = get_db_connection()
+    c = conn.cursor()
+    try:
+        c.execute(
+            """
+            SELECT
+                id,
+                admin_id,
+                stripe_checkout_session_id,
+                stripe_payment_intent_id,
+                request_type,
+                request_amount,
+                currency,
+                checkout_url,
+                status,
+                stripe_status,
+                stripe_payment_status,
+                payment_reference,
+                stripe_paid_at,
+                requested_at,
+                returned_at,
+                confirmed_at,
+                last_checked_at,
+                linked_plan_request_id,
+                applied_at,
+                applied_billing_history_id,
+                last_error_code,
+                last_error_message,
+                raw_create_response,
+                raw_payment_details,
+                raw_last_webhook,
+                created_at,
+                updated_at
+            FROM admin_stripe_payments
+            WHERE id=?
+            LIMIT 1
+            """,
+            (stripe_payment_id,),
+        )
+        payment_row = row_to_dict(c.fetchone())
+        if not payment_row:
+            conn.close()
+            return False, "stripe_payment_not_found", None
+        if payment_row.get("status") != ADMIN_STRIPE_STATUS_COMPLETED:
+            conn.close()
+            return False, "stripe_payment_not_completed", payment_row
+
+        linked_request_row = None
+        linked_request_id = payment_row.get("linked_plan_request_id")
+        if linked_request_id:
+            c.execute(
+                """
+                SELECT
+                    id,
+                    admin_id,
+                    request_type,
+                    payment_method,
+                    payment_amount,
+                    payment_date,
+                    payment_reference,
+                    request_note,
+                    status,
+                    review_note,
+                    reviewed_by_admin_id,
+                    reviewed_at,
+                    stripe_payment_id,
+                    payment_verification_status,
+                    payment_verified_at,
+                    created_at,
+                    updated_at
+                FROM admin_plan_requests
+                WHERE id=?
+                LIMIT 1
+                """,
+                (linked_request_id,),
+            )
+            linked_request_row = row_to_dict(c.fetchone())
+            if linked_request_row and linked_request_row.get("status") == ADMIN_PLAN_REQUEST_STATUS_APPROVED:
+                if not payment_row.get("applied_at"):
+                    c.execute(
+                        """
+                        UPDATE admin_stripe_payments
+                        SET applied_at=COALESCE(applied_at, ?),
+                            updated_at=?
+                        WHERE id=?
+                        """,
+                        (linked_request_row.get("reviewed_at") or applied_at_text, applied_at_text, stripe_payment_id),
+                    )
+                    conn.commit()
+                else:
+                    conn.close()
+                return True, "already_applied", portal_get_admin_stripe_payment(stripe_payment_id)
+            if linked_request_row and linked_request_row.get("status") == ADMIN_PLAN_REQUEST_STATUS_REJECTED:
+                conn.close()
+                return False, "linked_plan_request_rejected", payment_row
+
+        c.execute(
+            """
+            UPDATE admin_stripe_payments
+            SET applied_at=?,
+                updated_at=?
+            WHERE id=? AND applied_at IS NULL
+            """,
+            (applied_at_text, applied_at_text, stripe_payment_id),
+        )
+        if c.rowcount <= 0:
+            conn.rollback()
+            conn.close()
+            latest_payment = portal_get_admin_stripe_payment(stripe_payment_id)
+            if latest_payment and latest_payment.get("applied_at"):
+                return True, "already_applied", latest_payment
+            return False, "apply_claim_failed", latest_payment
+
+        c.execute(f"SELECT {ADMIN_SELECT_COLUMNS} FROM admins WHERE id=?", (payment_row["admin_id"],))
+        admin_row = row_to_dict(c.fetchone())
+        if not admin_row:
+            conn.rollback()
+            conn.close()
+            return False, "admin_not_found", payment_row
+
+        payment_amount = int(payment_row.get("request_amount") or 0)
+        payment_date = payment_row.get("stripe_paid_at") or applied_at_text
+        payment_reference = payment_row.get("payment_reference") or stripe_extract_reference(payment_row)
+        request_type = payment_row.get("request_type") or ADMIN_PLAN_REQUEST_TYPE_PAID_30_DAYS
+        auto_review_note = build_admin_plan_request_auto_review_note(payment_row, applied_via=applied_via)
+        request_note = linked_request_row.get("request_note") if linked_request_row else ""
+
+        if linked_request_row:
+            request_id = linked_request_row["id"]
+            c.execute(
+                """
+                UPDATE admin_plan_requests
+                SET request_type=?,
+                    payment_method=?,
+                    payment_amount=?,
+                    payment_date=?,
+                    payment_reference=?,
+                    status=?,
+                    review_note=?,
+                    reviewed_by_admin_id=NULL,
+                    reviewed_at=?,
+                    stripe_payment_id=?,
+                    payment_verification_status=?,
+                    payment_verified_at=?,
+                    updated_at=?
+                WHERE id=?
+                """,
+                (
+                    request_type,
+                    ADMIN_PLAN_REQUEST_PAYMENT_METHOD_STRIPE,
+                    payment_amount,
+                    payment_date,
+                    payment_reference,
+                    ADMIN_PLAN_REQUEST_STATUS_APPROVED,
+                    auto_review_note,
+                    applied_at_text,
+                    stripe_payment_id,
+                    ADMIN_PLAN_REQUEST_PAYMENT_VERIFICATION_VERIFIED,
+                    applied_at_text,
+                    applied_at_text,
+                    request_id,
+                ),
+            )
+        else:
+            c.execute(
+                """
+                INSERT INTO admin_plan_requests (
+                    admin_id,
+                    request_type,
+                    payment_method,
+                    payment_amount,
+                    payment_date,
+                    payment_reference,
+                    request_note,
+                    status,
+                    review_note,
+                    reviewed_by_admin_id,
+                    reviewed_at,
+                    stripe_payment_id,
+                    payment_verification_status,
+                    payment_verified_at,
+                    created_at,
+                    updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    payment_row["admin_id"],
+                    request_type,
+                    ADMIN_PLAN_REQUEST_PAYMENT_METHOD_STRIPE,
+                    payment_amount,
+                    payment_date,
+                    payment_reference,
+                    request_note or "",
+                    ADMIN_PLAN_REQUEST_STATUS_APPROVED,
+                    auto_review_note,
+                    None,
+                    applied_at_text,
+                    stripe_payment_id,
+                    ADMIN_PLAN_REQUEST_PAYMENT_VERIFICATION_VERIFIED,
+                    applied_at_text,
+                    applied_at_text,
+                    applied_at_text,
+                ),
+            )
+            request_id = c.lastrowid if not USE_POSTGRES else None
+            if USE_POSTGRES and not request_id:
+                c.execute("SELECT currval(pg_get_serial_sequence('admin_plan_requests', 'id')) AS id")
+                latest_row = c.fetchone()
+                request_id = (
+                    latest_row["id"] if isinstance(latest_row, dict) or hasattr(latest_row, "keys") else latest_row[0]
+                )
+
+        total_billing_amount = int(admin_row.get("total_billing_amount") or 0) + payment_amount
+        billing_count = int(admin_row.get("billing_count") or 0) + 1
+        expires_at = build_admin_plan_request_expiry(admin_row, request_type, payment_date)
+        current_account_status = normalize_admin_account_status(admin_row.get("account_status")) or ADMIN_ACCOUNT_STATUS_ACTIVE
+        account_status = (
+            ADMIN_ACCOUNT_STATUS_SUSPENDED
+            if current_account_status == ADMIN_ACCOUNT_STATUS_SUSPENDED
+            else ADMIN_ACCOUNT_STATUS_ACTIVE
+        )
+        legacy_status = ADMIN_STATUS_SUSPENDED if account_status == ADMIN_ACCOUNT_STATUS_SUSPENDED else ADMIN_STATUS_PAID
+
+        c.execute(
+            """
+            UPDATE admins
+            SET plan_type=?,
+                billing_status=?,
+                total_billing_amount=?,
+                billing_count=?,
+                last_billed_at=?,
+                expires_at=?,
+                account_status=?,
+                status=?
+            WHERE id=?
+            """,
+            (
+                ADMIN_PLAN_PAID,
+                ADMIN_BILLING_STATUS_PAID,
+                total_billing_amount,
+                billing_count,
+                payment_date,
+                expires_at,
+                account_status,
+                legacy_status,
+                payment_row["admin_id"],
+            ),
+        )
+        c.execute(
+            """
+            INSERT INTO admin_billing_history (
+                admin_id,
+                billing_status,
+                billed_at,
+                amount,
+                total_amount,
+                billing_count,
+                note,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                payment_row["admin_id"],
+                ADMIN_BILLING_STATUS_PAID,
+                payment_date,
+                payment_amount,
+                total_billing_amount,
+                billing_count,
+                build_admin_plan_request_billing_note(
+                    {
+                        "id": request_id,
+                        "payment_reference": payment_reference,
+                        "request_note": request_note or "",
+                    }
+                ),
+                applied_at_text,
+            ),
+        )
+        billing_history_id = c.lastrowid if not USE_POSTGRES else None
+        if USE_POSTGRES and not billing_history_id:
+            c.execute("SELECT currval(pg_get_serial_sequence('admin_billing_history', 'id')) AS id")
+            latest_row = c.fetchone()
+            billing_history_id = (
+                latest_row["id"] if isinstance(latest_row, dict) or hasattr(latest_row, "keys") else latest_row[0]
+            )
+        c.execute(
+            """
+            UPDATE admin_stripe_payments
+            SET linked_plan_request_id=?,
+                applied_billing_history_id=?,
+                updated_at=?
+            WHERE id=?
+            """,
+            (request_id, billing_history_id, applied_at_text, stripe_payment_id),
+        )
+        conn.commit()
+    except DatabaseError:
+        conn.rollback()
+        conn.close()
+        return False, "database_error", None
+
+    conn.close()
+    return True, "applied", portal_get_admin_stripe_payment(stripe_payment_id)
+
+
+def sync_admin_stripe_payment_with_stripe(checkout_session_id, mark_returned=False, applied_via=""):
     payment_details = stripe_get_checkout_session(checkout_session_id)
     error_object = (payment_details.get("json", {}) or {}).get("error") or {}
     updated_payment = portal_update_admin_stripe_payment_from_remote(
@@ -5147,6 +5619,14 @@ def sync_admin_stripe_payment_with_stripe(checkout_session_id, mark_returned=Fal
         error_code=error_object.get("code") or payment_details.get("error") or "",
         error_message=error_object.get("message") or "",
     )
+    auto_apply_result = {"ok": False, "status": "not_attempted"}
+    if updated_payment and updated_payment.get("status") == ADMIN_STRIPE_STATUS_COMPLETED:
+        applied_ok, apply_status, latest_payment = portal_auto_apply_completed_admin_stripe_payment(
+            updated_payment.get("id"),
+            applied_via=applied_via,
+        )
+        updated_payment = latest_payment or updated_payment
+        auto_apply_result = {"ok": applied_ok, "status": apply_status}
     if updated_payment and updated_payment.get("linked_plan_request_id"):
         portal_sync_plan_request_verification_with_payment(
             updated_payment.get("linked_plan_request_id"),
@@ -5155,7 +5635,7 @@ def sync_admin_stripe_payment_with_stripe(checkout_session_id, mark_returned=Fal
             payment_date=updated_payment.get("stripe_paid_at") or "",
             payment_reference=updated_payment.get("payment_reference") or stripe_extract_reference(updated_payment),
         )
-    return updated_payment, payment_details
+    return updated_payment, payment_details, auto_apply_result
 
 
 def verify_admin_plan_request_payment_before_approval(request_row):
@@ -5167,7 +5647,7 @@ def verify_admin_plan_request_payment_before_approval(request_row):
     payment_row = portal_get_admin_stripe_payment(request_row.get("stripe_payment_id"))
     if not payment_row:
         return False, "stripe_payment_not_found"
-    updated_payment, _payment_details = sync_admin_stripe_payment_with_stripe(
+    updated_payment, _payment_details, _auto_apply_result = sync_admin_stripe_payment_with_stripe(
         payment_row.get("stripe_checkout_session_id") or ""
     )
     if not updated_payment:
@@ -6249,6 +6729,18 @@ def site_admin_plan_requests():
 @app.route("/site-admin/plan-requests/<int:request_id>/review", methods=["POST"])
 @site_admin_required
 def site_admin_review_plan_request(request_id):
+    request_row = portal_get_admin_plan_request(request_id)
+    if not request_row:
+        return redirect(url_for("site_admin_plan_requests", error_message="申請が見つかりません。"))
+    payment_method = normalize_admin_plan_request_payment_method(request_row.get("payment_method"))
+    if payment_method == ADMIN_PLAN_REQUEST_PAYMENT_METHOD_STRIPE:
+        return redirect(
+            url_for(
+                "site_admin_plan_requests",
+                error_message="Stripe決済の承認操作は廃止されました。Stripe再確認で自動反映状況を確認してください。",
+            )
+        )
+
     decision = normalize_admin_plan_request_status(request.form.get("decision"))
     if decision not in {ADMIN_PLAN_REQUEST_STATUS_APPROVED, ADMIN_PLAN_REQUEST_STATUS_REJECTED}:
         return redirect(url_for("site_admin_plan_requests", error_message="判定の値が不正です。"))
@@ -6514,8 +7006,6 @@ def admin_stripe_checkout():
         return redirect(url_for("admin_login_entry"))
     if not stripe_checkout_is_configured():
         return redirect(url_for("admin_create_plan_request", error_message="Stripe設定が未完了のため決済を開始できません。"))
-    if portal_get_pending_admin_plan_request_by_admin(session["admin_id"]):
-        return redirect(url_for("admin_create_plan_request", error_message="申請中の有料プラン申請があるため、新規決済を開始できません。"))
 
     request_type = normalize_admin_plan_request_type(request.form.get("request_type"))
     if not request_type:
@@ -6554,16 +7044,25 @@ def admin_stripe_success():
     if not payment_row:
         return redirect(url_for("admin_create_plan_request", error_message="Stripe決済情報が見つかりません。"))
 
-    updated_payment, payment_details = sync_admin_stripe_payment_with_stripe(checkout_session_id, mark_returned=True)
+    updated_payment, payment_details, auto_apply_result = sync_admin_stripe_payment_with_stripe(
+        checkout_session_id,
+        mark_returned=True,
+        applied_via="success",
+    )
     if "admin_id" not in session or int(session.get("admin_id") or 0) != int(payment_row.get("admin_id") or 0):
         return redirect(url_for("admin_login_entry", next=url_for("admin_create_plan_request")))
 
     status = (updated_payment or {}).get("status") or ""
     if status == ADMIN_STRIPE_STATUS_COMPLETED:
+        if not auto_apply_result.get("ok"):
+            error_message = "Stripe決済の完了は確認できましたが、有料プラン反映に失敗しました。時間をおいて再確認してください。"
+            if auto_apply_result.get("status") == "linked_plan_request_rejected":
+                error_message = "紐付いた旧申請が却下済みのため、自動反映できませんでした。"
+            return redirect(url_for("admin_create_plan_request", error_message=error_message))
         return redirect(
             url_for(
                 "admin_create_plan_request",
-                success_message="Stripe決済を確認しました。内容を確認して申請を送信してください。",
+                success_message="Stripe決済を確認し、有料プランへ反映しました。",
             )
         )
     error_object = (payment_details.get("json", {}) or {}).get("error") or {}
@@ -6590,9 +7089,22 @@ def admin_refresh_stripe_payment(checkout_session_id):
     if not is_owner and not session.get("is_site_admin"):
         return redirect(append_query_params(redirect_target, error_message="他の管理者のStripe決済は確認できません。"))
 
-    updated_payment, _payment_details = sync_admin_stripe_payment_with_stripe(checkout_session_id)
+    updated_payment, _payment_details, auto_apply_result = sync_admin_stripe_payment_with_stripe(
+        checkout_session_id,
+        applied_via="manual_refresh",
+    )
     if updated_payment:
-        return redirect(append_query_params(redirect_target, success_message="Stripe決済状態を更新しました。"))
+        success_message = "Stripe決済状態を更新しました。"
+        if (updated_payment.get("status") == ADMIN_STRIPE_STATUS_COMPLETED) and auto_apply_result.get("ok"):
+            success_message = "Stripe決済状態を更新し、有料プラン反映まで完了しました。"
+        elif (updated_payment.get("status") == ADMIN_STRIPE_STATUS_COMPLETED) and not auto_apply_result.get("ok"):
+            return redirect(
+                append_query_params(
+                    redirect_target,
+                    error_message="Stripe決済完了は確認できましたが、有料プラン反映に失敗しました。",
+                )
+            )
+        return redirect(append_query_params(redirect_target, success_message=success_message))
     return redirect(append_query_params(redirect_target, error_message="Stripe決済状態を更新できませんでした。"))
 
 
@@ -6675,6 +7187,13 @@ def stripe_webhook():
         error_code=error_object.get("code") or payment_details.get("error") or "",
         error_message=error_object.get("message") or "",
     )
+    auto_apply_ok = True
+    auto_apply_status = "not_attempted"
+    if updated_payment and updated_payment.get("status") == ADMIN_STRIPE_STATUS_COMPLETED:
+        auto_apply_ok, auto_apply_status, updated_payment = portal_auto_apply_completed_admin_stripe_payment(
+            updated_payment.get("id"),
+            applied_via="webhook",
+        )
     if updated_payment and updated_payment.get("linked_plan_request_id"):
         portal_sync_plan_request_verification_with_payment(
             updated_payment.get("linked_plan_request_id"),
@@ -6683,6 +7202,16 @@ def stripe_webhook():
             payment_date=updated_payment.get("stripe_paid_at") or "",
             payment_reference=updated_payment.get("payment_reference") or stripe_extract_reference(updated_payment),
         )
+    if updated_payment and updated_payment.get("status") == ADMIN_STRIPE_STATUS_COMPLETED and not auto_apply_ok:
+        if event_id:
+            portal_update_stripe_webhook_event(
+                event_id,
+                "failed",
+                error_message=auto_apply_status,
+                checkout_session_id=checkout_session_id,
+                payment_intent_id=payment_intent_id,
+            )
+        return Response("retry", status=500, content_type="text/plain; charset=utf-8")
     if event_id:
         portal_update_stripe_webhook_event(
             event_id,
@@ -6708,92 +7237,12 @@ def admin_create_plan_request():
         context["error_message"] = request.args.get("error_message", "").strip()
         context["success_message"] = request.args.get("success_message", "").strip()
         return render_template("admin_plan_requests.html", **context)
-
-    if portal_get_pending_admin_plan_request_by_admin(session["admin_id"]):
-        return redirect(url_for("admin_create_plan_request", error_message="申請中の有料プラン申請があるため、新規申請できません。"))
-
-    request_type = normalize_admin_plan_request_type(request.form.get("request_type"))
-    payment_method = normalize_admin_plan_request_payment_method(request.form.get("payment_method"))
-    payment_amount_raw = request.form.get("payment_amount", "").strip()
-    payment_date_raw = request.form.get("payment_date", "").strip()
-    payment_reference = request.form.get("payment_reference", "").strip()
-    request_note = request.form.get("request_note", "").strip()
-    stripe_payment_id_raw = request.form.get("stripe_payment_id", "").strip()
-    stripe_payment_id = None
-
-    if not request_type:
-        return redirect(url_for("admin_create_plan_request", error_message="申請種別を選択してください。"))
-    if not payment_method:
-        return redirect(url_for("admin_create_plan_request", error_message="支払方法を選択してください。"))
-    if payment_method != ADMIN_PLAN_REQUEST_PAYMENT_METHOD_STRIPE:
-        return redirect(
-            url_for(
-                "admin_create_plan_request",
-                error_message="現在の有料プラン申請はStripeのみ対応しています。",
-            )
+    return redirect(
+        url_for(
+            "admin_create_plan_request",
+            error_message="申請送信フローは廃止されました。Stripe APIで支払い完了を確認できた決済は自動で有料プランへ反映されます。",
         )
-    if len(request_note) > 1000:
-        return redirect(url_for("admin_create_plan_request", error_message="申請メモは1000文字以内で入力してください。"))
-
-    if stripe_payment_id_raw:
-        try:
-            stripe_payment_id = int(stripe_payment_id_raw)
-        except ValueError:
-            return redirect(url_for("admin_create_plan_request", error_message="Stripe決済情報の指定が不正です。"))
-        stripe_payment = portal_get_admin_stripe_payment(stripe_payment_id)
-        if not stripe_payment or int(stripe_payment.get("admin_id") or 0) != int(session["admin_id"]):
-            return redirect(url_for("admin_create_plan_request", error_message="指定したStripe決済情報が見つかりません。"))
-        payment_amount = int(stripe_payment.get("request_amount") or 0)
-        payment_date_text = stripe_payment.get("stripe_paid_at") or ""
-        payment_reference = stripe_payment.get("payment_reference") or stripe_extract_reference(stripe_payment)
-        payment_date = parse_portal_datetime(payment_date_text)
-        if stripe_payment.get("status") != ADMIN_STRIPE_STATUS_COMPLETED or not payment_date:
-            return redirect(url_for("admin_create_plan_request", error_message="支払い完了済みのStripe決済だけを申請に利用できます。"))
-    else:
-        if payment_method == ADMIN_PLAN_REQUEST_PAYMENT_METHOD_STRIPE:
-            return redirect(
-                url_for(
-                    "admin_create_plan_request",
-                    error_message="Stripe決済完了後に申請を送信してください。success URL に戻っただけでは申請完了になりません。",
-                )
-            )
-        try:
-            payment_amount = int(payment_amount_raw or "0")
-        except ValueError:
-            return redirect(url_for("admin_create_plan_request", error_message="支払金額は整数で入力してください。"))
-        if payment_amount not in ADMIN_PLAN_REQUEST_PAYMENT_AMOUNT_OPTIONS:
-            return redirect(url_for("admin_create_plan_request", error_message="支払金額の選択肢が不正です。"))
-        payment_date = parse_portal_datetime(payment_date_raw)
-        if not payment_date:
-            return redirect(url_for("admin_create_plan_request", error_message="支払日の形式が不正です。"))
-        if not payment_reference:
-            return redirect(url_for("admin_create_plan_request", error_message="識別情報を入力してください。"))
-        if len(payment_reference) > 255:
-            return redirect(url_for("admin_create_plan_request", error_message="識別情報は255文字以内で入力してください。"))
-
-    created, status, _request_id = portal_create_admin_plan_request(
-        admin_id=session["admin_id"],
-        request_type=request_type,
-        payment_method=payment_method,
-        payment_amount=payment_amount,
-        payment_date=payment_date.strftime("%Y-%m-%d %H:%M:%S"),
-        payment_reference=payment_reference,
-        request_note=request_note,
-        stripe_payment_id=stripe_payment_id,
     )
-    if created:
-        return redirect(url_for("admin_create_plan_request", success_message="有料プラン申請を送信しました。承認までお待ちください。"))
-
-    error_message = "有料プラン申請を送信できませんでした。"
-    if status == "pending_exists":
-        error_message = "申請中の有料プラン申請があるため、新規申請できません。"
-    elif status == "stripe_payment_not_found":
-        error_message = "指定したStripe決済情報が見つかりません。"
-    elif status == "stripe_payment_already_linked":
-        error_message = "指定したStripe決済はすでに別の申請に使われています。"
-    elif status == "stripe_payment_incomplete":
-        error_message = "支払い完了済みのStripe決済だけを申請に利用できます。"
-    return redirect(url_for("admin_create_plan_request", error_message=error_message))
 
 
 @app.route("/admin/account/delete", methods=["POST"])

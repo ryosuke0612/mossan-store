@@ -1,4 +1,4 @@
-import argparse
+﻿import argparse
 import sqlite3
 from pathlib import Path
 
@@ -13,7 +13,6 @@ def load_app_source():
 
 def check_app_source(source):
     checks = []
-
     checks.append(
         (
             "legacy label remains readable",
@@ -23,23 +22,30 @@ def check_app_source(source):
     )
     checks.append(
         (
-            "approval is fail-closed for non-stripe",
+            "legacy approval remains fail-closed",
             'return False, "legacy_payment_method_not_supported"' in source,
-            "approval path blocks legacy payment methods",
-        )
-    )
-    checks.append(
-        (
-            "admin create plan request stays stripe-only",
-            'error_message="現在の有料プラン申請はStripeのみ対応しています。"' in source,
-            "plan request POST rejects non-Stripe methods",
+            "legacy payment methods still cannot be approved",
         )
     )
     checks.append(
         (
             "success return alone is not treated as success",
-            "success URL に戻っただけでは申請完了になりません。" in source,
-            "success return warning remains in request flow",
+            "success URL に戻っただけでは" in source,
+            "success flow still requires server-side Stripe API confirmation",
+        )
+    )
+    checks.append(
+        (
+            "auto-apply only after Stripe API confirmation",
+            "Stripe APIで支払い完了を確認後に自動反映" in source,
+            "auto-apply note is present in the server-side flow",
+        )
+    )
+    checks.append(
+        (
+            "manual request submission is disabled",
+            "申請送信フローは廃止されました。" in source,
+            "manual plan request submission path is no longer the primary flow",
         )
     )
     checks.append(
@@ -56,15 +62,11 @@ def check_app_source(source):
             "Postgres cleanup helper is present",
         )
     )
-
     return checks
 
 
 def sqlite_table_names(cursor):
-    return {
-        row[0]
-        for row in cursor.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
-    }
+    return {row[0] for row in cursor.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
 
 
 def sqlite_column_names(cursor, table_name):
@@ -92,6 +94,15 @@ def check_sqlite_db(db_path):
             "paypay_payment_id removed",
             "paypay_payment_id" not in admin_plan_request_columns,
             "legacy paypay_payment_id column is absent",
+        )
+    )
+
+    admin_stripe_payment_columns = sqlite_column_names(cur, "admin_stripe_payments")
+    checks.append(
+        (
+            "stripe auto-apply columns exist",
+            "applied_at" in admin_stripe_payment_columns and "applied_billing_history_id" in admin_stripe_payment_columns,
+            "idempotency columns for Stripe auto-apply are present",
         )
     )
 
@@ -155,9 +166,7 @@ def print_results(title, checks):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Verify PayPay removal state and Stripe safety invariants."
-    )
+    parser = argparse.ArgumentParser(description="Verify PayPay removal state and Stripe safety invariants.")
     parser.add_argument(
         "--db",
         default=str(ROOT_DIR / "schedule.db"),
