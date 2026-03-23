@@ -30,9 +30,14 @@ body {
 }
 .hero-text h1 {
   font-family: 'Anton', sans-serif;
-  font-size: clamp(38px, 6vw, 64px);
+  font-size: clamp(34px, 5.4vw, 64px);
   margin: 0 0 24px;
   letter-spacing: 3px;
+  line-height: 1.22;
+}
+.hero-title-line {
+  display: block;
+  white-space: nowrap;
 }
 .hero-text p {
   font-size: clamp(16px, 2.2vw, 22px);
@@ -40,9 +45,17 @@ body {
   font-weight: 700;
   margin: 0;
 }
+.hero-nowrap {
+  white-space: nowrap;
+}
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 34px;
+}
 .cta-btn {
   display: inline-block;
-  margin-top: 34px;
   padding: 14px 32px;
   font-size: 20px;
   background: #ff2b2b;
@@ -50,11 +63,22 @@ body {
   text-decoration: none;
   font-weight: 900;
   border-radius: 50px;
+  border: 2px solid #ff2b2b;
   transition: 0.2s;
 }
 .cta-btn:hover {
   background: #ff8f00;
+  border-color: #ff8f00;
   transform: scale(1.05);
+}
+.cta-btn.secondary {
+  background: transparent;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.cta-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #fff;
 }
 .hero-image {
   flex: 1;
@@ -72,15 +96,24 @@ body {
 .section h2 {
   font-family: 'Anton', sans-serif;
   font-size: clamp(34px, 5vw, 48px);
-  margin: 0 0 46px;
+  margin: 0 0 20px;
   letter-spacing: 2px;
   color: #ff2b2b;
 }
+.section-intro {
+  max-width: 860px;
+  margin: 0 auto 46px;
+  font-size: 18px;
+  line-height: 1.9;
+  color: #f2f2f2;
+}
+.pain-grid,
 .features {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 26px;
 }
+.pain-box,
 .feature-box {
   background: #1a1a1a;
   padding: 34px;
@@ -88,18 +121,112 @@ body {
   border-radius: 15px;
   transition: 0.2s;
 }
+.pain-box {
+  text-align: left;
+}
+.feature-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 300px;
+  text-align: center;
+}
+.pain-box:hover,
 .feature-box:hover {
   transform: translateY(-8px);
   background: #2a0000;
 }
+.pain-box h3,
 .feature-box h3 {
-  font-size: 28px;
+  font-size: clamp(25px, 2vw, 30px);
   margin: 0 0 14px;
+  line-height: 1.35;
 }
+.pain-box p,
 .feature-box p {
   margin: 0;
   font-size: 18px;
   line-height: 1.8;
+}
+.feature-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffb7b7;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.feature-copy {
+  max-width: 18em;
+}
+.flow {
+  background: linear-gradient(180deg, rgba(255, 43, 43, 0.12) 0%, rgba(0, 0, 0, 0.92) 100%);
+}
+.flow-panel {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 34px;
+  border: 1px solid rgba(255, 43, 43, 0.35);
+  border-radius: 20px;
+  background: rgba(12, 12, 12, 0.88);
+  text-align: left;
+}
+.flow-panel h2 {
+  text-align: center;
+}
+.flow-panel p {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.95;
+}
+.highlight {
+  color: #ffd166;
+}
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 22px;
+  margin-top: 40px;
+}
+.guide-box {
+  padding: 24px;
+  border: 1px solid rgba(255, 43, 43, 0.28);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  text-align: left;
+}
+.guide-box h3 {
+  margin: 0 0 10px;
+  color: #ff8f8f;
+  font-size: 22px;
+}
+.guide-box p {
+  margin: 0;
+  line-height: 1.8;
+}
+.notice-section {
+  background: linear-gradient(180deg, #120909 0%, #000 100%);
+}
+.notice-card {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.notice-card p {
+  margin: 0 0 18px;
+  font-size: 18px;
+  line-height: 1.9;
+}
+.notice-card p:last-child {
+  margin-bottom: 0;
 }
 .last {
   padding: 92px 8%;
@@ -110,6 +237,12 @@ body {
   font-family: 'Anton', sans-serif;
   font-size: clamp(34px, 6vw, 60px);
   margin: 0 0 24px;
+}
+.last p {
+  max-width: 760px;
+  margin: 0 auto;
+  font-size: 19px;
+  line-height: 1.9;
 }
 @media (max-width: 900px) {
   .hero {
@@ -123,17 +256,39 @@ body {
   .hero-text {
     margin-left: 0;
   }
+  .hero-title-line {
+    white-space: normal;
+  }
+  .hero-nowrap {
+    white-space: normal;
+  }
+  .cta-row {
+    justify-content: center;
+  }
   .hero-image {
     text-align: center;
   }
   .section {
     padding: 56px 6%;
   }
+  .pain-box h3,
   .feature-box h3 {
     font-size: 24px;
   }
-  .feature-box p {
+  .feature-box {
+    min-height: 0;
+    padding: 30px 24px;
+  }
+  .pain-box p,
+  .feature-box p,
+  .flow-panel p,
+  .section-intro,
+  .notice-card p,
+  .last p {
     font-size: 16px;
+  }
+  .flow-panel {
+    padding: 24px;
   }
   .last {
     padding: 64px 6%;
@@ -146,17 +301,22 @@ body {
 <section class="hero">
   <div class="hero-container">
     <div class="hero-text">
-      <h1>本気のチームに、<br>本気の管理を。</h1>
+      <h1>
+        <span class="hero-title-line">本気で勝ちたいチームへ。</span>
+        <span class="hero-title-line">運営は、もっとスマートに。</span>
+      </h1>
       <p>
         試合も、練習も、イベントも。<br>
         出欠確認に時間を奪われていませんか？<br><br>
-        MossanStoreの出欠管理アプリは、<br>
-        圧倒的スピードと直感操作を実現した管理システム。<br><br>
-        管理のストレスをゼロにし、<br>
-        チームの結束力と責任感を高める。<br>
-        本気で勝ちたいチームのための本気のツール。
+        出欠ボード＋は、メンバーがログイン不要ですぐ使える、<br>
+        チーム向けの出欠管理ツールです。<br><br>
+        <span class="hero-nowrap">未登録メンバーの見える化から、当日の参加者確定、チーム分けまで。</span><br>
+        本気で勝ちたいチームの運営を、もっと軽く、もっと速く。
       </p>
-      <a href="{{ url_for('admin_login_entry') }}" class="cta-btn">管理者ページを見る</a>
+      <div class="cta-row">
+        <a href="{{ url_for('admin_login_entry') }}" class="cta-btn">チームを作成する</a>
+        <a href="#features" class="cta-btn secondary">特徴を見る</a>
+      </div>
     </div>
     <div class="hero-image">
       <img src="{{ url_for('static', filename='images/gorilla-full.png') }}" alt="ゴリラ後ろ姿">
@@ -164,45 +324,149 @@ body {
   </div>
 </section>
 
-<section class="section" id="features">
-  <h2>なぜ選ばれているのか？</h2>
-  <div class="features">
-    <div class="feature-box">
-      <h3>🔥 ワンタップ出欠管理</h3>
+<section class="section">
+  <h2>こんなお悩みありませんか？</h2>
+  <p class="section-intro">
+    ちょうどよいアプリがない。<br>
+    ログインや登録が面倒で、なかなか定着しない。<br>
+    誰がまだ出欠を入れていないのかわからない。<br>
+    出欠確認のあと、当日の運営は結局アナログになってしまう。
+  </p>
+  <div class="pain-grid">
+    <div class="pain-box">
+      <h3>ちょうどよいアプリがない</h3>
       <p>
-        面倒な操作は一切なし。<br>
-        出欠を瞬時に登録。<br>
-        登録の負担を徹底的に削減。
+        高機能すぎて使いこなせない。<br>
+        逆に必要な機能が足りない。<br>
+        そんな中途半端さに悩みがちです。
       </p>
     </div>
-    <div class="feature-box">
-      <h3>💪 チーム意識の向上</h3>
+    <div class="pain-box">
+      <h3>未登録メンバーがわからない</h3>
       <p>
-        誰が参加するのかが即時共有。<br>
-        メンバーの責任感が高まる設計。
+        誰がまだ入力していないのか見えにくいと、<br>
+        毎回の確認連絡が手間になり、<br>
+        運営側の負担が増えてしまいます。
       </p>
     </div>
-    <div class="feature-box">
-      <h3>📱 スマホ完全対応</h3>
+    <div class="pain-box">
+      <h3>ログインが面倒で定着しない</h3>
       <p>
-        外出中でも即確認。<br>
-        どこにいても<br>
-        チームを動かせる。
-      </p>
-    </div>
-    <div class="feature-box">
-      <h3>⚡ 無駄を排除した設計</h3>
-      <p>
-        必要な機能だけを搭載。<br>
-        迷わない、止まらない<br>
-        戦えるUI。
+        メンバー側のひと手間が増えるほど、<br>
+        利用率は下がりやすくなります。<br>
+        続けて使えることが何より大切です。
       </p>
     </div>
   </div>
 </section>
 
+<section class="section flow">
+  <div class="flow-panel">
+    <h2>こんなアプリが欲しかった。</h2>
+    <p>
+      出欠ボード＋は、そんな声から生まれたサービスです。<br>
+      管理者はチームを作ってイベントを登録するだけ。<br>
+      メンバーは<span class="highlight">ログイン不要</span>で、すぐに出欠入力ができます。<br>
+      さらに、<span class="highlight">未登録メンバーがわかりやすい</span>から、確認漏れを減らせます。<br>
+      出欠確認で終わらず、当日の参加者確定やチーム分けまでつながる。<br>
+      本気で勝ちたいチームに、ちょうどいい管理を届けます。
+    </p>
+    <div class="guide-grid">
+      <div class="guide-box">
+        <h3>管理者はかんたん</h3>
+        <p>チームを作成して、メンバーとイベントをまとめて管理できます。</p>
+      </div>
+      <div class="guide-box">
+        <h3>メンバーは気軽</h3>
+        <p>ログイン不要だから、説明コストも少なく、すぐ運用を始められます。</p>
+      </div>
+      <div class="guide-box">
+        <h3>当日運営までつながる</h3>
+        <p>参加者の確定やチーム分けまで、現場で必要な流れをそのまま支えます。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="features">
+  <h2>出欠ボード＋の特徴</h2>
+  <p class="section-intro">
+    出欠確認だけで終わらない。<br>
+    チーム運営を回すために、本当に必要な機能をまとめています。
+  </p>
+  <div class="features">
+    <div class="feature-box">
+      <div class="feature-tag">使いやすさ</div>
+      <h3>ログイン不要でノンストレス</h3>
+      <p class="feature-copy">
+        メンバーはアカウント作成やログイン不要。<br>
+        使い始めのハードルを下げ、<br>
+        無理なく定着しやすくします。
+      </p>
+    </div>
+    <div class="feature-box">
+      <div class="feature-tag">見える化</div>
+      <h3>未登録メンバーがわかりやすい</h3>
+      <p class="feature-copy">
+        出欠状況を一覧で見える化。<br>
+        まだ入力していないメンバーを把握しやすく、<br>
+        確認漏れを減らせます。
+      </p>
+    </div>
+    <div class="feature-box">
+      <div class="feature-tag">イベント管理</div>
+      <h3>イベントを月ごとにまとめて管理</h3>
+      <p class="feature-copy">
+        練習、試合、イベントを月単位で整理。<br>
+        登録、編集、複製もしやすく、<br>
+        CSV出力にも対応し、<br>
+        毎回の準備をスムーズにします。
+      </p>
+    </div>
+    <div class="feature-box">
+      <div class="feature-tag">当日運営</div>
+      <h3>当日のチーム運営をサポート</h3>
+      <p class="feature-copy">
+        事前の出欠だけでなく、<br>
+        実際に来たメンバーで参加者を確定。<br>
+        飛び入り参加にも対応しやすく、<br>
+        そのままチーム分けや代表者選出まで進めます。
+      </p>
+    </div>
+    <div class="feature-box">
+      <div class="feature-tag">スマホ対応</div>
+      <h3>スマホでも使いやすい</h3>
+      <p class="feature-copy">
+        外出先でも確認しやすく、<br>
+        必要な操作をすばやく実行。<br>
+        日々のチーム運営を場所を選ばず進められます。
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="section notice-section">
+  <h2>現在は無料でご利用いただけます</h2>
+  <div class="notice-card">
+    <p>
+      出欠ボード＋は、まず多くの方に知っていただき、実際に使っていただけるサービスを目指しています。
+      そのため、現在は無料でご利用いただけます。
+    </p>
+    <p>
+      なお、今後のサービス成長にあわせて、提供形態を見直す可能性があります。
+      その際は、突然変更するのではなく、事前にわかりやすくご案内します。
+    </p>
+  </div>
+</section>
+
 <section class="last">
-  <h2>チームを進化させろ。</h2>
-  <a href="{{ url_for('admin_login_entry') }}" class="cta-btn">管理者ログインへ</a>
+  <h2>チーム運営を、もっと軽く。</h2>
+  <p>
+    出欠確認を、ただの確認作業で終わらせない。<br>
+    本気で勝ちたいチームの毎日を、出欠ボード＋が支えます。
+  </p>
+  <div class="cta-row" style="justify-content: center;">
+    <a href="{{ url_for('admin_login_entry') }}" class="cta-btn">チームを作成する</a>
+  </div>
 </section>
 {% endblock %}

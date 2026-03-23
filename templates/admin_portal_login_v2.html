@@ -1,9 +1,22 @@
-{% extends "admin_base_clean.html" %}
+﻿{% extends "admin_base_clean.html" %}
 
 {% block title %}管理者ログイン | Mossan Store{% endblock %}
 
+{% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
+<style>
+.dashboard-reggae-title {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.04em;
+  color: #ead7b3;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<h1 class="page-title">管理者ログイン</h1>
+<h1 class="page-title dashboard-reggae-title">管理者ログイン</h1>
 
 <section class="panel" style="max-width: 720px;">
   {% if error_message %}
@@ -24,7 +37,7 @@
       <input id="admin-password" type="password" name="password" placeholder="8文字以上" required minlength="8">
     </div>
     <div class="btn-row">
-      <button class="btn" type="submit">管理者画面へログイン</button>
+      <button class="btn" type="submit">管理者としてログイン</button>
       <a class="btn secondary" href="{{ url_for('attendance_description') }}">アプリ説明へ</a>
     </div>
   </form>

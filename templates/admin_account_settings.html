@@ -1,9 +1,24 @@
-{% extends "admin_base_clean.html" %}
+﻿{% extends "admin_base_clean.html" %}
 
 {% block title %}管理者アカウント設定 | Mossan Store{% endblock %}
 
 {% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
 <style>
+.dashboard-reggae-title {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.04em;
+  color: #ead7b3;
+}
+
+.dashboard-reggae-heading {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.02em;
+  color: #ead7b3;
+}
+
 .wild-admin-btn {
   position: relative;
   display: inline-flex;
@@ -74,7 +89,7 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="page-title">管理者アカウント設定</h1>
+<h1 class="page-title dashboard-reggae-title">管理者アカウント設定</h1>
 
 <section class="panel" style="max-width: 720px;">
   {% if error_message %}
@@ -109,7 +124,7 @@
 </section>
 
 <section class="panel" style="max-width: 720px;">
-  <h2 style="margin-top: 0;">アカウント削除</h2>
+  <h2 class="dashboard-reggae-heading" style="margin-top: 0;">アカウント削除</h2>
   <p>この管理者アカウントを削除すると、管理チームと関連データもあわせて削除されます。</p>
   <form method="POST" action="{{ url_for('admin_delete_account') }}" onsubmit="return confirm('管理者アカウントと管理チームを削除します。よろしいですか？');">
     <div class="field">
