@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}Mossan Store{% endblock %}</title>
 {% set is_attendance_brand = request.path.startswith('/admin') or request.path.startswith('/site-admin') or request.path.startswith('/team/') or request.path.startswith('/apps/attendance/app/') %}
-{% set is_home_page = request.endpoint == 'home' %}
+{% set is_marketing_page = request.endpoint in ['home', 'apps_list', 'blog_index'] %}
 {% set hide_footer = is_attendance_brand %}
 {% set favicon_filename = 'attendance-board-favicon.svg' if is_attendance_brand else 'favicon.ico' %}
 {% set favicon_type = 'image/svg+xml' if is_attendance_brand else 'image/x-icon' %}
@@ -28,6 +28,12 @@ body {
   font-family: 'Noto Sans JP', sans-serif;
   padding-top: 82px;
   padding-bottom: 68px;
+}
+body.marketing-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
 }
 a { color: inherit; }
 .site-header {
@@ -308,6 +314,9 @@ a { color: inherit; }
   width: min(1120px, 92%);
   margin: 34px auto 70px;
 }
+.page-wrap.marketing-page-wrap {
+  flex: 1 0 auto;
+}
 .page-title {
   font-family: 'Anton', sans-serif;
   letter-spacing: 1px;
@@ -486,12 +495,12 @@ th { background: #1b1b1b; color: #ffcbcb; }
 </style>
 {% endif %}
 </head>
-<body>
-<header class="site-header{% if is_home_page %} home-header{% endif %}">
+<body{% if is_marketing_page %} class="marketing-page"{% endif %}>
+<header class="site-header{% if is_marketing_page %} home-header{% endif %}">
   <div class="header-inner">
     {% set logo_variant = request.args.get('logo_variant', 'v2') %}
     <a class="logo-area" href="{{ url_for('attendance_description') if (request.path.startswith('/admin') or request.path.startswith('/site-admin') or request.path.startswith('/team/')) else url_for('home') }}">
-      <span class="logo-text{% if is_attendance_brand %} attendance-brand brand-{{ logo_variant }}{% elif is_home_page %} home-logo{% endif %}">
+      <span class="logo-text{% if is_attendance_brand %} attendance-brand brand-{{ logo_variant }}{% elif is_marketing_page %} home-logo{% endif %}">
         {% block header_logo_text %}
         {% if is_attendance_brand %}
           {% if logo_variant == 'v2' %}
@@ -521,11 +530,11 @@ th { background: #1b1b1b; color: #ffcbcb; }
     </nav>
   </div>
 </header>
-<main class="page-wrap">
+<main class="page-wrap{% if is_marketing_page %} marketing-page-wrap{% endif %}">
 {% block content %}{% endblock %}
 </main>
 {% if not hide_footer %}
-<footer class="site-footer{% if is_home_page %} home-footer{% endif %}">&copy; 2026 Mossan Store All Rights Reserved.</footer>
+<footer class="site-footer{% if is_marketing_page %} home-footer{% endif %}">&copy; 2026 Mossan Store All Rights Reserved.</footer>
 {% endif %}
 <script>
 (() => {

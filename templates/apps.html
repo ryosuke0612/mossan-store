@@ -2,43 +2,265 @@
 
 {% block title %}Mossan Store | アプリ一覧{% endblock %}
 
+{% block head_extra %}
+<style>
+.apps-shell {
+  display: grid;
+  gap: 28px;
+}
+.apps-hero {
+  padding: 18px 0 6px;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 8px 14px;
+  border: 1px solid rgba(115, 179, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(9, 19, 35, 0.68);
+  color: #96c5ff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.eyebrow::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #5df4c5;
+  box-shadow: 0 0 14px rgba(93, 244, 197, 0.9);
+}
+.hero-title {
+  margin: 0;
+  font-size: clamp(34px, 5vw, 58px);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+.hero-copy {
+  max-width: 760px;
+  margin: 18px 0 0;
+  color: #c7d5ea;
+  font-size: 18px;
+  line-height: 1.9;
+}
+.apps-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.app-card,
+.plan-card,
+.nav-card {
+  padding: 26px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(13, 20, 36, 0.82) 0%, rgba(8, 14, 26, 0.92) 100%);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+}
+.card-label {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(125, 211, 252, 0.08);
+  color: #8dd9f8;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.app-card h2,
+.plan-card h2,
+.nav-card h2 {
+  margin: 0 0 12px;
+  font-size: 28px;
+}
+.app-card p,
+.plan-card p,
+.nav-card p {
+  margin: 0;
+  color: #c3d2e7;
+  line-height: 1.85;
+}
+.point-list {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0 0;
+}
+.point {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #d7e4f3;
+  line-height: 1.75;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+}
+.home-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 211, 252, 0.5);
+  background: linear-gradient(135deg, #4ea7ff 0%, #68f0cc 100%);
+  color: #06111f;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 900;
+  box-shadow: 0 14px 28px rgba(31, 102, 170, 0.24);
+}
+.home-btn.secondary {
+  background: rgba(11, 19, 34, 0.62);
+  color: #eaf2ff;
+  border-color: rgba(234, 242, 255, 0.18);
+  box-shadow: none;
+}
+.section-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #8ebcf8;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.plan-grid,
+.nav-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+@media (max-width: 960px) {
+  .apps-grid,
+  .plan-grid,
+  .nav-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 720px) {
+  .hero-copy,
+  .app-card p,
+  .plan-card p,
+  .nav-card p {
+    font-size: 16px;
+  }
+  .app-card,
+  .plan-card,
+  .nav-card {
+    padding: 22px;
+  }
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<h1 class="page-title">アプリ一覧</h1>
+<div class="apps-shell">
+  <section class="apps-hero">
+    <div class="eyebrow">Products</div>
+    <h1 class="hero-title">今ある実用品と、<br>これから広がるアプリたち。</h1>
+    <p class="hero-copy">
+      まずは現場で役立つものを形にして、そこから磨き、次へつなげていく。
+      このページでは、現在公開しているアプリと、これから広げていきたい方向をまとめています。
+    </p>
+  </section>
 
-<section class="panel">
-  <h2 style="margin-top:0;">現在提供中</h2>
-  <div class="grid-2">
-    <article class="panel">
-      <h3 style="margin-top:0;">Attendance アプリ</h3>
-      <p>イベント作成・出欠記録・月別管理をまとめて行える出欠管理アプリです。</p>
-      <div class="btn-row">
-        <a href="{{ url_for('attendance_description') }}" class="btn">紹介ページ</a>
-        <a href="{{ url_for('index') }}" class="btn secondary">アプリを開く</a>
-      </div>
-    </article>
-  </div>
-</section>
+  <section>
+    <p class="section-title">Available Now</p>
+    <div class="apps-grid">
+      <article class="app-card">
+        <div class="card-label">Live Product</div>
+        <h2>Attendance アプリ</h2>
+        <p>
+          試合、練習、イベントの出欠をまとめて扱える実用アプリです。
+          月ごとの確認や一覧管理までつなげながら、日々の運営負荷を軽くします。
+        </p>
+        <div class="point-list">
+          <div class="point">イベント登録から出欠確認、一覧チェックまでひとつの流れで管理できます。</div>
+          <div class="point">運用しながら改善しやすい、今のアプリ群の出発点になるプロダクトです。</div>
+        </div>
+        <div class="actions">
+          <a href="{{ url_for('attendance_description') }}" class="home-btn">紹介ページを見る</a>
+          <a href="{{ url_for('index') }}" class="home-btn secondary">アプリを開く</a>
+        </div>
+      </article>
+      <article class="app-card">
+        <div class="card-label">In Progress</div>
+        <h2>次の便利さも準備中です</h2>
+        <p>
+          ひとつのアプリで終わらせず、運営や日常で繰り返し発生する手間を減らす道具を
+          少しずつ増やしていく予定です。必要な機能を、必要なサイズで届けていきます。
+        </p>
+        <div class="point-list">
+          <div class="point">大がかりすぎないけれど、あると確実に助かる実用品を増やしていく方針です。</div>
+          <div class="point">見た目だけではなく、使い勝手や継続運用のしやすさまで意識して育てます。</div>
+        </div>
+      </article>
+    </div>
+  </section>
 
-<section class="panel">
-  <h2 style="margin-top:0;">追加予定アプリ（サンプル）</h2>
-  <div class="grid-3">
-    <article class="panel">
-      <h3 style="margin-top:0;">バイトのシフト管理</h3>
-      <p>スタッフごとの希望提出、確定シフト表示、欠員チェックを想定しています。</p>
-      <a href="{{ url_for('shift_app') }}" class="btn">サンプルを見る</a>
-    </article>
+  <section>
+    <p class="section-title">Ideas In View</p>
+    <div class="plan-grid">
+      <article class="plan-card">
+        <h2>シフト管理</h2>
+        <p>担当の割り当てや確認の手間を減らし、日々の調整がもう少し楽になる形を目指します。</p>
+        <div class="actions">
+          <a href="{{ url_for('shift_app') }}" class="home-btn secondary">サンプルを見る</a>
+        </div>
+      </article>
+      <article class="plan-card">
+        <h2>QRコード生成</h2>
+        <p>必要なときにすぐ使える、小さくても実用性の高い補助ツールとして育てていく想定です。</p>
+        <div class="actions">
+          <a href="{{ url_for('qrcode_app') }}" class="home-btn secondary">サンプルを見る</a>
+        </div>
+      </article>
+      <article class="plan-card">
+        <h2>掲示板・お知らせ</h2>
+        <p>情報共有をもっとわかりやすく、もっと軽くするための導線として考えています。</p>
+        <div class="actions">
+          <a href="{{ url_for('noticeboard_app') }}" class="home-btn secondary">サンプルを見る</a>
+        </div>
+      </article>
+    </div>
+  </section>
 
-    <article class="panel">
-      <h3 style="margin-top:0;">QRコード作成</h3>
-      <p>URLやテキストを入力して、用途別にQRコードを生成できる想定です。</p>
-      <a href="{{ url_for('qrcode_app') }}" class="btn">サンプルを見る</a>
-    </article>
-
-    <article class="panel">
-      <h3 style="margin-top:0;">地域の掲示板</h3>
-      <p>地域イベント告知、募集投稿、コメントでの情報共有を想定しています。</p>
-      <a href="{{ url_for('noticeboard_app') }}" class="btn">サンプルを見る</a>
-    </article>
-  </div>
-</section>
+  <section>
+    <p class="section-title">Next Step</p>
+    <div class="nav-grid">
+      <article class="nav-card">
+        <h2>ホームへ戻る</h2>
+        <p>この場所が目指している方向や、アプリ群全体のコンセプトをあらためて確認できます。</p>
+        <div class="actions">
+          <a href="{{ url_for('home') }}" class="home-btn secondary">ホームを見る</a>
+        </div>
+      </article>
+      <article class="nav-card">
+        <h2>ブログを読む</h2>
+        <p>運営の工夫やアプリづくりの考え方を、読みものとして追いたいときはこちらです。</p>
+        <div class="actions">
+          <a href="{{ url_for('blog_index') }}" class="home-btn secondary">ブログ一覧へ</a>
+        </div>
+      </article>
+      <article class="nav-card">
+        <h2>公開中アプリを試す</h2>
+        <p>今すぐ触れるものから体験して、どんな方向へ広がっていくかを見てもらえます。</p>
+        <div class="actions">
+          <a href="{{ url_for('index') }}" class="home-btn">Attendance を開く</a>
+        </div>
+      </article>
+    </div>
+  </section>
+</div>
 {% endblock %}
