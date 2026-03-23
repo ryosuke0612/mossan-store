@@ -75,7 +75,8 @@ python scripts\verify_stripe_auto_apply_flow.py
 - `admin_stripe_payments.status='completed'`
 - `admin_stripe_payments.applied_at` が埋まる
 - `admins.plan_type='paid'`
-- 既存有効期限が未来ならそこから 30 日延長、期限切れまたは空なら現在時刻基準で 30 日延長
+- 500円なら30日、1000円なら60日、1500円なら90日延長される
+- 既存有効期限が未来ならそこから延長、期限切れまたは空なら現在時刻基準で延長される
 - `admin_billing_history` に新しい 1 行だけ追加される
 
 ### 4. 手動再確認でも自動反映できることを確認する
@@ -120,7 +121,7 @@ python scripts\verify_stripe_auto_apply_flow.py
 - DB 残骸確認スクリプトが `PASS`
 - Stripe の `success` / 手動再確認 / webhook で安全設計が崩れていない
 - `success URL` 単独では成功扱いにならない
-- completed / paid を確認できた決済だけ自動で 30 日追加される
+- completed / paid を確認できた決済だけ、金額に応じて自動延長される
 - 1 決済 1 回だけ billing history が記録される
 - 旧 PayPay 履歴が読める
 

@@ -105,7 +105,12 @@ ADMIN_STRIPE_STATUS_UNKNOWN = "unknown"
 ADMIN_PLAN_REQUEST_TYPE_LABELS = {
     ADMIN_PLAN_REQUEST_TYPE_PAID_30_DAYS: "+30日",
 }
-ADMIN_PLAN_REQUEST_PAYMENT_AMOUNT_OPTIONS = [500, 1000, 1500]
+ADMIN_PLAN_REQUEST_PAYMENT_AMOUNT_OPTIONS = [500, 900, 1200]
+ADMIN_PLAN_PAYMENT_AMOUNT_EXTENSION_DAYS = {
+    500: 30,
+    900: 60,
+    1200: 90,
+}
 ADMIN_PLAN_REQUEST_EXTENSION_DAYS = {
     ADMIN_PLAN_REQUEST_TYPE_PAID_30_DAYS: 30,
 }
@@ -1780,6 +1785,23 @@ def portal_get_admin_billing_history(admin_id, limit=20):
         LIMIT ?
         """,
         (admin_id, limit),
+    )
+    rows = rows_to_dict(c.fetchall())
+    conn.close()
+    return rows
+
+
+def portal_get_admin_billing_history_timeline(admin_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT id, admin_id, billing_status, billed_at, amount, total_amount, billing_count, note, created_at
+        FROM admin_billing_history
+        WHERE admin_id=?
+        ORDER BY COALESCE(NULLIF(billed_at, ''), created_at) ASC, id ASC
+        """,
+        (admin_id,),
     )
     rows = rows_to_dict(c.fetchall())
     conn.close()
@@ -4654,11 +4676,16 @@ def normalize_admin_plan_request_payment_method(value):
 def enrich_admin_stripe_payment_row(row):
     normalized_status = normalize_admin_stripe_status(row.get("status")) or ADMIN_STRIPE_STATUS_UNKNOWN
     normalized_request_type = normalize_admin_plan_request_type(row.get("request_type")) or ADMIN_PLAN_REQUEST_TYPE_PAID_30_DAYS
+    extension_days = ADMIN_PLAN_PAYMENT_AMOUNT_EXTENSION_DAYS.get(
+        int(row.get("request_amount") or 0),
+        ADMIN_PLAN_REQUEST_EXTENSION_DAYS.get(normalized_request_type, 30),
+    )
     row["status"] = normalized_status
     row["status_text"] = ADMIN_STRIPE_STATUS_LABELS.get(normalized_status, "確認中")
     row["request_type"] = normalized_request_type
     row["request_type_text"] = ADMIN_PLAN_REQUEST_TYPE_LABELS.get(normalized_request_type, "有料プラン申請")
     row["request_amount_text"] = format_currency_yen(row.get("request_amount"))
+    row["request_extension_text"] = f"+{extension_days}日"
     row["stripe_paid_at_text"] = format_portal_date(row.get("stripe_paid_at"))
     row["confirmed_at_text"] = format_portal_date(row.get("confirmed_at"))
     row["created_date"] = format_portal_date(row.get("created_at"))
@@ -4666,12 +4693,72 @@ def enrich_admin_stripe_payment_row(row):
     row["is_completed"] = normalized_status == ADMIN_STRIPE_STATUS_COMPLETED
     row["is_applied"] = bool(row.get("applied_at"))
     row["is_linked"] = bool(row.get("linked_plan_request_id"))
+    if row["is_applied"]:
+        row["application_status_text"] = "適用済み"
+    elif row["is_completed"]:
+        row["application_status_text"] = "支払い完了・適用待ち"
+    elif normalized_status in {ADMIN_STRIPE_STATUS_OPEN, ADMIN_STRIPE_STATUS_RETURNED, ADMIN_STRIPE_STATUS_UNKNOWN}:
+        row["application_status_text"] = "支払い確認中"
+    elif normalized_status == ADMIN_STRIPE_STATUS_CANCELED:
+        row["application_status_text"] = "キャンセル"
+    elif normalized_status == ADMIN_STRIPE_STATUS_FAILED:
+        row["application_status_text"] = "支払い失敗"
+    elif normalized_status == ADMIN_STRIPE_STATUS_EXPIRED:
+        row["application_status_text"] = "有効期限切れ"
+    else:
+        row["application_status_text"] = "未適用"
     row["payment_reference_text"] = stripe_extract_reference(row)
     return row
 
 
 def enrich_admin_stripe_payment_rows(rows):
     return [enrich_admin_stripe_payment_row(row) for row in rows]
+
+
+def build_admin_stripe_payment_expiry_change_map(admin, billing_history_rows):
+    expiry_map = {}
+    if is_unlimited_expiry(admin.get("expires_at")):
+        for row in billing_history_rows:
+            expiry_map[row["id"]] = {"before_text": "無期限", "after_text": "無期限"}
+        return expiry_map
+
+    current_expiry = resolve_admin_expiry_datetime(admin.get("created_at"), None)
+    for row in billing_history_rows:
+        amount = int(row.get("amount") or 0)
+        if amount <= 0:
+            continue
+        billed_at_text = (row.get("billed_at") or row.get("created_at") or "").strip()
+        billed_at_dt = parse_portal_datetime(billed_at_text) or datetime.now()
+        before_dt = current_expiry
+        extend_days = ADMIN_PLAN_PAYMENT_AMOUNT_EXTENSION_DAYS.get(amount, 0)
+        base_dt = before_dt if (before_dt and before_dt > billed_at_dt) else billed_at_dt
+        after_dt = base_dt + timedelta(days=extend_days)
+        expiry_map[row["id"]] = {
+            "before_text": format_expiry_date(before_dt.strftime("%Y-%m-%d %H:%M:%S") if before_dt else ""),
+            "after_text": format_expiry_date(after_dt.strftime("%Y-%m-%d %H:%M:%S")),
+        }
+        current_expiry = after_dt
+    return expiry_map
+
+
+def attach_admin_stripe_payment_expiry_change(rows, admin):
+    expiry_map = build_admin_stripe_payment_expiry_change_map(
+        admin,
+        portal_get_admin_billing_history_timeline(admin["id"]),
+    )
+    for row in rows:
+        billing_history_id = row.get("applied_billing_history_id")
+        expiry_change = expiry_map.get(billing_history_id)
+        if expiry_change:
+            row["expiry_before_text"] = expiry_change["before_text"]
+            row["expiry_after_text"] = expiry_change["after_text"]
+        elif row.get("is_applied"):
+            row["expiry_before_text"] = "-"
+            row["expiry_after_text"] = "-"
+        else:
+            row["expiry_before_text"] = "未適用のため未確定"
+            row["expiry_after_text"] = "未適用のため未確定"
+    return rows
 
 
 def enrich_admin_plan_request_row(row):
@@ -4723,8 +4810,9 @@ def build_admin_plan_request_page_context(admin):
     completed_stripe_payment = (
         enrich_admin_stripe_payment_row(completed_stripe_payment_raw) if completed_stripe_payment_raw else None
     )
-    recent_stripe_payments = enrich_admin_stripe_payment_rows(
-        portal_get_admin_stripe_payments_for_admin(admin["id"], limit=10)
+    recent_stripe_payments = attach_admin_stripe_payment_expiry_change(
+        enrich_admin_stripe_payment_rows(portal_get_admin_stripe_payments_for_admin(admin["id"], limit=10)),
+        admin,
     )
     effective_expiry = resolve_admin_expiry_datetime(admin.get("created_at"), admin.get("expires_at"))
     effective_expiry_text = (
@@ -5262,10 +5350,13 @@ def parse_team_state_from_form(raw_value):
     return teams
 
 
-def build_admin_plan_request_expiry(admin_row, request_type, approved_at_text):
+def build_admin_plan_request_expiry(admin_row, request_type, approved_at_text, payment_amount=None):
     if is_unlimited_expiry(admin_row.get("expires_at")):
         return ADMIN_EXPIRY_UNLIMITED
-    extend_days = ADMIN_PLAN_REQUEST_EXTENSION_DAYS.get(request_type, 30)
+    extend_days = ADMIN_PLAN_PAYMENT_AMOUNT_EXTENSION_DAYS.get(
+        int(payment_amount or 0),
+        ADMIN_PLAN_REQUEST_EXTENSION_DAYS.get(request_type, 30),
+    )
     approved_at_dt = parse_portal_datetime(approved_at_text) or datetime.now()
     effective_expiry = resolve_admin_expiry_datetime(admin_row.get("created_at"), admin_row.get("expires_at"))
     base_dt = effective_expiry if (effective_expiry and effective_expiry > approved_at_dt) else approved_at_dt
@@ -5517,7 +5608,12 @@ def portal_auto_apply_completed_admin_stripe_payment(stripe_payment_id, applied_
 
         total_billing_amount = int(admin_row.get("total_billing_amount") or 0) + payment_amount
         billing_count = int(admin_row.get("billing_count") or 0) + 1
-        expires_at = build_admin_plan_request_expiry(admin_row, request_type, payment_date)
+        expires_at = build_admin_plan_request_expiry(
+            admin_row,
+            request_type,
+            payment_date,
+            payment_amount=payment_amount,
+        )
         current_account_status = normalize_admin_account_status(admin_row.get("account_status")) or ADMIN_ACCOUNT_STATUS_ACTIVE
         account_status = (
             ADMIN_ACCOUNT_STATUS_SUSPENDED
@@ -5748,7 +5844,12 @@ def portal_review_admin_plan_request(request_id, reviewer_admin_id, decision, re
             payment_amount = int(request_row.get("payment_amount") or 0)
             total_billing_amount = int(admin_row.get("total_billing_amount") or 0) + payment_amount
             billing_count = int(admin_row.get("billing_count") or 0) + 1
-            expires_at = build_admin_plan_request_expiry(admin_row, request_row.get("request_type"), review_timestamp)
+            expires_at = build_admin_plan_request_expiry(
+                admin_row,
+                request_row.get("request_type"),
+                review_timestamp,
+                payment_amount=payment_amount,
+            )
             current_account_status = normalize_admin_account_status(admin_row.get("account_status")) or ADMIN_ACCOUNT_STATUS_ACTIVE
             account_status = (
                 ADMIN_ACCOUNT_STATUS_SUSPENDED

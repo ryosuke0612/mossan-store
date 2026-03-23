@@ -36,7 +36,7 @@ def main():
     now = datetime.now().replace(microsecond=0)
     created_at = (now - timedelta(days=5)).strftime("%Y-%m-%d %H:%M:%S")
     initial_expiry = (now + timedelta(days=10)).strftime("%Y-%m-%d %H:%M:%S")
-    expected_expiry = (now + timedelta(days=40)).strftime("%Y-%m-%d %H:%M:%S")
+    expected_expiry = (now + timedelta(days=70)).strftime("%Y-%m-%d %H:%M:%S")
     paid_at = now.strftime("%Y-%m-%d %H:%M:%S")
 
     cur.execute(

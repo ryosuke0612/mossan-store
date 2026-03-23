@@ -3,7 +3,22 @@
 {% block title %}有料プラン | Mossan Store{% endblock %}
 
 {% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
 <style>
+.dashboard-reggae-title {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.04em;
+  color: #ead7b3;
+}
+
+.dashboard-reggae-heading {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.02em;
+  color: #ead7b3;
+}
+
 .request-note-textarea {
   width: 100%;
   min-height: 140px;
@@ -152,11 +167,31 @@
   font-weight: 700;
   background: rgba(33, 44, 58, 0.88);
 }
+
+.plan-fee-cell {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+}
+
+.plan-fee-item {
+  display: grid;
+  gap: 2px;
+}
+
+.plan-fee-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.plan-fee-value {
+  font-weight: 700;
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<h1 class="page-title">有料プラン</h1>
+<h1 class="page-title dashboard-reggae-title">有料プラン</h1>
 
 <section class="panel" style="max-width: 920px;">
   {% if preview_mode %}
@@ -187,16 +222,20 @@
   {% endif %}
 
   <div class="field">
-    <label>現在のプラン</label>
-    <div>{{ current_plan_label }}</div>
-  </div>
-  <div class="field">
     <label>現在の有効期限</label>
     <div>{{ current_expiry_date }}{% if current_remaining_days and current_remaining_days != "-" %} <span style="color: var(--muted);">({{ current_remaining_days }})</span>{% endif %}</div>
   </div>
+  <div class="field" style="margin-bottom: 18px;">
+    <label>決済後の反映</label>
+    {% if current_plan_type == "free" %}
+    <div>無料プランのため、有料プランが有効になります</div>
+    {% else %}
+    <div>有料プラン利用中のため、現在の有効期限に日数が追加されます</div>
+    {% endif %}
+    <div style="color: var(--muted);">500円: +30日 / 900円: +60日 / 1200円: +90日</div>
+  </div>
   <section class="payment-entry-card">
-    <h2>クレジットカード決済</h2>
-    <p>新規の有料化は Stripe を使ったクレジットカード決済です。success URL に戻っただけでは成功扱いにせず、サーバー側で Stripe API を再確認できた決済だけ自動で反映します。</p>
+    <h2 class="dashboard-reggae-heading">クレジットカード決済</h2>
     <div class="card-brand-row">
       <span class="card-brand-chip">Visa</span>
       <span class="card-brand-chip">Mastercard</span>
@@ -204,24 +243,14 @@
       <span class="card-brand-chip">American Express</span>
     </div>
     {% if stripe_checkout_is_configured %}
-    {% if not stripe_webhook_is_configured %}
-    <div class="notice" style="margin-bottom: 14px;">Stripe webhook は未設定ですが、決済開始自体は可能です。success 戻り・手動再確認で Stripe API を使って状態確認し、自動反映します。Webhook を設定すると反映監視はより安定します。</div>
-    {% endif %}
     <form method="POST" action="{{ '#' if preview_mode else url_for('admin_stripe_checkout') }}" style="margin-bottom: 0;">
+      <input type="hidden" name="request_type" value="{{ plan_request_type_options.keys()|list|first }}">
       <div class="field">
-        <label for="stripe-checkout-request-type">反映種別</label>
-        <select id="stripe-checkout-request-type" name="request_type" required>
-          {% for value, label in plan_request_type_options.items() %}
-          <option value="{{ value }}">{{ label }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="field">
-        <label for="stripe-checkout-payment-amount">支払金額</label>
+        <label for="stripe-checkout-payment-amount">支払金額 / 反映内容</label>
         <select id="stripe-checkout-payment-amount" name="payment_amount" required>
           <option value="">選択してください</option>
           {% for amount in payment_amount_options %}
-          <option value="{{ amount }}" {% if completed_stripe_payment and completed_stripe_payment["request_amount"] == amount %}selected{% endif %}>{{ amount }}円</option>
+          <option value="{{ amount }}" {% if completed_stripe_payment and completed_stripe_payment["request_amount"] == amount %}selected{% endif %}>{{ amount }}円: +{% if amount == 500 %}30{% elif amount == 900 %}60{% elif amount == 1200 %}90{% else %}0{% endif %}日</option>
           {% endfor %}
         </select>
       </div>
@@ -242,86 +271,46 @@
     <div class="preview-disabled-note">`STRIPE_SECRET_KEY` と `STRIPE_REDIRECT_BASE_URL` が必要です。</div>
     {% endif %}
   </section>
-  <div class="notice">申請送信と site_admin 承認は不要になりました。Stripe の `completed / paid` をサーバー側で確認できた決済だけ、自動で 30 日追加されます。</div>
-  <div class="notice">既存の有効期限が未来ならその日付に 30 日加算し、期限切れまたは未設定なら現在時刻基準で 30 日加算します。旧決済方式の新規利用は終了しています。</div>
 </section>
 
 <section class="panel" style="max-width: 920px;">
-  <h2 style="margin-top: 0;">最近の反映・監査履歴</h2>
-  {% if plan_request_history %}
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>記録日</th>
-          <th>種別</th>
-          <th>支払方法</th>
-          <th>金額</th>
-          <th>支払日</th>
-          <th>識別情報</th>
-          <th>ステータス</th>
-          <th>審査日</th>
-          <th>審査メモ</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in plan_request_history %}
-        <tr>
-          <td>{{ row["created_date"] }}</td>
-          <td>{{ row["request_type_text"] }}</td>
-          <td>{{ row["payment_method_text"] }}</td>
-          <td>{{ row["payment_amount_text"] }}</td>
-          <td>{{ row["payment_date_text"] }}</td>
-          <td>{{ row["payment_reference"] or "-" }}</td>
-          <td>{{ row["status_text"] }}</td>
-          <td>{{ row["reviewed_date"] }}</td>
-          <td>{{ row["review_note"] or "-" }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <div class="notice success">反映・監査履歴はまだありません。</div>
-  {% endif %}
-</section>
-
-<section class="panel" style="max-width: 920px;">
-  <h2 style="margin-top: 0;">最近のStripe決済</h2>
+  <h2 class="dashboard-reggae-heading" style="margin-top: 0;">購入・反映履歴</h2>
   {% if recent_stripe_payments %}
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th>開始日</th>
-          <th>種別</th>
-          <th>金額</th>
-          <th>識別情報</th>
-          <th>状態</th>
+          <th>プラン料金</th>
           <th>支払日</th>
-          <th>反映日</th>
-          <th>操作</th>
+          <th>適用ステータス</th>
+          <th>有効期限</th>
         </tr>
       </thead>
       <tbody>
-        {% for payment in recent_stripe_payments %}
+        {% for payment in recent_stripe_payments[:5] %}
         <tr>
-          <td>{{ payment["created_date"] }}</td>
-          <td>{{ payment["request_type_text"] }}</td>
-          <td>{{ payment["request_amount_text"] }}</td>
-          <td>{{ payment["payment_reference_text"] }}</td>
-          <td>{{ payment["status_text"] }}</td>
-          <td>{{ payment["stripe_paid_at_text"] }}</td>
-          <td>{% if payment["is_applied"] %}{{ payment["applied_at_text"] }}{% else %}<span style="color: var(--muted);">未反映</span>{% endif %}</td>
           <td>
-            <form method="POST" action="{{ '#' if preview_mode else url_for('admin_refresh_stripe_payment', checkout_session_id=payment['stripe_checkout_session_id']) }}">
-              {% if preview_mode %}
-              <button class="btn secondary" type="button" disabled>再確認</button>
-              <div class="preview-disabled-note">{{ preview_actions_disabled_reason }}</div>
-              {% else %}
-              <button class="btn secondary" type="submit">再確認</button>
-              {% endif %}
-            </form>
+            <div class="plan-fee-cell">
+              <div class="plan-fee-item">
+                <div class="plan-fee-label">支払金額</div>
+                <div class="plan-fee-value">{{ payment["request_amount_text"] }}</div>
+              </div>
+              <div class="plan-fee-item">
+                <div class="plan-fee-label">反映内容</div>
+                <div class="plan-fee-value">{{ payment["request_extension_text"] }}</div>
+              </div>
+            </div>
+          </td>
+          <td>{{ payment["stripe_paid_at_text"] }}</td>
+          <td>
+            {{ payment["application_status_text"] }}
+            {% if payment["is_applied"] and payment["applied_at_text"] %}
+            <div style="color: var(--muted); font-size: 13px;">{{ payment["applied_at_text"] }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <div>決済前: {{ payment["expiry_before_text"] }}</div>
+            <div>決済後: {{ payment["expiry_after_text"] }}</div>
           </td>
         </tr>
         {% endfor %}
@@ -329,7 +318,7 @@
     </table>
   </div>
   {% else %}
-  <div class="notice success">Stripe決済履歴はまだありません。</div>
+  <div class="notice success">決済履歴はまだありません。</div>
   {% endif %}
 </section>
 

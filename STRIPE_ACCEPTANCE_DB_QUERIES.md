@@ -152,7 +152,7 @@ WHERE id = TARGET_ADMIN_ID;
 - `plan_type='paid'`
 - `billing_status='paid'`
 - `billing_count` が 1 回だけ増えている
-- `expires_at` が 30 日延長されている
+- `expires_at` が金額に応じて延長されている
 
 ## 6. billing history が 1 回だけ記録されたか
 ```sql
