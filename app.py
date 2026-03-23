@@ -1189,6 +1189,92 @@ def portal_create_admin_stripe_payment(admin_id, request_type, request_amount, c
     conn.close()
 
 
+def portal_ensure_admin_stripe_payment_from_remote(checkout_session_id, payment_details=None):
+    existing = portal_get_admin_stripe_payment_by_checkout_session_id(checkout_session_id)
+    if existing:
+        return existing
+    session_data = (payment_details or {}).get("json", {}) or {}
+    if not isinstance(session_data, dict):
+        return None
+    metadata = (session_data.get("metadata") or {})
+    if not isinstance(metadata, dict):
+        metadata = {}
+    try:
+        admin_id = int((metadata.get("admin_id") or "").strip() or "0")
+    except (TypeError, ValueError, AttributeError):
+        admin_id = 0
+    request_type = normalize_admin_plan_request_type(metadata.get("request_type")) or ADMIN_PLAN_REQUEST_TYPE_PAID_30_DAYS
+    try:
+        request_amount = int((metadata.get("payment_amount") or 0) or 0)
+    except (TypeError, ValueError):
+        request_amount = 0
+    if admin_id <= 0 or request_amount not in ADMIN_PLAN_REQUEST_PAYMENT_AMOUNT_OPTIONS:
+        return None
+    admin = portal_get_admin(admin_id)
+    if not admin:
+        return None
+    payment_intent = session_data.get("payment_intent")
+    if isinstance(payment_intent, dict):
+        stripe_payment_intent_id = (payment_intent.get("id") or "").strip()
+    else:
+        stripe_payment_intent_id = (payment_intent or "").strip()
+    now_text = portal_now_text()
+    requested_at_text = epoch_to_portal_text(session_data.get("created")) or now_text
+    raw_response = ""
+    if STRIPE_LOG_RAW_RESPONSE and payment_details is not None:
+        raw_response = (payment_details.get("body") or "")[:10000]
+    conn = get_db_connection()
+    c = conn.cursor()
+    try:
+        c.execute(
+            """
+            INSERT INTO admin_stripe_payments (
+                admin_id,
+                stripe_checkout_session_id,
+                stripe_payment_intent_id,
+                request_type,
+                request_amount,
+                currency,
+                checkout_url,
+                status,
+                stripe_status,
+                stripe_payment_status,
+                payment_reference,
+                stripe_paid_at,
+                requested_at,
+                raw_create_response,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                admin_id,
+                checkout_session_id,
+                stripe_payment_intent_id,
+                request_type,
+                request_amount,
+                (session_data.get("currency") or "jpy").upper(),
+                session_data.get("url") or "",
+                map_stripe_status(session_data, has_return=False),
+                session_data.get("status") or "",
+                session_data.get("payment_status") or "",
+                checkout_session_id,
+                stripe_extract_paid_at(session_data) or "",
+                requested_at_text,
+                raw_response,
+                now_text,
+                now_text,
+            ),
+        )
+        conn.commit()
+    except DatabaseError:
+        conn.rollback()
+    finally:
+        conn.close()
+    return portal_get_admin_stripe_payment_by_checkout_session_id(checkout_session_id)
+
+
 def portal_get_admin_stripe_payment_by_checkout_session_id(checkout_session_id):
     conn = get_db_connection()
     c = conn.cursor()
@@ -1517,6 +1603,8 @@ def portal_update_admin_stripe_payment_from_remote(
     error_message="",
 ):
     existing = portal_get_admin_stripe_payment_by_checkout_session_id(checkout_session_id)
+    if not existing:
+        existing = portal_ensure_admin_stripe_payment_from_remote(checkout_session_id, payment_details=payment_details)
     if not existing:
         return None
     session_data = (payment_details or {}).get("json", {}) or {}
@@ -7143,6 +7231,9 @@ def admin_stripe_success():
         return redirect(url_for("admin_create_plan_request", error_message="Stripe決済の識別情報が不足しています。"))
     payment_row = portal_get_admin_stripe_payment_by_checkout_session_id(checkout_session_id)
     if not payment_row:
+        payment_details = stripe_get_checkout_session(checkout_session_id)
+        payment_row = portal_ensure_admin_stripe_payment_from_remote(checkout_session_id, payment_details=payment_details)
+    if not payment_row:
         return redirect(url_for("admin_create_plan_request", error_message="Stripe決済情報が見つかりません。"))
 
     updated_payment, payment_details, auto_apply_result = sync_admin_stripe_payment_with_stripe(
@@ -7268,6 +7359,9 @@ def stripe_webhook():
         payment_row = portal_get_admin_stripe_payment_by_payment_intent_id(payment_intent_id)
         if payment_row:
             checkout_session_id = (payment_row.get("stripe_checkout_session_id") or "").strip()
+    if not payment_row:
+        payment_details = stripe_get_checkout_session(checkout_session_id) if checkout_session_id else {}
+        payment_row = portal_ensure_admin_stripe_payment_from_remote(checkout_session_id, payment_details=payment_details)
     if not payment_row:
         if event_id:
             portal_update_stripe_webhook_event(

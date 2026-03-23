@@ -280,15 +280,16 @@
     <table>
       <thead>
         <tr>
-          <th>プラン料金</th>
           <th>支払日</th>
-          <th>適用ステータス</th>
+          <th>プラン料金</th>
           <th>有効期限</th>
+          <th>適用ステータス</th>
         </tr>
       </thead>
       <tbody>
         {% for payment in recent_stripe_payments[:5] %}
         <tr>
+          <td>{{ payment["stripe_paid_at_text"] }}</td>
           <td>
             <div class="plan-fee-cell">
               <div class="plan-fee-item">
@@ -301,16 +302,15 @@
               </div>
             </div>
           </td>
-          <td>{{ payment["stripe_paid_at_text"] }}</td>
           <td>
-            {{ payment["application_status_text"] }}
+            <div style="color: var(--muted);">決済前: {{ payment["expiry_before_text"] }}</div>
+            <div>決済後: {{ payment["expiry_after_text"] }}</div>
+          </td>
+          <td>
             {% if payment["is_applied"] and payment["applied_at_text"] %}
             <div style="color: var(--muted); font-size: 13px;">{{ payment["applied_at_text"] }}</div>
             {% endif %}
-          </td>
-          <td>
-            <div>決済前: {{ payment["expiry_before_text"] }}</div>
-            <div>決済後: {{ payment["expiry_after_text"] }}</div>
+            <div>{{ payment["application_status_text"] }}</div>
           </td>
         </tr>
         {% endfor %}
