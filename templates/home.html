@@ -1,16 +1,30 @@
 {% extends "base.html" %}
 
-{% block title %}Mossan Store | 便利なアプリを、次々と。{% endblock %}
+{% block title %}Mossan Store | シンプルに整える。{% endblock %}
 
 {% block head_extra %}
 <style>
+:root {
+  --sand-50: #f3e8d9;
+  --sand-100: #e8d8c1;
+  --sand-200: #d9c1a0;
+  --sand-300: #c7a780;
+  --sand-500: #8d6845;
+  --ink-700: #4a392c;
+  --ink-900: #241b14;
+  --line: rgba(83, 66, 49, 0.12);
+  --shadow: 0 18px 40px rgba(88, 69, 46, 0.08);
+}
+html {
+  scroll-behavior: smooth;
+}
 body {
   padding-top: 0;
   padding-bottom: 0;
   background:
-    radial-gradient(circle at top left, rgba(42, 148, 255, 0.22), transparent 34%),
-    radial-gradient(circle at 85% 18%, rgba(93, 244, 197, 0.18), transparent 26%),
-    linear-gradient(180deg, #060b16 0%, #09111d 52%, #060913 100%);
+    radial-gradient(circle at top left, rgba(210, 184, 149, 0.58), transparent 28%),
+    linear-gradient(180deg, #f0e1cd 0%, #e8d5bc 52%, #dfc7a7 100%);
+  color: var(--ink-900);
 }
 .page-wrap {
   width: 100%;
@@ -19,536 +33,364 @@ body {
   padding: 0;
 }
 .home-shell {
-  position: relative;
-  overflow: hidden;
+  width: 100%;
 }
-.home-shell::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 34px 34px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.7), transparent 84%);
-  pointer-events: none;
-}
-.section {
-  position: relative;
-  z-index: 1;
-  width: min(1180px, 92%);
+.home-section {
+  width: min(1200px, 92%);
   margin: 0 auto;
 }
 .hero {
-  padding: 154px 0 88px;
+  padding: 140px 0 96px;
 }
 .hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
-  gap: 32px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 980px);
+  gap: 20px;
+  align-items: center;
 }
 .eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 18px;
-  padding: 8px 14px;
-  border: 1px solid rgba(115, 179, 255, 0.28);
-  border-radius: 999px;
-  background: rgba(9, 19, 35, 0.68);
-  color: #96c5ff;
+  color: var(--sand-500);
   font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  font-weight: 700;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 .eyebrow::before {
   content: "";
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #5df4c5;
-  box-shadow: 0 0 14px rgba(93, 244, 197, 0.9);
+  width: 22px;
+  height: 1px;
+  background: rgba(166, 135, 97, 0.6);
 }
-.hero-copy h1 {
+.hero h1,
+.section-title {
   margin: 0;
-  font-size: clamp(42px, 7vw, 84px);
-  line-height: 1.04;
-  letter-spacing: -0.03em;
-  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
 }
-.hero-copy .accent {
-  color: #7dd3fc;
+.hero h1 {
+  font-size: clamp(46px, 7vw, 92px);
 }
-.hero-copy p {
-  max-width: 700px;
-  margin: 26px 0 0;
-  font-size: clamp(17px, 2.05vw, 22px);
+.hero p,
+.section-copy {
+  margin: 22px 0 0;
+  color: var(--ink-700);
+  font-size: clamp(16px, 1.9vw, 21px);
   line-height: 1.9;
-  color: #c8d5ea;
 }
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
-  margin-top: 32px;
+  gap: 12px;
+  margin-top: 34px;
 }
-.home-btn {
+.hero-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 52px;
-  padding: 0 24px;
+  min-height: 50px;
+  padding: 0 22px;
   border-radius: 999px;
-  border: 1px solid rgba(125, 211, 252, 0.5);
-  background: linear-gradient(135deg, #4ea7ff 0%, #68f0cc 100%);
-  color: #06111f;
+  border: 1px solid transparent;
   text-decoration: none;
-  font-size: 15px;
-  font-weight: 900;
-  box-shadow: 0 16px 30px rgba(31, 102, 170, 0.28);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  font-size: 14px;
+  font-weight: 700;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
-.home-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 20px 34px rgba(31, 102, 170, 0.36);
-  filter: brightness(1.04);
+.hero-btn.primary {
+  background: var(--ink-900);
+  color: #f8f3ed;
 }
-.home-btn.secondary {
-  background: rgba(11, 19, 34, 0.62);
-  color: #eaf2ff;
-  border-color: rgba(234, 242, 255, 0.18);
-  box-shadow: none;
+.hero-btn.secondary {
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--ink-900);
+  border-color: var(--line);
 }
-.hero-card {
-  position: relative;
-  padding: 26px;
-  border: 1px solid rgba(125, 211, 252, 0.18);
-  border-radius: 28px;
-  background:
-    linear-gradient(180deg, rgba(12, 20, 36, 0.95) 0%, rgba(8, 14, 26, 0.92) 100%);
-  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
-  overflow: hidden;
+.hero-btn:hover {
+  transform: translateY(-1px);
 }
-.hero-card::after {
-  content: "";
-  position: absolute;
-  inset: auto -40px -60px auto;
-  width: 180px;
-  height: 180px;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(93, 244, 197, 0.28) 0%, transparent 66%);
+.section-block {
+  padding: 42px 0 88px;
 }
-.hero-card-title {
-  margin: 0 0 20px;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  color: #91a8ca;
-  text-transform: uppercase;
+.section-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 28px;
 }
-.signal-list {
-  display: grid;
-  gap: 14px;
-}
-.signal-item {
-  padding: 18px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-.signal-item strong {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 17px;
-}
-.signal-item span {
-  display: block;
-  color: #b7c7df;
-  line-height: 1.7;
-}
-.metrics {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 18px;
-}
-.metric {
-  padding: 16px;
-  border-radius: 18px;
-  background: rgba(8, 14, 25, 0.9);
-  border: 1px solid rgba(125, 211, 252, 0.12);
-}
-.metric-value {
-  display: block;
-  margin-bottom: 6px;
-  color: #71f1cd;
-  font-size: 28px;
-  font-weight: 900;
-}
-.metric-label {
-  color: #9cb1d0;
-  font-size: 13px;
-  line-height: 1.5;
-}
-.philosophy,
-.apps-preview,
-.commitment,
-.closing {
-  padding: 0 0 84px;
-}
-.section-label {
-  margin: 0 0 12px;
-  color: #8ebcf8;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
+.section-kicker {
+  margin: 0 0 10px;
+  color: var(--sand-500);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 .section-title {
+  font-size: clamp(34px, 4.6vw, 64px);
+}
+.section-link {
+  color: var(--ink-700);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+}
+.carousel {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(280px, 380px);
+  gap: 18px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  scroll-snap-type: x proximity;
+}
+.carousel::-webkit-scrollbar {
+  height: 8px;
+}
+.carousel::-webkit-scrollbar-thumb {
+  background: rgba(92, 74, 52, 0.18);
+  border-radius: 999px;
+}
+.card {
+  scroll-snap-align: start;
+  min-height: 360px;
+  padding: 28px;
+  border-radius: 28px;
+  background: rgba(255, 250, 244, 0.76);
+  border: 1px solid rgba(96, 75, 51, 0.08);
+  box-shadow: var(--shadow);
+}
+.card h3 {
   margin: 0;
-  font-size: clamp(30px, 4vw, 52px);
+  font-size: 28px;
   line-height: 1.15;
   letter-spacing: -0.03em;
 }
-.section-intro {
-  max-width: 760px;
-  margin: 18px 0 0;
-  color: #bed0e9;
-  font-size: 18px;
-  line-height: 1.9;
-}
-.philosophy-grid,
-.apps-grid,
-.commitment-grid {
-  display: grid;
-  gap: 18px;
-  margin-top: 34px;
-}
-.philosophy-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-.apps-grid {
-  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
-}
-.commitment-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-.glass-card {
-  padding: 24px;
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(180deg, rgba(13, 20, 36, 0.82) 0%, rgba(8, 14, 26, 0.92) 100%);
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.22);
-}
-.glass-card h3 {
-  margin: 0 0 12px;
-  font-size: 22px;
-}
-.glass-card p {
-  margin: 0;
-  color: #bfd1e9;
+.card p {
+  margin: 14px 0 0;
+  color: var(--ink-700);
   line-height: 1.8;
 }
-.app-spotlight {
+.card-link {
+  display: inline-flex;
+  margin-top: 20px;
+  color: var(--ink-900);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+}
+.product-card {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  justify-content: end;
+  background: linear-gradient(180deg, rgba(255, 248, 241, 0.3) 0%, rgba(235, 217, 190, 0.96) 100%);
 }
-.app-badge {
-  display: inline-flex;
-  width: fit-content;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(125, 211, 252, 0.08);
-  color: #8dd9f8;
+.product-visual {
+  position: relative;
+  flex: 1;
+  margin-bottom: 24px;
+  border-radius: 24px;
+  background: linear-gradient(145deg, #ead8c2 0%, #d8bd9c 100%);
+  overflow: hidden;
+}
+.product-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  padding: 24px;
+  filter: drop-shadow(0 16px 24px rgba(71, 54, 35, 0.14));
+}
+.product-visual::before,
+.product-visual::after {
+  content: "";
+  position: absolute;
+  border-radius: 24px;
+  pointer-events: none;
+}
+.product-visual::before {
+  inset: 20px 46px 58px 46px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(96, 75, 51, 0.08);
+}
+.product-visual::after {
+  inset: 56px 76px 24px 76px;
+  background: linear-gradient(180deg, rgba(213, 194, 167, 0.42), rgba(255, 255, 255, 0));
+}
+.product-tone-2 .product-visual {
+  background: linear-gradient(145deg, #e6d2b8 0%, #cfaf89 100%);
+}
+.product-tone-3 .product-visual {
+  background: linear-gradient(145deg, #e1ccb0 0%, #caa57b 100%);
+}
+.blog-card {
+  min-height: 320px;
+  background: linear-gradient(180deg, rgba(255, 250, 245, 0.38) 0%, rgba(234, 217, 192, 0.95) 100%);
+}
+.blog-meta {
+  color: var(--sand-500);
   font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
-.app-spotlight h3 {
-  margin: 0;
-  font-size: clamp(28px, 4vw, 42px);
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
 }
-.app-spotlight p {
-  margin: 0;
-  color: #cad8eb;
-  font-size: 17px;
-  line-height: 1.9;
-}
-.app-points {
-  display: grid;
-  gap: 12px;
-}
-.app-point {
-  padding: 16px 18px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.03);
-  color: #d7e4f3;
-  line-height: 1.75;
-}
-.roadmap {
-  position: relative;
-}
-.roadmap::before {
-  content: "";
-  position: absolute;
-  left: 15px;
-  top: 8px;
-  bottom: 8px;
-  width: 1px;
-  background: linear-gradient(180deg, rgba(125, 211, 252, 0.55) 0%, rgba(125, 211, 252, 0) 100%);
-}
-.roadmap-item {
-  position: relative;
-  padding-left: 40px;
-}
-.roadmap-item + .roadmap-item {
-  margin-top: 20px;
-}
-.roadmap-item::before {
-  content: "";
-  position: absolute;
-  left: 9px;
-  top: 8px;
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #4ea7ff 0%, #68f0cc 100%);
-  box-shadow: 0 0 0 5px rgba(78, 167, 255, 0.12);
-}
-.roadmap-item strong {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 17px;
-}
-.roadmap-item span {
-  color: #bfd1e9;
-  line-height: 1.75;
-}
-.closing-panel {
-  padding: 34px;
-  border-radius: 32px;
-  border: 1px solid rgba(125, 211, 252, 0.12);
-  background:
-    radial-gradient(circle at top right, rgba(93, 244, 197, 0.18), transparent 28%),
-    linear-gradient(180deg, rgba(12, 19, 35, 0.96) 0%, rgba(7, 12, 22, 0.96) 100%);
-  text-align: center;
-}
-.closing-panel p {
-  max-width: 760px;
-  margin: 18px auto 0;
-  color: #cad8eb;
-  font-size: 18px;
-  line-height: 1.9;
-}
-.closing-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 14px;
-  margin-top: 28px;
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 @media (max-width: 980px) {
   .hero {
-    padding: 136px 0 72px;
+    padding: 122px 0 72px;
   }
   .hero-grid,
-  .apps-grid,
-  .philosophy-grid,
-  .commitment-grid {
+  .section-head {
     grid-template-columns: 1fr;
+    display: grid;
   }
 }
 @media (max-width: 720px) {
-  .section {
-    width: min(1180px, 94%);
+  .home-section {
+    width: min(1200px, 94%);
   }
-  .hero-copy h1 {
-    font-size: clamp(38px, 12vw, 58px);
+  .hero-actions {
+    flex-direction: column;
   }
-  .hero-copy p,
-  .section-intro,
-  .app-spotlight p,
-  .closing-panel p {
-    font-size: 16px;
+  .hero-btn {
+    width: 100%;
   }
-  .hero-card,
-  .glass-card,
-  .closing-panel {
-    padding: 22px;
+  .carousel {
+    grid-auto-columns: minmax(250px, 86vw);
   }
-  .metrics {
-    grid-template-columns: 1fr;
-  }
-  .philosophy,
-  .apps-preview,
-  .commitment,
-  .closing {
-    padding: 0 0 64px;
+  .card {
+    min-height: 300px;
+    padding: 24px;
   }
 }
 </style>
 {% endblock %}
 
+{% block header_nav_items %}
+<a href="#concept">サイト紹介</a>
+<a href="#products">Product</a>
+<a href="#blog">Blog</a>
+<a href="{{ url_for('apps_list') }}">アプリ一覧</a>
+{% endblock %}
+
 {% block content %}
 <div class="home-shell">
-  <section class="section hero">
+  <section class="home-section hero reveal" id="concept">
     <div class="hero-grid">
-      <div class="hero-copy">
-        <div class="eyebrow">Product Studio</div>
-        <h1>
-          便利なアプリを、<br>
-          <span class="accent">次々と、ちゃんと使える形</span>で。
-        </h1>
+      <div>
+        <p class="eyebrow">Mossan Store</p>
+        <h1>日々の困りごとを、<br>アプリで解決する。</h1>
         <p>
-          日常や現場の「ちょっと不便」を見逃さず、
-          質の高い Web アプリへ磨き上げていく場所です。<br>
-          速く作るだけでは終わらせない。細かいところまで届く実用品を、
-          これからもっとがつがつ増やしていきます。
+          日々の困りごとを、
+          シンプルなアプリで解決していくためのサイトです。
         </p>
         <div class="hero-actions">
-          <a href="{{ url_for('apps_list') }}" class="home-btn">アプリ一覧を見る</a>
-          <a href="{{ url_for('blog_index') }}" class="home-btn secondary">開発ブログを見る</a>
+          <a href="{{ url_for('apps_list') }}" class="hero-btn primary">Productを見る</a>
+          <a href="{{ url_for('blog_index') }}" class="hero-btn secondary">Blogを見る</a>
         </div>
       </div>
-      <aside class="hero-card">
-        <p class="hero-card-title">What We Care About</p>
-        <div class="signal-list">
-          <div class="signal-item">
-            <strong>かゆいところに手が届く</strong>
-            <span>大きな課題より、毎日じわじわ効いてくる不便をきちんと解消します。</span>
-          </div>
-          <div class="signal-item">
-            <strong>速く、でも雑にしない</strong>
-            <span>生成の速さを活かしつつ、人が使う画面と体験として丁寧に仕上げます。</span>
-          </div>
-          <div class="signal-item">
-            <strong>作って終わりではなく育てる</strong>
-            <span>使われ方を見ながら改善し、道具としての完成度を引き上げ続けます。</span>
-          </div>
-        </div>
-        <div class="metrics">
-          <div class="metric">
-            <span class="metric-value">Fast</span>
-            <span class="metric-label">アイデアをすぐ試せる開発速度</span>
-          </div>
-          <div class="metric">
-            <span class="metric-value">Sharp</span>
-            <span class="metric-label">細かい使い勝手まで磨く視点</span>
-          </div>
-          <div class="metric">
-            <span class="metric-value">More</span>
-            <span class="metric-label">これから広がっていくアプリ群</span>
-          </div>
-        </div>
-      </aside>
     </div>
   </section>
 
-  <section class="section philosophy">
-    <p class="section-label">Philosophy</p>
-    <h2 class="section-title">勢いだけでも、堅さだけでもない。<br>前に進みながら、ちゃんと磨く。</h2>
-    <p class="section-intro">
-      目指しているのは、派手なだけのデモでも、重すぎて進まない大作でもありません。
-      現場で本当に使えるものを素早く立ち上げ、必要なところにしっかり手を入れて、
-      じわじわ効く品質まで育てていく。その積み重ねで、便利なアプリを増やしていきます。
-    </p>
-    <div class="philosophy-grid">
-      <article class="glass-card">
-        <h3>小さな困りごとを見逃さない</h3>
-        <p>「大きなサービスにはないけれど、あると助かる」を拾い上げて、ちょうどよい形にします。</p>
-      </article>
-      <article class="glass-card">
-        <h3>スピードも品質もあきらめない</h3>
-        <p>立ち上がりの速さを大事にしながら、試行錯誤を重ねて、より良い体験へしっかり近づけていきます。</p>
-      </article>
-      <article class="glass-card">
-        <h3>今まさに伸びていく途中</h3>
-        <p>完成済みの棚ではなく、これから次々に増えていくプロダクト群として育てていくフェーズです。</p>
-      </article>
-    </div>
-  </section>
-
-  <section class="section apps-preview">
-    <p class="section-label">Products</p>
-    <h2 class="section-title">今あるアプリも入口にすぎません。<br>ここから、もっと広げていきます。</h2>
-    <div class="apps-grid">
-      <article class="glass-card app-spotlight">
-        <span class="app-badge">Now Available</span>
-        <h3>すでに動いている実用品から、次を作る。</h3>
-        <p>
-          まずは使えるものを世に出し、そこから改善していく。
-          ここでは、実際に役立つアプリを積み上げながら、
-          別の課題にも横展開していける土台を育てています。
-        </p>
-        <div class="app-points">
-          <div class="app-point">出欠管理のように、運用で毎回発生する手間を軽くするアプリを先に形にする。</div>
-          <div class="app-point">使いながら見えてきた細かな要望を拾って、さらに手触りを良くしていく。</div>
-          <div class="app-point">ひとつ作って終わりではなく、次の実用品へつなげる開発の流れを作る。</div>
-        </div>
-        <div class="hero-actions" style="margin-top: 8px;">
-          <a href="{{ url_for('apps_list') }}" class="home-btn">公開中のアプリを見る</a>
-        </div>
-      </article>
-      <aside class="glass-card roadmap">
-        <div class="roadmap-item">
-          <strong>Step 1: 不便を具体化する</strong>
-          <span>曖昧な不満のままにせず、どこが面倒で何を軽くしたいかを言葉にします。</span>
-        </div>
-        <div class="roadmap-item">
-          <strong>Step 2: すばやく形にする</strong>
-          <span>試作速度を上げ、触れるものとして早めに出します。</span>
-        </div>
-        <div class="roadmap-item">
-          <strong>Step 3: 細部を磨き込む</strong>
-          <span>導線、文言、操作感まで調整して、実際の運用に耐える完成度へ近づけます。</span>
-        </div>
-        <div class="roadmap-item">
-          <strong>Step 4: 次のアプリへ進む</strong>
-          <span>得られた知見を次へつなぎ、便利なアプリ群として面を広げていきます。</span>
-        </div>
-      </aside>
-    </div>
-  </section>
-
-  <section class="section commitment">
-    <p class="section-label">Commitment</p>
-    <h2 class="section-title">この場所が大事にしたいこと</h2>
-    <div class="commitment-grid">
-      <article class="glass-card">
-        <h3>使う人にやさしいこと</h3>
-        <p>機能があるだけでなく、迷いにくく、運用しやすく、続けて使いやすいことを重視します。</p>
-      </article>
-      <article class="glass-card">
-        <h3>見た目と中身の両立</h3>
-        <p>ただ整って見えるだけではなく、裏側の使い勝手やメンテナンス性まで意識して組み上げます。</p>
-      </article>
-      <article class="glass-card">
-        <h3>まだまだ攻めていくこと</h3>
-        <p>今ある形に満足せず、次のアプリ、次の改善、次の一手へと継続的に踏み込んでいきます。</p>
-      </article>
-    </div>
-  </section>
-
-  <section class="section closing">
-    <div class="closing-panel">
-      <p class="section-label">Next</p>
-      <h2 class="section-title">便利なアプリを、これからもっと。</h2>
-      <p>
-        ひとつひとつの課題に、ちゃんと意味のある解決策を。
-        スピードも品質もあきらめず、
-        使う人にとって気持ちのいい Web アプリを積み重ねていきます。
-      </p>
-      <div class="closing-actions">
-        <a href="{{ url_for('apps_list') }}" class="home-btn">アプリ一覧へ</a>
-        <a href="{{ url_for('blog_index') }}" class="home-btn secondary">ブログ一覧へ</a>
+  <section class="home-section section-block reveal" id="products">
+    <div class="section-head">
+      <div>
+        <p class="section-kicker">Product</p>
+        <h2 class="section-title">必要なものを、静かに並べる。</h2>
+        <p class="section-copy">カードを横に流しながら、プロダクトを軽く見渡せる構成です。</p>
       </div>
+      <a href="{{ url_for('apps_list') }}" class="section-link">すべて見る</a>
+    </div>
+    <div class="carousel">
+      <article class="card product-card">
+        <div class="product-visual">
+          <img src="{{ url_for('static', filename='images/gorilla-full.png') }}" alt="出欠ボード＋紹介画像">
+        </div>
+        <h3>出欠ボード＋</h3>
+        <p>チーム運営をすっきり整えるためのプロダクト。</p>
+        <a href="{{ url_for('attendance_description') }}" class="card-link">詳しく見る</a>
+      </article>
+      <article class="card product-card product-tone-2">
+        <div class="product-visual"></div>
+        <h3>Shift</h3>
+        <p>予定や担当を、見やすく扱うための小さな道具。</p>
+        <a href="{{ url_for('shift_app') }}" class="card-link">詳しく見る</a>
+      </article>
+      <article class="card product-card product-tone-3">
+        <div class="product-visual"></div>
+        <h3>Noticeboard</h3>
+        <p>伝えることを、余計な装飾なくまとめるための入口。</p>
+        <a href="{{ url_for('noticeboard_app') }}" class="card-link">詳しく見る</a>
+      </article>
+      <article class="card product-card">
+        <div class="product-visual"></div>
+        <h3>QR Code</h3>
+        <p>使いたい場面ですぐ扱える、シンプルなユーティリティ。</p>
+        <a href="{{ url_for('qrcode_app') }}" class="card-link">詳しく見る</a>
+      </article>
+    </div>
+  </section>
+
+  <section class="home-section section-block reveal" id="blog">
+    <div class="section-head">
+      <div>
+        <p class="section-kicker">Blog</p>
+        <h2 class="section-title">考え方や背景も、同じ温度で。</h2>
+        <p class="section-copy">記事も横スクロールのカードで、軽く読み始められる形にしています。</p>
+      </div>
+      <a href="{{ url_for('blog_index') }}" class="section-link">記事一覧へ</a>
+    </div>
+    <div class="carousel">
+      <article class="card blog-card">
+        <p class="blog-meta">Sports Attendance</p>
+        <h3>スポーツチームの出欠管理をわかりやすく。</h3>
+        <p>出欠確認をもっとスムーズにするための考え方を、わかりやすくまとめた記事です。</p>
+        <a href="{{ url_for('blog_sports_attendance') }}" class="card-link">記事を読む</a>
+      </article>
+      <article class="card blog-card">
+        <p class="blog-meta">PTA Attendance</p>
+        <h3>PTAや保護者会の出欠確認をシンプルに。</h3>
+        <p>人数の多い場面でも、連絡や確認を進めやすくするための内容を紹介しています。</p>
+        <a href="{{ url_for('blog_pta_attendance') }}" class="card-link">記事を読む</a>
+      </article>
+      <article class="card blog-card">
+        <p class="blog-meta">Journal</p>
+        <h3>このサイトで大切にしていること。</h3>
+        <p>日々の困りごとを、シンプルなアプリで解決していく考え方をまとめています。</p>
+        <a href="{{ url_for('blog_index') }}" class="card-link">一覧を見る</a>
+      </article>
     </div>
   </section>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const revealTargets = document.querySelectorAll('.reveal');
+  if (revealTargets.length) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+        }
+      });
+    }, { threshold: 0.14, rootMargin: '0px 0px -8% 0px' });
+
+    revealTargets.forEach((target) => observer.observe(target));
+  }
+})();
+</script>
 {% endblock %}
