@@ -372,7 +372,7 @@ def format_collection_collected_at(value):
     parsed = parse_portal_datetime(value)
     if not parsed:
         return ""
-    return parsed.strftime("%m/%d %H:%M")
+    return parsed.strftime("%m/%d")
 
 
 def append_query_params(url, **params):
