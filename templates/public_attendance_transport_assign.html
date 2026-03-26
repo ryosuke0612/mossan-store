@@ -112,10 +112,10 @@ document.addEventListener("DOMContentLoaded", function () {
           <div class="assignment-item">
             <input type="hidden" name="driver_name" value="{{ driver['member_name'] }}">
             <select name="passenger_name" class="transport-seat-select assignment-select">
-              <option value="">未割り当て</option>
+              <option value=""></option>
               {% for row in transport_passenger_rows %}
               <option value="{{ row['member_name'] }}" {% if assigned_passenger == row['member_name'] %}selected{% endif %}>
-                {{ row["member_name"] }}{% if row["note"] %} - {{ row["note"] }}{% endif %}
+                {{ row["member_name"] }}{% if row["assigned_driver"] and row["member_name"] != assigned_passenger %}（割当済み）{% endif %}{% if row["note"] %} - {{ row["note"] }}{% endif %}
               </option>
               {% endfor %}
             </select>
