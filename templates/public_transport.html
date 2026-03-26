@@ -1,0 +1,140 @@
+{% extends "attendance_base.html" %}
+
+{% block title %}配車回答 | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<style>
+.transport-table { width: 100%; border-collapse: collapse; background: #11151b; }
+.transport-table th, .transport-table td { border: 1px solid #2f3946; vertical-align: top; }
+.transport-table th { border-color: #2f6d44; background: linear-gradient(180deg, #3b8f5f 0%, #2a6d48 100%); color: #f2fff6; }
+.transport-table .col-name { width: 120px; }
+.transport-table .col-status { width: 84px; text-align: center; }
+.transport-table .col-role { width: 180px; }
+.transport-table .col-seats { width: 110px; text-align: center; }
+.transport-table .col-note { width: auto; }
+.transport-table input[type="number"] { width: 72px; }
+.summary-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+.summary-card { border: 1px solid #2f3946; border-radius: 8px; padding: 12px; background: rgba(17, 21, 27, 0.78); }
+.summary-card strong { display: block; font-size: 1.2rem; margin-bottom: 4px; }
+.assignment-card { border: 1px solid #2f3946; border-radius: 8px; padding: 12px; background: rgba(17, 21, 27, 0.78); }
+.assignment-card h3 { margin-top: 0; margin-bottom: 8px; }
+.assignment-card ul { margin: 0; padding-left: 18px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">配車回答</h1>
+
+<section class="panel">
+  <div>{{ event["date_label"] }} {{ event["start_time"] }}〜{{ event["end_time"] }}</div>
+  <div>{{ event["opponent"] }} @ {{ event["place"] }}</div>
+</section>
+
+{% if success_message %}
+<section class="panel"><div class="notice success">{{ success_message }}</div></section>
+{% endif %}
+
+<section class="panel">
+  <h2>回答入力</h2>
+  <p class="small-note">運転する場合は同乗できる人数を入力してください。運転しない場合は人数欄は空欄で大丈夫です。</p>
+  <form method="post">
+    <div class="table-wrap">
+      <table class="transport-table">
+        <thead>
+          <tr>
+            <th class="col-name">メンバー</th>
+            <th class="col-status">出欠</th>
+            <th class="col-role">配車希望</th>
+            <th class="col-seats">同乗人数</th>
+            <th class="col-note">メモ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in member_rows %}
+          <tr>
+            <td class="col-name">{{ row["member_name"] }}</td>
+            <td class="col-status">{{ row["attendance_status"] or "-" }}</td>
+            <td class="col-role">
+              <select name="transport_role_{{ row['member_id'] }}" class="transport-role-select" data-target="seats-{{ row['member_id'] }}">
+                {% for role_value, role_label in transport_role_labels.items() %}
+                <option value="{{ role_value }}" {% if row["transport_role"] == role_value %}selected{% endif %}>{{ role_label }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td class="col-seats">
+              <input id="seats-{{ row['member_id'] }}" type="number" min="0" max="8" name="seats_available_{{ row['member_id'] }}" value="{{ row['seats_available'] or 0 }}">
+            </td>
+            <td class="col-note">
+              <input type="text" name="transport_note_{{ row['member_id'] }}" value="{{ row['note'] }}" placeholder="集合場所や補足など">
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="btn-row" style="margin-top:14px;">
+      <button type="submit" class="btn">回答を保存</button>
+      <a href="{{ url_for('member_team_page', public_id=public_id) }}" class="btn secondary">戻る</a>
+    </div>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>現在の状況</h2>
+  <div class="summary-grid">
+    <div class="summary-card"><strong>{{ summary["driver_count"] }}</strong><div>運転する</div></div>
+    <div class="summary-card"><strong>{{ summary["passenger_count"] }}</strong><div>乗車希望</div></div>
+    <div class="summary-card"><strong>{{ summary["total_seats"] }}</strong><div>空き座席</div></div>
+    <div class="summary-card"><strong>{{ summary["unassigned_count"] }}</strong><div>未割当</div></div>
+  </div>
+</section>
+
+{% if driver_cards %}
+<section class="panel">
+  <h2>配車割当</h2>
+  <div class="summary-grid">
+    {% for driver in driver_cards %}
+    <div class="assignment-card">
+      <h3>{{ driver["member_name"] }}</h3>
+      <div>同乗可能: {{ driver["seats_available"] }}人</div>
+      <div>割当済み: {{ driver["assigned_count"] }}人</div>
+      {% if driver["assigned_passengers"] %}
+      <ul style="margin-top:8px;">
+        {% for passenger_name in driver["assigned_passengers"] %}
+        <li>{{ passenger_name }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div style="margin-top:8px;" class="small-note">まだ割当はありません。</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll(".transport-role-select").forEach(function (select) {
+    const targetId = select.getAttribute("data-target");
+    const input = document.getElementById(targetId);
+    if (!input) {
+      return;
+    }
+    const updateState = function () {
+      const isDriver = select.value === "driver";
+      input.disabled = !isDriver;
+      if (!isDriver) {
+        input.value = 0;
+      } else if (!input.value || Number(input.value) <= 0) {
+        input.value = 1;
+      }
+    };
+    select.addEventListener("change", updateState);
+    updateState();
+  });
+});
+</script>
+{% endblock %}

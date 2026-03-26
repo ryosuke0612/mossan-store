@@ -146,10 +146,20 @@ PLAN_FEATURE_RANDOM_PICK = "random_pick"
 COLLECTION_STATUS_PENDING = "pending"
 COLLECTION_STATUS_COLLECTED = "collected"
 COLLECTION_STATUS_EXEMPT = "exempt"
+TRANSPORT_ROLE_NONE = "none"
+TRANSPORT_ROLE_DRIVER = "driver"
+TRANSPORT_ROLE_PASSENGER = "passenger"
+TRANSPORT_ROLE_DIRECT = "direct"
 COLLECTION_STATUS_LABELS = {
     COLLECTION_STATUS_PENDING: "未集金",
     COLLECTION_STATUS_COLLECTED: "集金済み",
     COLLECTION_STATUS_EXEMPT: "免除",
+}
+TRANSPORT_ROLE_LABELS = {
+    TRANSPORT_ROLE_NONE: "不要",
+    TRANSPORT_ROLE_DRIVER: "運転する",
+    TRANSPORT_ROLE_PASSENGER: "乗せてほしい",
+    TRANSPORT_ROLE_DIRECT: "現地集合",
 }
 ADMIN_SELECT_COLUMNS = """
 id,
@@ -338,6 +348,24 @@ def normalize_collection_status(value):
         "免除": COLLECTION_STATUS_EXEMPT,
     }
     return status_map.get(normalized, "")
+
+
+def normalize_transport_role(value):
+    normalized = (value or "").strip().lower()
+    role_map = {
+        TRANSPORT_ROLE_NONE: TRANSPORT_ROLE_NONE,
+        "不要": TRANSPORT_ROLE_NONE,
+        "なし": TRANSPORT_ROLE_NONE,
+        TRANSPORT_ROLE_DRIVER: TRANSPORT_ROLE_DRIVER,
+        "運転": TRANSPORT_ROLE_DRIVER,
+        "運転する": TRANSPORT_ROLE_DRIVER,
+        TRANSPORT_ROLE_PASSENGER: TRANSPORT_ROLE_PASSENGER,
+        "乗車": TRANSPORT_ROLE_PASSENGER,
+        "乗せてほしい": TRANSPORT_ROLE_PASSENGER,
+        TRANSPORT_ROLE_DIRECT: TRANSPORT_ROLE_DIRECT,
+        "現地集合": TRANSPORT_ROLE_DIRECT,
+    }
+    return role_map.get(normalized, "")
 
 
 def format_collection_collected_at(value):
@@ -2910,6 +2938,14 @@ def portal_delete_event(team_id, event_id):
         (team_id, event_id),
     )
     c.execute(
+        "DELETE FROM portal_transport_assignments WHERE team_id=? AND event_id=?",
+        (team_id, event_id),
+    )
+    c.execute(
+        "DELETE FROM portal_transport_responses WHERE team_id=? AND event_id=?",
+        (team_id, event_id),
+    )
+    c.execute(
         "DELETE FROM portal_events WHERE team_id=? AND id=?",
         (team_id, event_id),
     )
@@ -2987,6 +3023,368 @@ def portal_get_attendance_for_event(team_id, event_id):
     rows = rows_to_dict(c.fetchall())
     conn.close()
     return rows
+
+
+def portal_get_transport_responses(team_id, event_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT
+            pm.id AS member_id,
+            pm.name AS member_name,
+            pm.display_order,
+            ptr.transport_role,
+            ptr.seats_available,
+            ptr.note,
+            ptr.updated_at
+        FROM portal_members pm
+        LEFT JOIN portal_transport_responses ptr
+            ON ptr.team_id = pm.team_id
+           AND ptr.event_id = ?
+           AND ptr.member_name = pm.name
+        WHERE pm.team_id=? AND pm.is_active=1
+        ORDER BY pm.display_order ASC, pm.id ASC
+        """,
+        (event_id, team_id),
+    )
+    rows = rows_to_dict(c.fetchall())
+    conn.close()
+    return rows
+
+
+def portal_get_all_transport_responses_for_event(team_id, event_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT
+            ptr.id,
+            ptr.team_id,
+            ptr.event_id,
+            ptr.member_name,
+            ptr.transport_role,
+            ptr.seats_available,
+            ptr.note,
+            ptr.updated_at,
+            pm.id AS member_id,
+            pm.display_order,
+            pm.is_active
+        FROM portal_transport_responses ptr
+        LEFT JOIN portal_members pm
+            ON pm.team_id = ptr.team_id AND pm.name = ptr.member_name
+        WHERE ptr.team_id=? AND ptr.event_id=?
+        ORDER BY
+            CASE WHEN pm.display_order IS NULL THEN 1 ELSE 0 END,
+            pm.display_order ASC,
+            ptr.member_name ASC
+        """,
+        (team_id, event_id),
+    )
+    rows = rows_to_dict(c.fetchall())
+    conn.close()
+    return rows
+
+
+def portal_replace_transport_responses(team_id, event_id, response_rows):
+    now_text = portal_now_text()
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        "DELETE FROM portal_transport_assignments WHERE team_id=? AND event_id=?",
+        (team_id, event_id),
+    )
+    c.execute(
+        "DELETE FROM portal_transport_responses WHERE team_id=? AND event_id=?",
+        (team_id, event_id),
+    )
+    for row in response_rows:
+        member_name = (row.get("member_name") or "").strip()
+        if not member_name:
+            continue
+        transport_role = normalize_transport_role(row.get("transport_role")) or TRANSPORT_ROLE_NONE
+        seats_available = _coerce_positive_int(row.get("seats_available")) or 0
+        if transport_role != TRANSPORT_ROLE_DRIVER:
+            seats_available = 0
+        c.execute(
+            """
+            INSERT INTO portal_transport_responses (
+                team_id,
+                event_id,
+                member_name,
+                transport_role,
+                seats_available,
+                note,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                team_id,
+                event_id,
+                member_name,
+                transport_role,
+                seats_available,
+                (row.get("note") or "").strip(),
+                now_text,
+            ),
+        )
+    conn.commit()
+    conn.close()
+
+
+def portal_replace_transport_responses_for_attendees(team_id, event_id, attendee_names, response_rows):
+    allowed_names = set(_normalize_name_list(attendee_names))
+    existing_rows = portal_get_all_transport_responses_for_event(team_id, event_id)
+    preserved_rows = []
+    seen_names = set()
+    for row in response_rows:
+        member_name = (row.get("member_name") or "").strip()
+        if not member_name or member_name not in allowed_names or member_name in seen_names:
+            continue
+        preserved_rows.append(row)
+        seen_names.add(member_name)
+    for row in existing_rows:
+        member_name = (row.get("member_name") or "").strip()
+        if not member_name or member_name in allowed_names or member_name in seen_names:
+            continue
+        preserved_rows.append(
+            {
+                "member_name": member_name,
+                "transport_role": row.get("transport_role"),
+                "seats_available": row.get("seats_available"),
+                "note": row.get("note"),
+            }
+        )
+        seen_names.add(member_name)
+    portal_replace_transport_responses(team_id, event_id, preserved_rows)
+
+
+def portal_get_transport_assignments(team_id, event_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT id, team_id, event_id, driver_name, passenger_name, display_order, created_at, updated_at
+        FROM portal_transport_assignments
+        WHERE team_id=? AND event_id=?
+        ORDER BY display_order ASC, id ASC
+        """,
+        (team_id, event_id),
+    )
+    rows = rows_to_dict(c.fetchall())
+    conn.close()
+    return rows
+
+
+def portal_prune_transport_assignments(team_id, event_id, valid_member_names):
+    valid_names = set(_normalize_name_list(valid_member_names))
+    if not valid_names:
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute(
+            "DELETE FROM portal_transport_assignments WHERE team_id=? AND event_id=?",
+            (team_id, event_id),
+        )
+        conn.commit()
+        conn.close()
+        return
+
+    conn = get_db_connection()
+    c = conn.cursor()
+    assignment_rows = portal_get_transport_assignments(team_id, event_id)
+    retained_rows = []
+    for row in assignment_rows:
+        passenger_name = (row.get("passenger_name") or "").strip()
+        driver_name = (row.get("driver_name") or "").strip()
+        if passenger_name in valid_names and driver_name in valid_names:
+            retained_rows.append({"passenger_name": passenger_name, "driver_name": driver_name})
+    c.execute(
+        "DELETE FROM portal_transport_assignments WHERE team_id=? AND event_id=?",
+        (team_id, event_id),
+    )
+    now_text = portal_now_text()
+    for index, row in enumerate(retained_rows, start=1):
+        c.execute(
+            """
+            INSERT INTO portal_transport_assignments (
+                team_id,
+                event_id,
+                driver_name,
+                passenger_name,
+                display_order,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (team_id, event_id, row["driver_name"], row["passenger_name"], index, now_text, now_text),
+        )
+    conn.commit()
+    conn.close()
+
+
+def portal_save_transport_assignments(team_id, event_id, requested_assignments):
+    response_rows = portal_get_transport_responses(team_id, event_id)
+    driver_capacity = {}
+    passenger_names = set()
+    for row in response_rows:
+        member_name = (row.get("member_name") or "").strip()
+        transport_role = normalize_transport_role(row.get("transport_role")) or TRANSPORT_ROLE_NONE
+        if transport_role == TRANSPORT_ROLE_DRIVER:
+            driver_capacity[member_name] = max(0, int(row.get("seats_available") or 0))
+        elif transport_role == TRANSPORT_ROLE_PASSENGER:
+            passenger_names.add(member_name)
+
+    normalized_assignments = []
+    assigned_passengers = set()
+    seats_used = {}
+    for raw_assignment in requested_assignments:
+        passenger_name = (raw_assignment.get("passenger_name") or "").strip()
+        driver_name = (raw_assignment.get("driver_name") or "").strip()
+        if not passenger_name or not driver_name:
+            continue
+        if passenger_name in assigned_passengers:
+            continue
+        if passenger_name not in passenger_names:
+            return False, "乗車希望ではないメンバーが含まれています。"
+        if driver_name not in driver_capacity:
+            return False, "運転者として登録されていないメンバーが含まれています。"
+        if passenger_name == driver_name:
+            return False, "自分自身を自分の車に割り当てることはできません。"
+        seats_used[driver_name] = seats_used.get(driver_name, 0) + 1
+        if seats_used[driver_name] > driver_capacity.get(driver_name, 0):
+            return False, f"{driver_name} さんの同乗可能人数を超えています。"
+        assigned_passengers.add(passenger_name)
+        normalized_assignments.append({"passenger_name": passenger_name, "driver_name": driver_name})
+
+    now_text = portal_now_text()
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        "DELETE FROM portal_transport_assignments WHERE team_id=? AND event_id=?",
+        (team_id, event_id),
+    )
+    for index, assignment in enumerate(normalized_assignments, start=1):
+        c.execute(
+            """
+            INSERT INTO portal_transport_assignments (
+                team_id,
+                event_id,
+                driver_name,
+                passenger_name,
+                display_order,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                team_id,
+                event_id,
+                assignment["driver_name"],
+                assignment["passenger_name"],
+                index,
+                now_text,
+                now_text,
+            ),
+        )
+    conn.commit()
+    conn.close()
+    return True, "saved"
+
+
+def build_portal_transport_overview(team_id, event_id, allowed_member_names=None):
+    response_rows = portal_get_all_transport_responses_for_event(team_id, event_id)
+    assignment_rows = portal_get_transport_assignments(team_id, event_id)
+    attendance_rows = portal_get_attendance_for_event(team_id, event_id)
+    attendance_map = {
+        row.get("member_name"): normalize_status(row.get("status"))
+        for row in attendance_rows
+        if row.get("member_name")
+    }
+    allowed_name_set = set(_normalize_name_list(allowed_member_names or []))
+    if allowed_name_set:
+        response_rows = [
+            row for row in response_rows
+            if (row.get("member_name") or "").strip() in allowed_name_set
+        ]
+
+    driver_rows = []
+    passenger_rows = []
+    direct_rows = []
+    none_rows = []
+    driver_cards_by_name = {}
+    passenger_name_set = set()
+    for row in response_rows:
+        member_name = (row.get("member_name") or "").strip()
+        transport_role = normalize_transport_role(row.get("transport_role")) or TRANSPORT_ROLE_NONE
+        enriched = {
+            **row,
+            "member_name": member_name,
+            "attendance_status": attendance_map.get(member_name, ""),
+            "transport_role": transport_role,
+            "transport_role_label": TRANSPORT_ROLE_LABELS.get(transport_role, TRANSPORT_ROLE_LABELS[TRANSPORT_ROLE_NONE]),
+            "seats_available": max(0, int(row.get("seats_available") or 0)),
+            "note": row.get("note") or "",
+        }
+        if transport_role == TRANSPORT_ROLE_DRIVER:
+            driver_rows.append(enriched)
+            driver_cards_by_name[member_name] = {
+                **enriched,
+                "assigned_passengers": [],
+                "assigned_count": 0,
+                "remaining_seats": max(0, int(enriched["seats_available"])),
+            }
+        elif transport_role == TRANSPORT_ROLE_PASSENGER:
+            passenger_rows.append(enriched)
+            passenger_name_set.add(member_name)
+        elif transport_role == TRANSPORT_ROLE_DIRECT:
+            direct_rows.append(enriched)
+        else:
+            none_rows.append(enriched)
+
+    assignment_map = {}
+    for row in assignment_rows:
+        passenger_name = (row.get("passenger_name") or "").strip()
+        driver_name = (row.get("driver_name") or "").strip()
+        if passenger_name not in passenger_name_set:
+            continue
+        driver_card = driver_cards_by_name.get(driver_name)
+        if not driver_card:
+            continue
+        assignment_map[passenger_name] = driver_name
+        driver_card["assigned_passengers"].append(passenger_name)
+
+    for driver_card in driver_cards_by_name.values():
+        driver_card["assigned_count"] = len(driver_card["assigned_passengers"])
+        driver_card["remaining_seats"] = max(0, driver_card["seats_available"] - driver_card["assigned_count"])
+
+    for row in passenger_rows:
+        row["assigned_driver"] = assignment_map.get(row["member_name"], "")
+
+    total_seats = sum(card["seats_available"] for card in driver_cards_by_name.values())
+    assigned_count = len(assignment_map)
+    passenger_count = len(passenger_rows)
+    summary = {
+        "driver_count": len(driver_rows),
+        "passenger_count": passenger_count,
+        "direct_count": len(direct_rows),
+        "none_count": len(none_rows),
+        "total_seats": total_seats,
+        "assigned_count": assigned_count,
+        "unassigned_count": max(0, passenger_count - assigned_count),
+        "seat_surplus": total_seats - passenger_count,
+    }
+    return {
+        "response_rows": response_rows,
+        "driver_rows": driver_rows,
+        "passenger_rows": passenger_rows,
+        "direct_rows": direct_rows,
+        "none_rows": none_rows,
+        "driver_cards": list(driver_cards_by_name.values()),
+        "summary": summary,
+    }
 
 
 def portal_delete_member_attendance_by_month(team_id, month, name):
@@ -3178,6 +3576,7 @@ def build_member_legacy_index_context(team, active_month="", selected_member="")
         "can_use_csv_export": can_use_paid_features,
         "plan_csv_message": get_plan_restriction_message(PLAN_FEATURE_CSV_EXPORT),
         "plan_attendance_check_message": get_plan_restriction_message(PLAN_FEATURE_ATTENDANCE_CHECK),
+        "transport_role_labels": TRANSPORT_ROLE_LABELS,
     }
 
 
@@ -3823,6 +4222,40 @@ def init_db_sqlite():
         source_type TEXT NOT NULL DEFAULT 'attendance',
         confirmed_at TEXT NOT NULL,
         UNIQUE(team_id, event_id, member_name),
+        FOREIGN KEY(team_id) REFERENCES teams(id),
+        FOREIGN KEY(event_id) REFERENCES portal_events(id)
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_transport_responses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        team_id INTEGER NOT NULL,
+        event_id INTEGER NOT NULL,
+        member_name TEXT NOT NULL,
+        transport_role TEXT NOT NULL DEFAULT 'none',
+        seats_available INTEGER NOT NULL DEFAULT 0,
+        note TEXT,
+        updated_at TEXT NOT NULL,
+        UNIQUE(team_id, event_id, member_name),
+        FOREIGN KEY(team_id) REFERENCES teams(id),
+        FOREIGN KEY(event_id) REFERENCES portal_events(id)
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_transport_assignments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        team_id INTEGER NOT NULL,
+        event_id INTEGER NOT NULL,
+        driver_name TEXT NOT NULL,
+        passenger_name TEXT NOT NULL,
+        display_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE(team_id, event_id, passenger_name),
         FOREIGN KEY(team_id) REFERENCES teams(id),
         FOREIGN KEY(event_id) REFERENCES portal_events(id)
     )
@@ -4651,6 +5084,36 @@ def init_db_postgres():
         source_type TEXT NOT NULL DEFAULT 'attendance',
         confirmed_at TEXT NOT NULL,
         UNIQUE(team_id, event_id, member_name)
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_transport_responses (
+        id SERIAL PRIMARY KEY,
+        team_id INTEGER NOT NULL REFERENCES teams(id),
+        event_id INTEGER NOT NULL REFERENCES portal_events(id),
+        member_name TEXT NOT NULL,
+        transport_role TEXT NOT NULL DEFAULT 'none',
+        seats_available INTEGER NOT NULL DEFAULT 0,
+        note TEXT,
+        updated_at TEXT NOT NULL,
+        UNIQUE(team_id, event_id, member_name)
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_transport_assignments (
+        id SERIAL PRIMARY KEY,
+        team_id INTEGER NOT NULL REFERENCES teams(id),
+        event_id INTEGER NOT NULL REFERENCES portal_events(id),
+        driver_name TEXT NOT NULL,
+        passenger_name TEXT NOT NULL,
+        display_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE(team_id, event_id, passenger_name)
     )
     """
     )
@@ -8364,6 +8827,67 @@ def admin_team_events(team_id):
     )
 
 
+@app.route("/admin/teams/<int:team_id>/events/<int:event_id>/transport", methods=["GET", "POST"])
+@admin_login_required
+def admin_team_event_transport(team_id, event_id):
+    team, team_error = get_owned_team_or_error(team_id, session["admin_id"])
+    if team_error == "not_found":
+        return redirect(url_for("admin_dashboard", error_message="対象チームが見つかりません。"))
+    if team_error == "forbidden":
+        return redirect(url_for("admin_dashboard", error_message="他チームは操作できません。"))
+
+    event = portal_get_event(team["id"], event_id)
+    if not event:
+        return redirect(url_for("admin_team_events", team_id=team_id, error_message="対象イベントが見つかりません。"))
+
+    if request.method == "POST":
+        assignments = [
+            {"passenger_name": passenger_name, "driver_name": driver_name}
+            for passenger_name, driver_name in zip(
+                request.form.getlist("passenger_name"),
+                request.form.getlist("driver_name"),
+            )
+        ]
+        saved, status = portal_save_transport_assignments(team["id"], event_id, assignments)
+        if not saved:
+            return redirect(
+                url_for(
+                    "admin_team_event_transport",
+                    team_id=team_id,
+                    event_id=event_id,
+                    error_message=status,
+                )
+            )
+        return redirect(
+            url_for(
+                "admin_team_event_transport",
+                team_id=team_id,
+                event_id=event_id,
+                success_message="配車割当を保存しました。",
+            )
+        )
+
+    event_data = dict(event)
+    event_data["date_label"] = format_date_mmdd_with_weekday(event_data.get("date", ""))
+    overview = build_portal_transport_overview(team["id"], event_id)
+    driver_options = [row for row in overview["driver_rows"] if int(row.get("seats_available") or 0) > 0]
+    return render_template(
+        "admin_transport.html",
+        team=team,
+        event=event_data,
+        driver_rows=overview["driver_rows"],
+        driver_cards=overview["driver_cards"],
+        passenger_rows=overview["passenger_rows"],
+        direct_rows=overview["direct_rows"],
+        none_rows=overview["none_rows"],
+        summary=overview["summary"],
+        driver_options=driver_options,
+        transport_role_labels=TRANSPORT_ROLE_LABELS,
+        error_message=request.args.get("error_message", "").strip(),
+        success_message=request.args.get("success_message", "").strip(),
+    )
+
+
 @app.route("/admin/teams/<int:team_id>/collections", methods=["GET", "POST"])
 @admin_login_required
 def admin_team_collections(team_id):
@@ -8939,6 +9463,16 @@ def public_attendance_check(public_id, match_id):
     has_confirmed_today = bool(confirmed_names)
     candidate_names = _normalize_name_list(grouped_members["参加"] + walkin_names)
     effective_attendees = get_portal_effective_attendees(team["id"], match_id)
+    transport_response_map = {}
+    for row in portal_get_all_transport_responses_for_event(team["id"], match_id):
+        member_name = (row.get("member_name") or "").strip()
+        if not member_name or member_name not in candidate_names:
+            continue
+        transport_response_map[member_name] = {
+            "transport_role": normalize_transport_role(row.get("transport_role")) or "",
+            "seats_available": max(0, int(row.get("seats_available") or 0)),
+            "note": row.get("note") or "",
+        }
 
     tool_message = request.args.get("tool_message", "").strip()
     return render_template(
@@ -8953,6 +9487,8 @@ def public_attendance_check(public_id, match_id):
         walkin_names=walkin_names,
         has_confirmed_today=has_confirmed_today,
         effective_attendees=effective_attendees,
+        transport_response_map=transport_response_map,
+        transport_role_labels=TRANSPORT_ROLE_LABELS,
         tool_message=tool_message,
         tools_url=url_for("public_attendance_tools", public_id=public_id, match_id=match_id),
     )
@@ -8972,6 +9508,7 @@ def public_attendance_tools(public_id, match_id):
     match_data = dict(match)
     match_data["date_label"] = format_date_mmdd_with_weekday(match["date"])
     effective_attendees = get_portal_effective_attendees(team["id"], match_id)
+    transport_overview = build_portal_transport_overview(team["id"], match_id, allowed_member_names=effective_attendees)
     team_result = []
     random_pick = []
     team_share_url = ""
@@ -9009,6 +9546,10 @@ def public_attendance_tools(public_id, match_id):
         saved_tool_results=saved_tool_results,
         selected_team_count=selected_team_count,
         selected_pick_count=selected_pick_count,
+        transport_summary=transport_overview["summary"],
+        transport_driver_cards=transport_overview["driver_cards"],
+        transport_passenger_rows=transport_overview["passenger_rows"],
+        transport_driver_options=[row for row in transport_overview["driver_rows"] if int(row.get("seats_available") or 0) > 0],
     )
 
 
@@ -9021,13 +9562,49 @@ def public_attendance_check_confirm_attendees(public_id, match_id):
         return build_member_page_notice_redirect(public_id, get_plan_restriction_message(PLAN_FEATURE_ATTENDANCE_CHECK))
     selected_names = request.form.getlist("confirmed_names")
     walkin_names = request.form.getlist("walkin_names")
-    save_portal_confirmed_attendees(team["id"], match_id, selected_names, walkin_names)
+    confirmed_names = save_portal_confirmed_attendees(team["id"], match_id, selected_names, walkin_names)
+    submitted_transport_map = {}
+    for member_name, transport_role, seats_available, note in zip(
+        request.form.getlist("transport_member_name"),
+        request.form.getlist("transport_role"),
+        request.form.getlist("seats_available"),
+        request.form.getlist("transport_note"),
+    ):
+        normalized_member_name = (member_name or "").strip()
+        if not normalized_member_name:
+            continue
+        submitted_transport_map[normalized_member_name] = {
+            "transport_role": normalize_transport_role(transport_role) or TRANSPORT_ROLE_NONE,
+            "seats_available": _coerce_positive_int(seats_available) or 0,
+            "note": note or "",
+        }
+    transport_rows = []
+    for member_name in confirmed_names:
+        submitted = submitted_transport_map.get(member_name, {})
+        transport_role = submitted.get("transport_role") or TRANSPORT_ROLE_DIRECT
+        seats_available = submitted.get("seats_available") or 0
+        if transport_role == TRANSPORT_ROLE_DRIVER and seats_available <= 0:
+            seats_available = 1
+        if transport_role != TRANSPORT_ROLE_DRIVER:
+            seats_available = 0
+        transport_rows.append(
+            {
+                "member_name": member_name,
+                "transport_role": transport_role,
+                "seats_available": seats_available,
+                "note": submitted.get("note", ""),
+            }
+        )
+    portal_replace_transport_responses_for_attendees(team["id"], match_id, confirmed_names, transport_rows)
+    portal_prune_transport_assignments(team["id"], match_id, confirmed_names)
+    save_mode = (request.form.get("save_mode") or "").strip().lower()
+    success_message = "値を更新しました。" if save_mode == "autosave" else "当日参加者を確定しました。"
     return redirect(
         url_for(
             "public_attendance_check",
             public_id=public_id,
             match_id=match_id,
-            tool_message="当日参加者を確定しました。",
+            tool_message=success_message,
         )
     )
 
@@ -9056,6 +9633,143 @@ def public_attendance_check_delete_walkin(public_id, match_id):
     deleted = remove_portal_walkin_attendee(team["id"], match_id, member_name)
     message = "飛び入り参加者を削除しました。" if deleted else "削除対象の飛び入り参加者が見つかりませんでした。"
     return redirect(url_for("public_attendance_check", public_id=public_id, match_id=match_id, tool_message=message))
+
+
+@app.route("/team/<public_id>/attendance/check/<int:match_id>/walkin/delete-selected", methods=["POST"])
+def public_attendance_check_delete_selected_walkins(public_id, match_id):
+    team = get_team_by_public_id(public_id)
+    if not team:
+        return redirect(url_for("attendance_description"))
+    if not can_team_use_paid_feature(team):
+        return build_member_page_notice_redirect(public_id, get_plan_restriction_message(PLAN_FEATURE_ATTENDANCE_CHECK))
+    selected_names = set(_normalize_name_list(request.form.getlist("confirmed_names")))
+    walkin_names = _normalize_name_list(request.form.getlist("walkin_names"))
+    target_names = [name for name in walkin_names if name in selected_names]
+    deleted_count = 0
+    for member_name in target_names:
+        if remove_portal_walkin_attendee(team["id"], match_id, member_name):
+            deleted_count += 1
+    if deleted_count:
+        message = f"飛び入り参加者を削除しました（{deleted_count}人）。"
+    else:
+        message = "削除できる飛び入り参加者が選択されていません。"
+    return redirect(url_for("public_attendance_check", public_id=public_id, match_id=match_id, tool_message=message))
+
+
+@app.route("/team/<public_id>/transport/<int:event_id>", methods=["GET", "POST"])
+def public_transport(public_id, event_id):
+    team = get_team_by_public_id(public_id)
+    if not team:
+        return redirect(url_for("attendance_description"))
+
+    event = portal_get_event(team["id"], event_id)
+    if not event:
+        return redirect(url_for("member_team_page", public_id=public_id))
+
+    active_members = portal_get_members_for_team(team["id"], include_inactive=False)
+    attendance_map = {
+        row.get("member_name"): normalize_status(row.get("status"))
+        for row in portal_get_attendance_for_event(team["id"], event_id)
+    }
+    transport_target_members = [
+        member
+        for member in active_members
+        if attendance_map.get(member.get("name") or "", "") != "不参加"
+    ]
+    if request.method == "POST":
+        action = (request.form.get("action") or "save_responses").strip()
+        if action == "save_assignments":
+            assignments = [
+                {"passenger_name": passenger_name, "driver_name": driver_name}
+                for passenger_name, driver_name in zip(
+                    request.form.getlist("passenger_name"),
+                    request.form.getlist("driver_name"),
+                )
+            ]
+            saved, status = portal_save_transport_assignments(team["id"], event_id, assignments)
+            if not saved:
+                return redirect(
+                    url_for(
+                        "public_transport",
+                        public_id=public_id,
+                        event_id=event_id,
+                        error_message=status,
+                    )
+                )
+            return redirect(
+                url_for(
+                    "public_transport",
+                    public_id=public_id,
+                    event_id=event_id,
+                    success_message="配車割当を保存しました。",
+                )
+            )
+        response_rows = []
+        for member in transport_target_members:
+            member_id = member.get("id")
+            member_name = member.get("name") or ""
+            transport_role = normalize_transport_role(request.form.get(f"transport_role_{member_id}")) or TRANSPORT_ROLE_NONE
+            seats_available = _coerce_positive_int(request.form.get(f"seats_available_{member_id}")) or 0
+            if transport_role == TRANSPORT_ROLE_DRIVER and seats_available <= 0:
+                seats_available = 1
+            if transport_role != TRANSPORT_ROLE_DRIVER:
+                seats_available = 0
+            response_rows.append(
+                {
+                    "member_name": member_name,
+                    "transport_role": transport_role,
+                    "seats_available": seats_available,
+                    "note": request.form.get(f"transport_note_{member_id}", ""),
+                }
+            )
+        portal_replace_transport_responses(team["id"], event_id, response_rows)
+        return redirect(
+            url_for(
+                "public_transport",
+                public_id=public_id,
+                event_id=event_id,
+                success_message="配車回答を保存しました。",
+            )
+        )
+
+    event_data = dict(event)
+    event_data["date_label"] = format_date_mmdd_with_weekday(event_data.get("date", ""))
+    overview = build_portal_transport_overview(team["id"], event_id)
+    transport_target_names = {
+        member.get("name") or ""
+        for member in transport_target_members
+        if member.get("name")
+    }
+    member_rows = [
+        row for row in overview["response_rows"]
+        if (row.get("member_name") or "") in transport_target_names
+    ]
+    for row in member_rows:
+        attendance_status = attendance_map.get(row.get("member_name"), "")
+        transport_role = normalize_transport_role(row.get("transport_role")) or ""
+        if not transport_role:
+            transport_role = TRANSPORT_ROLE_PASSENGER if attendance_status == "参加" else TRANSPORT_ROLE_NONE
+        row["attendance_status"] = attendance_status
+        row["transport_role"] = transport_role
+        row["seats_available"] = max(0, int(row.get("seats_available") or 0))
+        row["note"] = row.get("note") or ""
+
+    return render_template(
+        "public_transport_manage.html",
+        public_id=public_id,
+        team=team,
+        event=event_data,
+        member_rows=member_rows,
+        driver_cards=overview["driver_cards"],
+        passenger_rows=overview["passenger_rows"],
+        direct_rows=overview["direct_rows"],
+        none_rows=overview["none_rows"],
+        summary=overview["summary"],
+        driver_options=[row for row in overview["driver_rows"] if int(row.get("seats_available") or 0) > 0],
+        transport_role_labels=TRANSPORT_ROLE_LABELS,
+        error_message=request.args.get("error_message", "").strip(),
+        success_message=request.args.get("success_message", "").strip(),
+    )
 
 
 @app.route("/team/<public_id>/attendance/check/<int:match_id>/tools/team-split", methods=["POST"])
@@ -9213,6 +9927,27 @@ def public_attendance_check_random_pick(public_id, match_id):
             tool_message=f"ランダムで{picked_label}を代表者に選出しました。",
         )
     )
+
+
+@app.route("/team/<public_id>/attendance/check/<int:match_id>/tools/transport-assign", methods=["POST"])
+def public_attendance_tools_save_transport_assignments(public_id, match_id):
+    team = get_team_by_public_id(public_id)
+    if not team:
+        return redirect(url_for("attendance_description"))
+    if not can_team_use_paid_feature(team):
+        return build_member_page_notice_redirect(public_id, get_plan_restriction_message(PLAN_FEATURE_ATTENDANCE_CHECK))
+    effective_attendees = get_portal_effective_attendees(team["id"], match_id)
+    assignments = [
+        {"passenger_name": passenger_name, "driver_name": driver_name}
+        for passenger_name, driver_name in zip(
+            request.form.getlist("passenger_name"),
+            request.form.getlist("driver_name"),
+        )
+        if (passenger_name or "").strip() in effective_attendees
+    ]
+    saved, status = portal_save_transport_assignments(team["id"], match_id, assignments)
+    message = "配車割当を保存しました。" if saved else status
+    return redirect(url_for("public_attendance_tools", public_id=public_id, match_id=match_id, tool_message=message))
 
 
 @app.route("/team/<public_id>/attendance/check/<int:match_id>/tools/save", methods=["POST"])

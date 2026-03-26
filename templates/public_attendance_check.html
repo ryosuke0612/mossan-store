@@ -21,40 +21,27 @@
 .confirm-table .col-select,
 .confirm-table th.col-select,
 .confirm-table td.col-select {
-  width: 56px;
-  min-width: 56px;
-  max-width: 56px;
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
   text-align: center;
+}
+.confirm-table .col-select .btn {
+  min-width: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  line-height: 1;
 }
 .confirm-table .col-name,
 .confirm-table th.col-name,
 .confirm-table td.col-name {
-  width: auto;
+  width: 128px;
 }
-.confirm-table .col-action,
-.confirm-table th.col-action,
-.confirm-table td.col-action {
-  width: 84px;
-  min-width: 84px;
-  max-width: 84px;
-  text-align: center;
-  white-space: nowrap;
-}
-.confirm-table td.col-action {
-  padding-top: 0;
-  padding-bottom: 0;
-}
-.confirm-table .action-cell {
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.confirm-table .action-cell form {
-  margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.confirm-table .col-transport,
+.confirm-table th.col-transport,
+.confirm-table td.col-transport {
+  width: 128px;
 }
 .confirm-table tr.walkin-row td {
   background: rgba(159, 224, 177, 0.14);
@@ -70,6 +57,68 @@
 .walkin-form input[type="text"] {
   flex: 1 1 220px;
   min-width: 0;
+}
+.transport-inline {
+  display: grid;
+  gap: 6px;
+  grid-template-rows: 38px 38px;
+}
+.transport-inline select {
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  line-height: 38px;
+  box-sizing: border-box;
+  margin: 0;
+}
+.member-name-block {
+  display: grid;
+  gap: 6px;
+  grid-template-rows: 38px 38px;
+}
+.member-name-block > div:first-child {
+  display: flex;
+  align-items: center;
+}
+.transport-inline input[type="text"] {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+  padding: 0 10px;
+  line-height: 38px;
+  box-sizing: border-box;
+}
+@media (max-width: 640px) {
+  .confirm-table {
+    font-size: 12px;
+  }
+  .confirm-table th,
+  .confirm-table td {
+    padding: 6px 4px;
+  }
+  .confirm-table .col-name {
+    width: 98px;
+  }
+  .confirm-table .col-transport {
+    width: 110px;
+  }
+  .transport-inline,
+  .member-name-block {
+    gap: 4px;
+    grid-template-rows: 34px 34px;
+  }
+  .transport-inline select,
+  .member-name-block input[type="text"],
+  .transport-inline input[type="text"] {
+    font-size: 12px;
+    height: 34px;
+    padding: 0 8px;
+    line-height: 34px;
+  }
+  .btn-row .btn {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
 }
 .fancy-maroon-btn {
   position: relative;
@@ -142,37 +191,61 @@
       </tr></tbody>
     </table>
   </div>
-  <p class="small-note" style="margin-top:10px;">チーム分け、代表者選出ができます。<br>参加メンバーが異なる場合は↓で調整してください。</p>
+  <p class="small-note" style="margin-top:10px;">チーム分け、代表者選出、配車割当ができます。<br>参加メンバーが異なる場合は↓で調整してください。</p>
   <div class="btn-row" style="margin-top:10px;"><a href="{{ tools_url }}" class="btn fancy-maroon-btn">参加者ツールへ</a></div>
 </section>
 
 <section id="confirmed-attendees-section" class="panel">
   <h2>当日参加者の確定</h2>
-  <p class="small-note">当日来たメンバーを確定してから参加者ツールを使います。</p>
   <form id="public-confirm-attendees-form" method="post" action="{{ url_for('public_attendance_check_confirm_attendees', public_id=public_id, match_id=match['id']) }}">
+    <input type="hidden" name="save_mode" id="attendance-save-mode" value="autosave">
     <div class="table-wrap">
       <table class="confirm-table">
-        <thead><tr><th class="col-select">選択</th><th class="col-name">メンバー名</th><th class="col-action">操作</th></tr></thead>
+        <thead><tr><th class="col-select">選択</th><th class="col-name">メンバー名・補足メモ</th><th class="col-transport">配車回答・乗車可能人数</th></tr></thead>
         <tbody>
           {% for name in candidate_names %}
           {% set is_walkin = (name in walkin_names) %}
+          {% set transport = transport_response_map.get(name, {}) %}
+          {% set selected_role = transport.get("transport_role") or 'direct' %}
           <tr{% if is_walkin %} class="walkin-row"{% endif %}>
-            <td class="col-select">{% if is_walkin %}<input type="hidden" name="walkin_names" value="{{ name }}">{% endif %}<input type="checkbox" name="confirmed_names" value="{{ name }}" {% if name in confirmed_names or (not has_confirmed_today and name in join_members) %}checked{% endif %}></td>
-            <td class="col-name">{{ name }}</td>
-            <td class="col-action">
-              <div class="action-cell">
+            <td class="col-select">
               {% if is_walkin %}
+              <input type="hidden" name="walkin_names" value="{{ name }}">
               <button
                 type="submit"
                 name="member_name"
                 value="{{ name }}"
                 formaction="{{ url_for('public_attendance_check_delete_walkin', public_id=public_id, match_id=match['id']) }}"
                 formmethod="post"
-                class="btn secondary compact delete-walkin-btn"
-              >削除</button>
+                class="btn secondary delete-walkin-btn"
+                aria-label="{{ name }}を削除"
+                title="{{ name }}を削除"
+              >✖</button>
               {% else %}
-              -
+              <input type="checkbox" name="confirmed_names" value="{{ name }}" {% if name in confirmed_names or (not has_confirmed_today and name in join_members) %}checked{% endif %}>
               {% endif %}
+            </td>
+            <td class="col-name">
+              <div class="member-name-block">
+                <div>{{ name }}</div>
+                <input type="text" name="transport_note" value="{{ transport.get('note', '') }}" placeholder="補足メモ">
+              </div>
+            </td>
+            <td class="col-transport">
+              <div class="transport-inline">
+                <input type="hidden" name="transport_member_name" value="{{ name }}">
+                <select name="transport_role" class="attendance-transport-role" data-target="transport-seats-{{ loop.index }}">
+                  {% for role_value, role_label in transport_role_labels.items() %}
+                  {% if role_value != 'none' %}
+                  <option value="{{ role_value }}" {% if selected_role == role_value %}selected{% endif %}>{{ role_label }}</option>
+                  {% endif %}
+                  {% endfor %}
+                </select>
+                <select id="transport-seats-{{ loop.index }}" name="seats_available">
+                  {% for seat_count in range(0, 10) %}
+                  <option value="{{ seat_count }}" {% if transport.get('seats_available', 0) == seat_count %}selected{% endif %}>{{ seat_count }}</option>
+                  {% endfor %}
+                </select>
               </div>
             </td>
           </tr>
@@ -186,7 +259,6 @@
     <input type="text" name="walkin_name" placeholder="飛び入り参加者名">
     <button type="submit" class="btn secondary">飛び入り追加</button>
   </form>
-  <div class="btn-row" style="margin-top:10px;"><button type="submit" form="public-confirm-attendees-form" class="btn fancy-maroon-btn">当日参加者を確定</button></div>
 </section>
 
 <div class="btn-row" style="margin-top:16px;"><a href="{{ url_for('member_team_page', public_id=public_id) }}" class="btn secondary">戻る</a></div>
@@ -203,6 +275,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   const confirmForm = document.getElementById("public-confirm-attendees-form");
+  const saveModeInput = document.getElementById("attendance-save-mode");
   if (confirmForm) {
     confirmForm.addEventListener("submit", function () {
       window.sessionStorage.setItem(storageKey, String(window.scrollY));
@@ -221,6 +294,40 @@ document.addEventListener("DOMContentLoaded", function () {
       window.sessionStorage.setItem(storageKey, String(window.scrollY));
     });
   });
+
+  document.querySelectorAll(".attendance-transport-role").forEach(function (select) {
+    const targetId = select.getAttribute("data-target");
+    const input = document.getElementById(targetId);
+    if (!input) {
+      return;
+    }
+    const updateState = function () {
+      const isDriver = select.value === "driver";
+      if (!isDriver) {
+        input.value = "0";
+      } else if (!input.value || Number(input.value) <= 0) {
+        input.value = "1";
+      }
+    };
+    select.addEventListener("change", updateState);
+    updateState();
+  });
+
+  if (confirmForm && saveModeInput) {
+    const autoSubmit = function () {
+      saveModeInput.value = "autosave";
+      confirmForm.requestSubmit();
+    };
+
+    confirmForm.querySelectorAll('input[type="checkbox"], select').forEach(function (field) {
+      field.addEventListener("change", autoSubmit);
+    });
+
+    confirmForm.querySelectorAll('input[type="text"]').forEach(function (field) {
+      field.addEventListener("change", autoSubmit);
+    });
+  }
+
 });
 </script>
 {% endblock %}
