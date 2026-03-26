@@ -1,0 +1,141 @@
+﻿{% extends "admin_base_clean.html" %}
+
+{% block title %}集金詳細 | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
+<style>
+.dashboard-reggae-title { font-family: 'Reggae One', 'Noto Sans JP', sans-serif; letter-spacing: 0.04em; color: #ead7b3; }
+.save-indicator { min-height: 22px; font-size: 13px; color: #cfd8e3; margin-top: 10px; }
+.check-table { width: 100%; min-width: 0; table-layout: fixed; }
+.check-table th, .check-table td { width: 33.3333%; text-align: left; vertical-align: top; }
+.member-list { margin: 0; padding: 0; list-style: none; }
+.member-list li { margin: 0 0 8px; word-break: break-word; }
+.member-status-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: #eef2f6;
+  text-align: left;
+}
+.member-name { font-weight: 700; }
+.member-time { font-size: 12px; color: #c8c8c8; }
+.small-note { color: #c8c8c8; font-size: 13px; }
+.fancy-maroon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 41px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  border: 1px solid #78172d;
+  color: #ffe9ee;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.32);
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0 3px, rgba(0, 0, 0, 0.1) 3px 6px),
+    linear-gradient(180deg, #9d1f3c 0%, #681328 100%);
+}
+.fancy-maroon-btn::before,
+.fancy-maroon-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(22, 24, 27, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.fancy-maroon-btn::before { left: 8px; }
+.fancy-maroon-btn::after { right: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title dashboard-reggae-title">集金詳細</h1>
+
+<section class="panel">
+  <div>{{ collection_event_view["collection_date_label"] }}</div>
+  <div>{{ collection_event["title"] }} / {{ collection_event_view["amount_label"] }}</div>
+  <div>{{ collection_event["note"] or "備考なし" }}</div>
+</section>
+
+<section class="panel">
+  <div class="table-wrap">
+    <table class="check-table">
+      <thead>
+        <tr><th>集金済</th><th>未集金</th><th>対象外</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><ul class="member-list" id="collectedList"></ul></td>
+          <td><ul class="member-list" id="pendingList"></ul></td>
+          <td><ul class="member-list" id="exemptList"></ul></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="btn-row" style="margin-top:10px;"><a href="{{ url_for('admin_team_collections', team_id=team['id']) }}" class="btn fancy-maroon-btn">集金一覧へ戻る</a></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(() => {
+  const members = {{ member_rows|tojson }};
+  const collectedList = document.getElementById('collectedList');
+  const pendingList = document.getElementById('pendingList');
+  const exemptList = document.getElementById('exemptList');
+  const stateById = new Map();
+  members.forEach((member) => stateById.set(String(member.member_id), { ...member }));
+
+  const escapeHtml = (value) => String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+  const buildListItem = (member) => `
+    <li>
+      <div class="member-status-btn is-${member.status}">
+        <span class="member-name">${escapeHtml(member.member_name)}</span>
+        <span class="member-time">${escapeHtml(member.collected_at_label || '-')}</span>
+      </div>
+    </li>
+  `;
+
+  const renderColumns = () => {
+    const grouped = { collected: [], pending: [], exempt: [] };
+    stateById.forEach((member) => {
+      const key = grouped[member.status] ? member.status : 'pending';
+      grouped[key].push(member);
+    });
+    const sortByName = (a, b) => String(a.member_name).localeCompare(String(b.member_name), 'ja');
+    grouped.collected.sort(sortByName);
+    grouped.pending.sort(sortByName);
+    grouped.exempt.sort(sortByName);
+    collectedList.innerHTML = grouped.collected.length ? grouped.collected.map(buildListItem).join('') : '<li>-</li>';
+    pendingList.innerHTML = grouped.pending.length ? grouped.pending.map(buildListItem).join('') : '<li>-</li>';
+    exemptList.innerHTML = grouped.exempt.length ? grouped.exempt.map(buildListItem).join('') : '<li>-</li>';
+  };
+
+  renderColumns();
+})();
+</script>
+{% endblock %}

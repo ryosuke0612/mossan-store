@@ -350,13 +350,19 @@
             </div>
           </div>
           <div class="team-meta-item">
-            <label>メンバー・イベント管理</label>
             <div class="team-manage-actions">
               <a class="fancy-admin-btn gold" href="{{ url_for('admin_team_members', team_id=team['id']) }}">
                 メンバー管理
               </a>
               <a class="fancy-admin-btn rose" href="{{ url_for('admin_team_events', team_id=team['id']) }}">
                 イベント管理
+              </a>
+            </div>
+          </div>
+          <div class="team-meta-item">
+            <div class="team-manage-actions">
+              <a class="fancy-admin-btn maroon" href="{{ url_for('admin_team_collections', team_id=team['id']) }}">
+                集金管理
               </a>
             </div>
           </div>

@@ -8,7 +8,7 @@ import sqlite3
 import hashlib
 import hmac
 import time
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from functools import wraps
 from pathlib import Path
 from urllib import error as urllib_error
@@ -143,6 +143,14 @@ PLAN_FEATURE_CSV_EXPORT = "csv_export"
 PLAN_FEATURE_ATTENDANCE_CHECK = "attendance_check"
 PLAN_FEATURE_TEAM_SPLIT = "team_split"
 PLAN_FEATURE_RANDOM_PICK = "random_pick"
+COLLECTION_STATUS_PENDING = "pending"
+COLLECTION_STATUS_COLLECTED = "collected"
+COLLECTION_STATUS_EXEMPT = "exempt"
+COLLECTION_STATUS_LABELS = {
+    COLLECTION_STATUS_PENDING: "未集金",
+    COLLECTION_STATUS_COLLECTED: "集金済み",
+    COLLECTION_STATUS_EXEMPT: "免除",
+}
 ADMIN_SELECT_COLUMNS = """
 id,
 email,
@@ -314,6 +322,29 @@ def row_to_dict(row):
 
 def rows_to_dict(rows):
     return [dict(row) for row in rows]
+
+
+def normalize_collection_status(value):
+    normalized = (value or "").strip().lower()
+    status_map = {
+        COLLECTION_STATUS_PENDING: COLLECTION_STATUS_PENDING,
+        "unpaid": COLLECTION_STATUS_PENDING,
+        "未集金": COLLECTION_STATUS_PENDING,
+        COLLECTION_STATUS_COLLECTED: COLLECTION_STATUS_COLLECTED,
+        "paid": COLLECTION_STATUS_COLLECTED,
+        "済": COLLECTION_STATUS_COLLECTED,
+        "集金済み": COLLECTION_STATUS_COLLECTED,
+        COLLECTION_STATUS_EXEMPT: COLLECTION_STATUS_EXEMPT,
+        "免除": COLLECTION_STATUS_EXEMPT,
+    }
+    return status_map.get(normalized, "")
+
+
+def format_collection_collected_at(value):
+    parsed = parse_portal_datetime(value)
+    if not parsed:
+        return ""
+    return parsed.strftime("%m/%d %H:%M")
 
 
 def append_query_params(url, **params):
@@ -1959,6 +1990,16 @@ def portal_create_team(admin_id, name):
 
 
 def delete_team_related_records(cursor, team_id):
+    cursor.execute(
+        """
+        DELETE FROM portal_collection_event_members
+        WHERE collection_event_id IN (
+            SELECT id FROM portal_collection_events WHERE team_id=?
+        )
+        """,
+        (team_id,),
+    )
+    cursor.execute("DELETE FROM portal_collection_events WHERE team_id=?", (team_id,))
     cursor.execute("DELETE FROM portal_attendance WHERE team_id=?", (team_id,))
     cursor.execute("DELETE FROM portal_events WHERE team_id=?", (team_id,))
     cursor.execute("DELETE FROM portal_members WHERE team_id=?", (team_id,))
@@ -2440,6 +2481,402 @@ def portal_get_event(team_id, event_id):
     return event
 
 
+def build_collection_event_summary(collection_event, member_rows):
+    amount = int(collection_event.get("amount") or 0)
+    target_count = len(member_rows)
+    collected_count = len(
+        [row for row in member_rows if normalize_collection_status(row.get("status")) == COLLECTION_STATUS_COLLECTED]
+    )
+    pending_count = len(
+        [row for row in member_rows if normalize_collection_status(row.get("status")) == COLLECTION_STATUS_PENDING]
+    )
+    exempt_count = len(
+        [row for row in member_rows if normalize_collection_status(row.get("status")) == COLLECTION_STATUS_EXEMPT]
+    )
+    return {
+        "target_count": target_count,
+        "collected_count": collected_count,
+        "pending_count": pending_count,
+        "exempt_count": exempt_count,
+        "collected_total": amount * collected_count,
+        "pending_total": amount * pending_count,
+    }
+
+
+def _get_collection_target_members(team_id, target_member_ids=None, select_all_active=False):
+    members = portal_get_members_for_team(team_id, include_inactive=True)
+    active_members = [member for member in members if member.get("is_active")]
+    if select_all_active:
+        return active_members
+
+    selected_ids = []
+    seen_ids = set()
+    for raw_member_id in target_member_ids or []:
+        member_id = _coerce_positive_int(raw_member_id)
+        if member_id is None or member_id in seen_ids:
+            continue
+        seen_ids.add(member_id)
+        selected_ids.append(member_id)
+    if not selected_ids:
+        return []
+
+    selected_set = set(selected_ids)
+    return [member for member in active_members if member.get("id") in selected_set]
+
+
+def portal_create_collection_event(
+    team_id,
+    title,
+    collection_date,
+    amount,
+    note,
+    target_member_ids=None,
+    target_mode="manual",
+    attendance_event_id=None,
+):
+    target_members = _get_collection_target_members(
+        team_id,
+        target_member_ids=target_member_ids,
+        select_all_active=(target_mode == "all_active"),
+    )
+    if not target_members:
+        return None, "members_required"
+
+    now_text = portal_now_text()
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        INSERT INTO portal_collection_events (
+            team_id,
+            title,
+            collection_date,
+            amount,
+            note,
+            target_mode,
+            attendance_event_id,
+            created_at,
+            updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            team_id,
+            title,
+            collection_date,
+            amount,
+            note,
+            target_mode,
+            attendance_event_id,
+            now_text,
+            now_text,
+        ),
+    )
+    collection_event_id = c.lastrowid if not USE_POSTGRES else None
+    if not collection_event_id:
+        c.execute(
+            """
+            SELECT id
+            FROM portal_collection_events
+            WHERE team_id=? AND title=? AND collection_date=? AND amount=? AND created_at=?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (team_id, title, collection_date, amount, now_text),
+        )
+        created_row = c.fetchone()
+        collection_event_id = created_row["id"] if created_row else None
+    if not collection_event_id:
+        conn.rollback()
+        conn.close()
+        return None, "create_failed"
+
+    for member in target_members:
+        c.execute(
+            """
+            INSERT INTO portal_collection_event_members (
+                collection_event_id,
+                member_id,
+                member_name,
+                status,
+                collected_at,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                collection_event_id,
+                member.get("id"),
+                member.get("name") or "",
+                COLLECTION_STATUS_PENDING,
+                None,
+                now_text,
+                now_text,
+            ),
+        )
+    conn.commit()
+    conn.close()
+    return portal_get_collection_event(team_id, collection_event_id), "created"
+
+
+def portal_get_collection_events(team_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT
+            id,
+            team_id,
+            title,
+            collection_date,
+            amount,
+            note,
+            target_mode,
+            attendance_event_id,
+            created_at,
+            updated_at
+        FROM portal_collection_events
+        WHERE team_id=?
+        ORDER BY collection_date DESC, id DESC
+        """,
+        (team_id,),
+    )
+    events = rows_to_dict(c.fetchall())
+    conn.close()
+    return events
+
+
+def portal_get_collection_event(team_id, collection_event_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT
+            id,
+            team_id,
+            title,
+            collection_date,
+            amount,
+            note,
+            target_mode,
+            attendance_event_id,
+            created_at,
+            updated_at
+        FROM portal_collection_events
+        WHERE team_id=? AND id=?
+        """,
+        (team_id, collection_event_id),
+    )
+    event = row_to_dict(c.fetchone())
+    conn.close()
+    return event
+
+
+def portal_get_collection_event_members(team_id, collection_event_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT
+            cem.id,
+            cem.collection_event_id,
+            cem.member_id,
+            cem.member_name,
+            cem.status,
+            cem.collected_at,
+            cem.created_at,
+            cem.updated_at,
+            pm.name AS current_member_name,
+            pm.display_order,
+            pm.is_active AS current_member_is_active
+        FROM portal_collection_event_members cem
+        INNER JOIN portal_collection_events ce
+            ON ce.id = cem.collection_event_id
+        LEFT JOIN portal_members pm
+            ON pm.team_id = ce.team_id AND pm.id = cem.member_id
+        WHERE ce.team_id=? AND cem.collection_event_id=?
+        ORDER BY
+            CASE WHEN pm.display_order IS NULL THEN 1 ELSE 0 END,
+            pm.display_order ASC,
+            cem.id ASC
+        """,
+        (team_id, collection_event_id),
+    )
+    members = rows_to_dict(c.fetchall())
+    conn.close()
+    return members
+
+
+def portal_update_collection_event(
+    team_id,
+    collection_event_id,
+    title,
+    collection_date,
+    amount,
+    note,
+    target_member_ids=None,
+    target_mode="manual",
+    attendance_event_id=None,
+):
+    current_event = portal_get_collection_event(team_id, collection_event_id)
+    if not current_event:
+        return None, "not_found"
+
+    target_members = _get_collection_target_members(
+        team_id,
+        target_member_ids=target_member_ids,
+        select_all_active=(target_mode == "all_active"),
+    )
+    if not target_members:
+        return None, "members_required"
+
+    current_member_rows = portal_get_collection_event_members(team_id, collection_event_id)
+    preserved_by_member_id = {}
+    for row in current_member_rows:
+        member_id = _coerce_positive_int(row.get("member_id"))
+        if member_id is not None:
+            preserved_by_member_id[member_id] = row
+
+    now_text = portal_now_text()
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        UPDATE portal_collection_events
+        SET title=?, collection_date=?, amount=?, note=?, target_mode=?, attendance_event_id=?, updated_at=?
+        WHERE team_id=? AND id=?
+        """,
+        (
+            title,
+            collection_date,
+            amount,
+            note,
+            target_mode,
+            attendance_event_id,
+            now_text,
+            team_id,
+            collection_event_id,
+        ),
+    )
+    c.execute("DELETE FROM portal_collection_event_members WHERE collection_event_id=?", (collection_event_id,))
+    for member in target_members:
+        preserved = preserved_by_member_id.get(member.get("id"))
+        preserved_status = normalize_collection_status((preserved or {}).get("status")) or COLLECTION_STATUS_PENDING
+        preserved_collected_at = (
+            preserved.get("collected_at") if preserved_status == COLLECTION_STATUS_COLLECTED and preserved else None
+        )
+        c.execute(
+            """
+            INSERT INTO portal_collection_event_members (
+                collection_event_id,
+                member_id,
+                member_name,
+                status,
+                collected_at,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                collection_event_id,
+                member.get("id"),
+                member.get("name") or "",
+                preserved_status,
+                preserved_collected_at,
+                (preserved or {}).get("created_at") or now_text,
+                now_text,
+            ),
+        )
+    conn.commit()
+    conn.close()
+    return portal_get_collection_event(team_id, collection_event_id), "updated"
+
+
+def portal_delete_collection_event(team_id, collection_event_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("SELECT 1 FROM portal_collection_events WHERE team_id=? AND id=?", (team_id, collection_event_id))
+    if not c.fetchone():
+        conn.close()
+        return False
+    c.execute("DELETE FROM portal_collection_event_members WHERE collection_event_id=?", (collection_event_id,))
+    c.execute("DELETE FROM portal_collection_events WHERE team_id=? AND id=?", (team_id, collection_event_id))
+    conn.commit()
+    conn.close()
+    return True
+
+
+def portal_duplicate_collection_event(team_id, collection_event_id):
+    source_event = portal_get_collection_event(team_id, collection_event_id)
+    if not source_event:
+        return None, "not_found"
+
+    member_rows = portal_get_collection_event_members(team_id, collection_event_id)
+    target_member_ids = [
+        row.get("member_id")
+        for row in member_rows
+        if _coerce_positive_int(row.get("member_id")) is not None
+    ]
+    if not target_member_ids:
+        return None, "members_required"
+
+    duplicated_event, status = portal_create_collection_event(
+        team_id,
+        source_event.get("title") or "",
+        source_event.get("collection_date") or "",
+        int(source_event.get("amount") or 0),
+        source_event.get("note") or "",
+        target_member_ids=target_member_ids,
+        target_mode=source_event.get("target_mode") or "manual",
+        attendance_event_id=source_event.get("attendance_event_id"),
+    )
+    return duplicated_event, status
+
+
+def portal_update_collection_member_status(team_id, collection_event_id, member_id, status):
+    normalized_status = normalize_collection_status(status)
+    if not normalized_status:
+        return None, "invalid_status"
+
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT cem.id
+        FROM portal_collection_event_members cem
+        INNER JOIN portal_collection_events ce
+            ON ce.id = cem.collection_event_id
+        WHERE ce.team_id=? AND ce.id=? AND cem.member_id=?
+        """,
+        (team_id, collection_event_id, member_id),
+    )
+    row = c.fetchone()
+    if not row:
+        conn.close()
+        return None, "not_found"
+
+    now_text = portal_now_text()
+    collected_at = now_text if normalized_status == COLLECTION_STATUS_COLLECTED else None
+    c.execute(
+        """
+        UPDATE portal_collection_event_members
+        SET status=?, collected_at=?, updated_at=?
+        WHERE id=?
+        """,
+        (normalized_status, collected_at, now_text, row["id"]),
+    )
+    conn.commit()
+    conn.close()
+
+    member_rows = portal_get_collection_event_members(team_id, collection_event_id)
+    for member_row in member_rows:
+        if int(member_row.get("member_id") or 0) == int(member_id):
+            return member_row, "updated"
+    return None, "not_found"
+
+
 def portal_update_event(team_id, event_id, date, start_time, end_time, opponent, place):
     conn = get_db_connection()
     c = conn.cursor()
@@ -2632,6 +3069,61 @@ def portal_build_event_list_csv_response(team_id, month="all"):
     csv_text = "\ufeff" + output.getvalue()
     filename_suffix = month if month and month != "all" else "all"
     filename = f"event_list_export_{filename_suffix}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        csv_text,
+        mimetype="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+def collection_status_to_symbol(status):
+    normalized_status = normalize_collection_status(status)
+    symbol_map = {
+        COLLECTION_STATUS_COLLECTED: "○",
+        COLLECTION_STATUS_PENDING: "×",
+        COLLECTION_STATUS_EXEMPT: "ー",
+    }
+    return symbol_map.get(normalized_status, "-")
+
+
+def portal_build_collection_list_csv_response(team_id, month="all", member_name=""):
+    collection_events = portal_get_collection_events(team_id)
+    if month and month != "all":
+        collection_events = [
+            event for event in collection_events if (event.get("collection_date") or "").startswith(month)
+        ]
+
+    active_members = portal_get_members_for_team(team_id, include_inactive=False)
+    member_names = [member.get("name") for member in active_members if member.get("name")]
+    target_member_names = [member_name] if member_name and member_name in member_names else member_names
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["日付", "集金名", "金額", "備考", "○", "×", "ー", *target_member_names])
+
+    for collection_event in collection_events:
+        member_rows = portal_get_collection_event_members(team_id, collection_event["id"])
+        member_status_map = {
+            (row.get("current_member_name") or row.get("member_name") or ""): normalize_collection_status(row.get("status"))
+            for row in member_rows
+        }
+        summary = build_collection_event_summary(collection_event, member_rows)
+        writer.writerow(
+            [
+                collection_event.get("collection_date") or "",
+                collection_event.get("title") or "",
+                int(collection_event.get("amount") or 0),
+                collection_event.get("note") or "",
+                summary["collected_count"],
+                summary["pending_count"],
+                summary["exempt_count"],
+                *[collection_status_to_symbol(member_status_map.get(name, "")) for name in target_member_names],
+            ]
+        )
+
+    csv_text = "\ufeff" + output.getvalue()
+    filename_suffix = month if month and month != "all" else "all"
+    filename = f"collection_list_export_{filename_suffix}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     return Response(
         csv_text,
         mimetype="text/csv; charset=utf-8",
@@ -3268,6 +3760,40 @@ def init_db_sqlite():
         place TEXT,
         created_at TEXT NOT NULL,
         FOREIGN KEY(team_id) REFERENCES teams(id)
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_collection_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        team_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        collection_date TEXT NOT NULL,
+        amount INTEGER NOT NULL DEFAULT 0,
+        note TEXT,
+        target_mode TEXT NOT NULL DEFAULT 'manual',
+        attendance_event_id INTEGER,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY(team_id) REFERENCES teams(id),
+        FOREIGN KEY(attendance_event_id) REFERENCES portal_events(id)
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_collection_event_members (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        collection_event_id INTEGER NOT NULL,
+        member_id INTEGER,
+        member_name TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        collected_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE(collection_event_id, member_id),
+        FOREIGN KEY(collection_event_id) REFERENCES portal_collection_events(id)
     )
     """
     )
@@ -4068,6 +4594,37 @@ def init_db_postgres():
         opponent TEXT,
         place TEXT,
         created_at TEXT NOT NULL
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_collection_events (
+        id SERIAL PRIMARY KEY,
+        team_id INTEGER NOT NULL REFERENCES teams(id),
+        title TEXT NOT NULL,
+        collection_date TEXT NOT NULL,
+        amount INTEGER NOT NULL DEFAULT 0,
+        note TEXT,
+        target_mode TEXT NOT NULL DEFAULT 'manual',
+        attendance_event_id INTEGER REFERENCES portal_events(id),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    )
+    """
+    )
+    c.execute(
+        """
+    CREATE TABLE IF NOT EXISTS portal_collection_event_members (
+        id SERIAL PRIMARY KEY,
+        collection_event_id INTEGER NOT NULL REFERENCES portal_collection_events(id),
+        member_id INTEGER,
+        member_name TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        collected_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE(collection_event_id, member_id)
     )
     """
     )
@@ -7491,6 +8048,47 @@ def serialize_member_for_api(member):
     }
 
 
+def serialize_collection_member_for_api(member_row):
+    if not member_row:
+        return None
+    status = normalize_collection_status(member_row.get("status")) or COLLECTION_STATUS_PENDING
+    display_name = member_row.get("current_member_name") or member_row.get("member_name") or ""
+    return {
+        "member_id": member_row.get("member_id"),
+        "member_name": display_name,
+        "member_name_snapshot": member_row.get("member_name") or "",
+        "status": status,
+        "status_label": COLLECTION_STATUS_LABELS.get(status, COLLECTION_STATUS_LABELS[COLLECTION_STATUS_PENDING]),
+        "collected_at": member_row.get("collected_at") or "",
+        "collected_at_label": format_collection_collected_at(member_row.get("collected_at")),
+        "is_active": bool(member_row.get("current_member_is_active")) if member_row.get("current_member_is_active") is not None else True,
+    }
+
+
+def serialize_collection_event_for_list(collection_event, member_rows):
+    summary = build_collection_event_summary(collection_event, member_rows)
+    return {
+        "id": collection_event.get("id"),
+        "team_id": collection_event.get("team_id"),
+        "title": collection_event.get("title") or "",
+        "collection_date": collection_event.get("collection_date") or "",
+        "collection_date_label": format_date_mmdd_with_weekday(collection_event.get("collection_date") or ""),
+        "amount": int(collection_event.get("amount") or 0),
+        "amount_label": format_currency_yen(collection_event.get("amount") or 0),
+        "note": collection_event.get("note") or "",
+        "target_mode": collection_event.get("target_mode") or "manual",
+        "summary": summary,
+        "summary_labels": {
+            "target_count": summary["target_count"],
+            "collected_count": summary["collected_count"],
+            "pending_count": summary["pending_count"],
+            "exempt_count": summary["exempt_count"],
+            "collected_total": format_currency_yen(summary["collected_total"]),
+            "pending_total": format_currency_yen(summary["pending_total"]),
+        },
+    }
+
+
 @app.route("/admin/teams/<int:team_id>/members", methods=["GET", "POST"])
 @admin_login_required
 def admin_team_members(team_id):
@@ -7766,6 +8364,295 @@ def admin_team_events(team_id):
     )
 
 
+@app.route("/admin/teams/<int:team_id>/collections", methods=["GET", "POST"])
+@admin_login_required
+def admin_team_collections(team_id):
+    team, team_error = get_owned_team_or_error(team_id, session["admin_id"])
+    if team_error == "not_found":
+        return redirect(url_for("admin_dashboard", error_message="対象チームが見つかりません。"))
+    if team_error == "forbidden":
+        return redirect(url_for("admin_dashboard", error_message="他チームは操作できません。"))
+
+    error_message = request.args.get("error_message", "").strip()
+    success_message = request.args.get("success_message", "").strip()
+    page = _coerce_positive_int(request.args.get("page")) or 1
+    name = (request.args.get("name") or "").strip()
+    editing_collection_id = _coerce_positive_int(request.args.get("editing_collection_id"))
+
+    def _redirect_collections(page_value=None, success="", error="", editing_id=None):
+        params = {"team_id": team_id}
+        if page_value and page_value > 1:
+            params["page"] = page_value
+        if name:
+            params["name"] = name
+        if success:
+            params["success_message"] = success
+        if error:
+            params["error_message"] = error
+        if editing_id:
+            params["editing_collection_id"] = editing_id
+        return redirect(url_for("admin_team_collections", **params))
+
+    active_members = portal_get_members_for_team(team["id"], include_inactive=False)
+    member_options = [{"name": member.get("name")} for member in active_members if member.get("name")]
+    member_names = [member["name"] for member in member_options]
+    if name and name not in member_names:
+        name = ""
+
+    if request.method == "POST":
+        action = request.form.get("action", "").strip()
+        page = _coerce_positive_int(request.form.get("page")) or page
+        editing_collection_id = _coerce_positive_int(request.form.get("editing_collection_id")) or editing_collection_id
+        selected_collection_ids_raw = request.form.get("selected_collection_ids", "").strip()
+        selected_collection_ids = []
+        if selected_collection_ids_raw:
+            seen_collection_ids = set()
+            for raw_id in selected_collection_ids_raw.split(","):
+                collection_id = _coerce_positive_int(raw_id.strip())
+                if collection_id is None or collection_id in seen_collection_ids:
+                    continue
+                seen_collection_ids.add(collection_id)
+                selected_collection_ids.append(collection_id)
+        title = request.form.get("title", "").strip()
+        collection_date = request.form.get("collection_date", "").strip()
+        if not collection_date:
+            if editing_collection_id:
+                editing_event = portal_get_collection_event(team["id"], editing_collection_id)
+                collection_date = (editing_event or {}).get("collection_date", "").strip()
+            if not collection_date:
+                collection_date = date.today().isoformat()
+        note = request.form.get("note", "").strip()
+        target_mode_input = (request.form.get("target_mode") or "all_active").strip()
+        target_mode = "all_active" if target_mode_input == "all_active" else "manual"
+        target_member_ids = request.form.getlist("target_member_ids")
+        amount_raw = request.form.get("amount", "").strip()
+
+        if action in {"create_collection", "update_collection"}:
+            try:
+                amount = int(amount_raw)
+            except ValueError:
+                amount = -1
+            if not title:
+                error_message = "集金イベント名を入力してください。"
+            elif amount < 0:
+                error_message = "金額は0円以上の整数で入力してください。"
+            else:
+                if action == "create_collection":
+                    created_event, status = portal_create_collection_event(
+                        team["id"],
+                        title,
+                        collection_date,
+                        amount,
+                        note,
+                        target_member_ids=target_member_ids,
+                        target_mode=target_mode,
+                    )
+                    if created_event:
+                        return _redirect_collections(page_value=1, success="集金イベントを作成しました。")
+                    if status == "members_required":
+                        error_message = "対象メンバーを1名以上選択してください。"
+                    else:
+                        error_message = "集金イベントを作成できませんでした。"
+                else:
+                    updated_event, status = portal_update_collection_event(
+                        team["id"],
+                        editing_collection_id,
+                        title,
+                        collection_date,
+                        amount,
+                        note,
+                        target_member_ids=target_member_ids,
+                        target_mode=target_mode,
+                    )
+                    if updated_event:
+                        return _redirect_collections(page_value=page, success="集金イベントを更新しました。")
+                    if status == "not_found":
+                        error_message = "編集対象の集金イベントが見つかりません。"
+                    elif status == "members_required":
+                        error_message = "対象メンバーを1名以上選択してください。"
+                    else:
+                        error_message = "集金イベントを更新できませんでした。"
+        elif action == "start_edit":
+            if len(selected_collection_ids) != 1:
+                return _redirect_collections(page_value=page, error="編集する集金イベントを1件選択してください。")
+            target_id = selected_collection_ids[0]
+            target_event = portal_get_collection_event(team["id"], target_id)
+            if not target_event:
+                return _redirect_collections(page_value=page, error="対象の集金イベントが見つかりません。")
+            return _redirect_collections(page_value=page, editing_id=target_id)
+        elif action == "open_detail":
+            if len(selected_collection_ids) != 1:
+                return _redirect_collections(page_value=page, error="詳細確認する集金イベントを1件選択してください。")
+            target_id = selected_collection_ids[0]
+            if not portal_get_collection_event(team["id"], target_id):
+                return _redirect_collections(page_value=page, error="対象の集金イベントが見つかりません。")
+            return redirect(url_for("admin_team_collection_run", team_id=team["id"], collection_event_id=target_id))
+        elif action == "duplicate_collection":
+            if not selected_collection_ids:
+                return _redirect_collections(page_value=page, error="複製する集金イベントを選択してください。")
+            copied_count = 0
+            for target_id in selected_collection_ids:
+                target_event = portal_get_collection_event(team["id"], target_id)
+                if not target_event:
+                    continue
+                duplicated_event, status = portal_duplicate_collection_event(team["id"], target_id)
+                if not duplicated_event:
+                    continue
+                copied_count += 1
+            if copied_count == 0:
+                return _redirect_collections(page_value=page, error="対象の集金イベントが見つかりません。")
+            return _redirect_collections(page_value=1, success=f"集金イベントを複製しました（{copied_count}件）。")
+        elif action == "delete_collection":
+            if not selected_collection_ids:
+                return _redirect_collections(page_value=page, error="削除する集金イベントを選択してください。")
+            deleted_count = 0
+            for target_id in selected_collection_ids:
+                target_event = portal_get_collection_event(team["id"], target_id)
+                if not target_event:
+                    continue
+                if portal_delete_collection_event(team["id"], target_id):
+                    deleted_count += 1
+            if deleted_count == 0:
+                return _redirect_collections(page_value=page, error="対象の集金イベントが見つかりません。")
+            return _redirect_collections(page_value=1, success=f"集金イベントを削除しました（{deleted_count}件）。")
+        else:
+            error_message = "不正な操作です。"
+
+    collection_events = portal_get_collection_events(team["id"])
+    editing_collection = None
+    editing_member_ids = set()
+    if editing_collection_id is not None:
+        editing_collection = portal_get_collection_event(team["id"], editing_collection_id)
+        if editing_collection:
+            editing_member_ids = {
+                int(row.get("member_id"))
+                for row in portal_get_collection_event_members(team["id"], editing_collection_id)
+                if _coerce_positive_int(row.get("member_id")) is not None
+            }
+        else:
+            editing_collection_id = None
+
+    collection_rows = []
+    for collection_event in collection_events:
+        member_rows = portal_get_collection_event_members(team["id"], collection_event["id"])
+        collection_rows.append(serialize_collection_event_for_list(collection_event, member_rows))
+    display_member_names = [name] if name else member_names
+    per_page = 10
+    total_count = len(collection_rows)
+    total_pages = max(1, (total_count + per_page - 1) // per_page)
+    if page > total_pages:
+        page = total_pages
+    start_index = (page - 1) * per_page
+    end_index = start_index + per_page
+    visible_rows = collection_rows[start_index:end_index]
+    collection_table_rows = []
+    for row in visible_rows:
+        member_rows = portal_get_collection_event_members(team["id"], row["id"])
+        member_status_map = {}
+        member_cell_map = {}
+        for member_row in member_rows:
+            member_name = (member_row.get("current_member_name") or member_row.get("member_name") or "")
+            normalized_status = normalize_collection_status(member_row.get("status"))
+            member_status_map[member_name] = normalized_status
+            member_cell_map[member_name] = {
+                "member_id": member_row.get("member_id"),
+                "status": normalized_status,
+                "symbol": collection_status_to_symbol(normalized_status),
+            }
+        table_row = dict(row)
+        table_row["event_summary_text"] = f"{row['title']}"
+        table_row["event_sub_text"] = f"{row['amount_label']} / {row['note'] or '備考なし'}"
+        table_row["member_symbols"] = {
+            member_name: collection_status_to_symbol(member_status_map.get(member_name, ""))
+            for member_name in display_member_names
+        }
+        table_row["member_cells"] = {
+            member_name: member_cell_map.get(
+                member_name,
+                {
+                    "member_id": None,
+                    "status": COLLECTION_STATUS_EXEMPT,
+                    "symbol": collection_status_to_symbol(COLLECTION_STATUS_EXEMPT),
+                },
+            )
+            for member_name in display_member_names
+        }
+        collection_table_rows.append(table_row)
+
+    return render_template(
+        "admin_team_collections_table.html",
+        team=team,
+        active_members=active_members,
+        member_options=member_options,
+        name=name,
+        display_member_names=display_member_names,
+        collection_rows=collection_rows,
+        collection_table_rows=collection_table_rows,
+        page=page,
+        per_page=per_page,
+        total_count=total_count,
+        total_pages=total_pages,
+        editing_collection=editing_collection,
+        editing_collection_id=editing_collection_id,
+        editing_member_ids=editing_member_ids,
+        error_message=error_message,
+        success_message=success_message,
+    )
+
+
+@app.route("/admin/teams/<int:team_id>/collections/<int:collection_event_id>")
+@admin_login_required
+def admin_team_collection_run(team_id, collection_event_id):
+    team, team_error = get_owned_team_or_error(team_id, session["admin_id"])
+    if team_error == "not_found":
+        return redirect(url_for("admin_dashboard", error_message="対象チームが見つかりません。"))
+    if team_error == "forbidden":
+        return redirect(url_for("admin_dashboard", error_message="他チームは操作できません。"))
+
+    collection_event = portal_get_collection_event(team["id"], collection_event_id)
+    if not collection_event:
+        return redirect(url_for("admin_team_collections", team_id=team["id"], error_message="集金イベントが見つかりません。"))
+
+    member_rows = portal_get_collection_event_members(team["id"], collection_event_id)
+    summary = build_collection_event_summary(collection_event, member_rows)
+    serialized_members = [serialize_collection_member_for_api(member_row) for member_row in member_rows]
+    filter_mode = (request.args.get("filter") or "all").strip().lower()
+    if filter_mode not in {"all", "pending", "collected"}:
+        filter_mode = "all"
+
+    return render_template(
+        "admin_collection_run.html",
+        team=team,
+        collection_event=collection_event,
+        collection_event_view=serialize_collection_event_for_list(collection_event, member_rows),
+        member_rows=serialized_members,
+        summary=summary,
+        summary_labels={
+            "target_count": summary["target_count"],
+            "collected_count": summary["collected_count"],
+            "pending_count": summary["pending_count"],
+            "exempt_count": summary["exempt_count"],
+            "collected_total": format_currency_yen(summary["collected_total"]),
+            "pending_total": format_currency_yen(summary["pending_total"]),
+        },
+        filter_mode=filter_mode,
+    )
+
+
+@app.route("/admin/teams/<int:team_id>/collections/csv")
+@admin_login_required
+def admin_export_collection_csv(team_id):
+    team, team_error = get_owned_team_or_error(team_id, session["admin_id"])
+    if team_error == "not_found":
+        return redirect(url_for("admin_dashboard", error_message="対象チームが見つかりません。"))
+    if team_error == "forbidden":
+        return redirect(url_for("admin_dashboard", error_message="他チームは操作できません。"))
+
+    month = request.args.get("month", "all").strip() or "all"
+    name = (request.args.get("name") or "").strip()
+    return portal_build_collection_list_csv_response(team["id"], month=month, member_name=name)
+
+
 @app.route("/admin/api/teams/<int:team_id>/members", methods=["GET"])
 @admin_api_required
 def api_get_members(team_id):
@@ -7881,6 +8768,44 @@ def api_reorder_members(team_id):
 
     members = portal_get_members_for_team(team["id"], include_inactive=True)
     return {"status": "updated", "members": [serialize_member_for_api(member) for member in members]}
+
+
+@app.route("/admin/api/teams/<int:team_id>/collections/<int:collection_event_id>/members/<int:member_id>", methods=["PATCH"])
+@admin_api_required
+def api_update_collection_member_status(team_id, collection_event_id, member_id):
+    team, team_error = get_owned_team_or_error(team_id, session["admin_id"])
+    if team_error == "not_found":
+        return {"error": "not_found"}, 404
+    if team_error == "forbidden":
+        return {"error": "forbidden"}, 403
+
+    payload = request.get_json(silent=True) or request.form
+    next_status = normalize_collection_status(payload.get("status"))
+    if not next_status:
+        return {"error": "invalid_status"}, 400
+
+    updated_row, status = portal_update_collection_member_status(team["id"], collection_event_id, member_id, next_status)
+    if not updated_row and status == "not_found":
+        return {"error": "member_not_found"}, 404
+    if not updated_row:
+        return {"error": "update_failed"}, 400
+
+    collection_event = portal_get_collection_event(team["id"], collection_event_id)
+    member_rows = portal_get_collection_event_members(team["id"], collection_event_id)
+    summary = build_collection_event_summary(collection_event, member_rows)
+    return {
+        "status": "updated",
+        "member": serialize_collection_member_for_api(updated_row),
+        "summary": summary,
+        "summary_labels": {
+            "target_count": summary["target_count"],
+            "collected_count": summary["collected_count"],
+            "pending_count": summary["pending_count"],
+            "exempt_count": summary["exempt_count"],
+            "collected_total": format_currency_yen(summary["collected_total"]),
+            "pending_total": format_currency_yen(summary["pending_total"]),
+        },
+    }
 
 
 @app.route("/admin/logout")
