@@ -191,8 +191,11 @@
       </tr></tbody>
     </table>
   </div>
-  <p class="small-note" style="margin-top:10px;">チーム分け、代表者選出、配車割当ができます。<br>参加メンバーが異なる場合は↓で調整してください。</p>
-  <div class="btn-row" style="margin-top:10px;"><a href="{{ tools_url }}" class="btn fancy-maroon-btn">参加者ツールへ</a></div>
+  <p class="small-note" style="margin-top:10px;">チーム分け、代表者選出、配車割り当てができます。<br>参加メンバーが異なる場合は↓で調整してください。</p>
+  <div class="btn-row" style="margin-top:10px;">
+    <a href="{{ tools_url }}" class="btn fancy-maroon-btn">参加者ツールへ</a>
+    <a href="{{ transport_assign_url }}" class="btn fancy-maroon-btn">配車割り当て</a>
+  </div>
 </section>
 
 <section id="confirmed-attendees-section" class="panel">
@@ -206,7 +209,7 @@
           {% for name in candidate_names %}
           {% set is_walkin = (name in walkin_names) %}
           {% set transport = transport_response_map.get(name, {}) %}
-          {% set selected_role = transport.get("transport_role") or 'direct' %}
+          {% set selected_role = transport.get("transport_role") or ('direct' if is_walkin else 'direct') %}
           <tr{% if is_walkin %} class="walkin-row"{% endif %}>
             <td class="col-select">
               {% if is_walkin %}

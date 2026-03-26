@@ -3225,7 +3225,7 @@ def portal_prune_transport_assignments(team_id, event_id, valid_member_names):
 
 
 def portal_save_transport_assignments(team_id, event_id, requested_assignments):
-    response_rows = portal_get_transport_responses(team_id, event_id)
+    response_rows = portal_get_all_transport_responses_for_event(team_id, event_id)
     driver_capacity = {}
     passenger_names = set()
     for row in response_rows:
@@ -7518,7 +7518,8 @@ def save_portal_confirmed_attendees(team_id, event_id, selected_names, walkin_na
     c.execute("DELETE FROM portal_actual_attendees WHERE team_id=? AND event_id=?", (team_id, event_id))
     for member_name in names_to_keep:
         if member_name in walkins:
-            source_type = "walkin" if member_name in selected else "walkin_pending"
+            # Walk-in attendees are treated as confirmed immediately after being added.
+            source_type = "walkin"
         else:
             source_type = "attendance" if member_name in join_names else "walkin"
         c.execute(
@@ -7548,6 +7549,27 @@ def add_portal_walkin_attendee(team_id, event_id, member_name):
         DO UPDATE SET source_type=excluded.source_type, confirmed_at=excluded.confirmed_at
         """,
         (team_id, event_id, target_name, "walkin", portal_now_text()),
+    )
+    c.execute(
+        """
+        INSERT INTO portal_transport_responses (
+            team_id,
+            event_id,
+            member_name,
+            transport_role,
+            seats_available,
+            note,
+            updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(team_id, event_id, member_name)
+        DO UPDATE SET
+            transport_role=excluded.transport_role,
+            seats_available=excluded.seats_available,
+            note=excluded.note,
+            updated_at=excluded.updated_at
+        """,
+        (team_id, event_id, target_name, TRANSPORT_ROLE_DIRECT, 0, "", portal_now_text()),
     )
     conn.commit()
     conn.close()
@@ -9491,6 +9513,7 @@ def public_attendance_check(public_id, match_id):
         transport_role_labels=TRANSPORT_ROLE_LABELS,
         tool_message=tool_message,
         tools_url=url_for("public_attendance_tools", public_id=public_id, match_id=match_id),
+        transport_assign_url=url_for("public_attendance_transport_assignments", public_id=public_id, match_id=match_id),
     )
 
 
@@ -9508,7 +9531,6 @@ def public_attendance_tools(public_id, match_id):
     match_data = dict(match)
     match_data["date_label"] = format_date_mmdd_with_weekday(match["date"])
     effective_attendees = get_portal_effective_attendees(team["id"], match_id)
-    transport_overview = build_portal_transport_overview(team["id"], match_id, allowed_member_names=effective_attendees)
     team_result = []
     random_pick = []
     team_share_url = ""
@@ -9546,6 +9568,30 @@ def public_attendance_tools(public_id, match_id):
         saved_tool_results=saved_tool_results,
         selected_team_count=selected_team_count,
         selected_pick_count=selected_pick_count,
+    )
+
+
+@app.route("/team/<public_id>/attendance/tools/<int:match_id>/transport")
+def public_attendance_transport_assignments(public_id, match_id):
+    team = get_team_by_public_id(public_id)
+    if not team:
+        return redirect(url_for("attendance_description"))
+    if not can_team_use_paid_feature(team):
+        return build_member_page_notice_redirect(public_id, get_plan_restriction_message(PLAN_FEATURE_ATTENDANCE_CHECK))
+    match = portal_get_event(team["id"], match_id)
+    if not match:
+        return redirect(url_for("member_team_page", public_id=public_id))
+
+    match_data = dict(match)
+    match_data["date_label"] = format_date_mmdd_with_weekday(match["date"])
+    effective_attendees = get_portal_effective_attendees(team["id"], match_id)
+    transport_overview = build_portal_transport_overview(team["id"], match_id, allowed_member_names=effective_attendees)
+    tool_message = request.args.get("tool_message", "").strip()
+    return render_template(
+        "public_attendance_transport_assign.html",
+        public_id=public_id,
+        match=match_data,
+        tool_message=tool_message,
         transport_summary=transport_overview["summary"],
         transport_driver_cards=transport_overview["driver_cards"],
         transport_passenger_rows=transport_overview["passenger_rows"],
@@ -9946,8 +9992,13 @@ def public_attendance_tools_save_transport_assignments(public_id, match_id):
         if (passenger_name or "").strip() in effective_attendees
     ]
     saved, status = portal_save_transport_assignments(team["id"], match_id, assignments)
-    message = "配車割当を保存しました。" if saved else status
-    return redirect(url_for("public_attendance_tools", public_id=public_id, match_id=match_id, tool_message=message))
+    redirect_kwargs = {
+        "public_id": public_id,
+        "match_id": match_id,
+    }
+    if not saved and status:
+        redirect_kwargs["tool_message"] = status
+    return redirect(url_for("public_attendance_transport_assignments", **redirect_kwargs))
 
 
 @app.route("/team/<public_id>/attendance/check/<int:match_id>/tools/save", methods=["POST"])

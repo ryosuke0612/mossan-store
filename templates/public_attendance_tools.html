@@ -22,9 +22,6 @@
 .copy-area { width: 100%; min-height: 90px; }
 .qr-wrap img { width: 200px; max-width: 60vw; border-radius: 10px; background: #fff; padding: 6px; }
 .tool-form { display: grid; gap: 8px; }
-.transport-table { width: 100%; border-collapse: collapse; background: #11151b; }
-.transport-table th, .transport-table td { border: 1px solid #2f3946; vertical-align: top; }
-.transport-table th { border-color: #2f6d44; background: linear-gradient(180deg, #3b8f5f 0%, #2a6d48 100%); color: #f2fff6; }
 .inline-submit-row { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; }
 .inline-submit-row select { width: 96px; margin: 0; }
 .inline-submit-label { font-size: 16px; font-weight: 800; letter-spacing: 0.04em; }
@@ -137,75 +134,6 @@ document.addEventListener("DOMContentLoaded", function () {
   </div>
 </section>
 {% endif %}
-
-<section class="panel">
-  <h2>配車割当</h2>
-  <div class="small-note" style="margin-bottom:10px;">出欠確認ページで入力した配車回答をもとに、ここで割当を調整します。</div>
-  <div class="team-grid" style="margin-bottom:12px;">
-    <div class="team-card"><div class="team-name">運転する</div><div>{{ transport_summary["driver_count"] }}人 / 空き {{ transport_summary["total_seats"] }}席</div></div>
-    <div class="team-card"><div class="team-name">乗車希望</div><div>{{ transport_summary["passenger_count"] }}人 / 未割当 {{ transport_summary["unassigned_count"] }}人</div></div>
-  </div>
-  {% if transport_passenger_rows %}
-  <form method="post" action="{{ url_for('public_attendance_tools_save_transport_assignments', public_id=public_id, match_id=match['id']) }}" data-preserve-scroll="true">
-    <div class="table-wrap">
-      <table class="transport-table">
-        <thead>
-          <tr>
-            <th>乗車希望メンバー</th>
-            <th>メモ</th>
-            <th>割当先</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in transport_passenger_rows %}
-          <tr>
-            <td>
-              {{ row["member_name"] }}
-              <input type="hidden" name="passenger_name" value="{{ row['member_name'] }}">
-            </td>
-            <td>{{ row["note"] or "-" }}</td>
-            <td>
-              <select name="driver_name">
-                <option value="">未割当</option>
-                {% for driver in transport_driver_options %}
-                <option value="{{ driver['member_name'] }}" {% if row["assigned_driver"] == driver['member_name'] %}selected{% endif %}>
-                  {{ driver["member_name"] }} ({{ driver["seats_available"] }}人)
-                </option>
-                {% endfor %}
-              </select>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <div class="btn-row" style="margin-top:10px;">
-      <button type="submit" class="btn fancy-maroon-btn">配車割当を保存</button>
-    </div>
-  </form>
-  {% else %}
-  <div class="notice">乗車希望メンバーはいません。</div>
-  {% endif %}
-
-  {% if transport_driver_cards %}
-  <div class="team-grid" style="margin-top:12px;">
-    {% for driver in transport_driver_cards %}
-    <div class="team-card">
-      <div class="team-name">{{ driver["member_name"] }}</div>
-      <div>空き {{ driver["remaining_seats"] }} / {{ driver["seats_available"] }}席</div>
-      {% if driver["note"] %}<div class="small-note" style="margin-top:6px;">{{ driver["note"] }}</div>{% endif %}
-      {% if driver["assigned_passengers"] %}
-      <ul class="member-list" style="margin-top:8px;">
-        {% for passenger_name in driver["assigned_passengers"] %}
-        <li>{{ passenger_name }}</li>
-        {% endfor %}
-      </ul>
-      {% endif %}
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-</section>
 
 <div class="btn-row" style="margin-top:16px;"><a href="{{ url_for('public_attendance_check', public_id=public_id, match_id=match['id']) }}" class="btn secondary">出欠確認へ戻る</a></div>
 {% endblock %}
