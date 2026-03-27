@@ -8859,67 +8859,6 @@ def admin_team_events(team_id):
     )
 
 
-@app.route("/admin/teams/<int:team_id>/events/<int:event_id>/transport", methods=["GET", "POST"])
-@admin_login_required
-def admin_team_event_transport(team_id, event_id):
-    team, team_error = get_owned_team_or_error(team_id, session["admin_id"])
-    if team_error == "not_found":
-        return redirect(url_for("admin_dashboard", error_message="対象チームが見つかりません。"))
-    if team_error == "forbidden":
-        return redirect(url_for("admin_dashboard", error_message="他チームは操作できません。"))
-
-    event = portal_get_event(team["id"], event_id)
-    if not event:
-        return redirect(url_for("admin_team_events", team_id=team_id, error_message="対象イベントが見つかりません。"))
-
-    if request.method == "POST":
-        assignments = [
-            {"passenger_name": passenger_name, "driver_name": driver_name}
-            for passenger_name, driver_name in zip(
-                request.form.getlist("passenger_name"),
-                request.form.getlist("driver_name"),
-            )
-        ]
-        saved, status = portal_save_transport_assignments(team["id"], event_id, assignments)
-        if not saved:
-            return redirect(
-                url_for(
-                    "admin_team_event_transport",
-                    team_id=team_id,
-                    event_id=event_id,
-                    error_message=status,
-                )
-            )
-        return redirect(
-            url_for(
-                "admin_team_event_transport",
-                team_id=team_id,
-                event_id=event_id,
-                success_message="配車割当を保存しました。",
-            )
-        )
-
-    event_data = dict(event)
-    event_data["date_label"] = format_date_mmdd_with_weekday(event_data.get("date", ""))
-    overview = build_portal_transport_overview(team["id"], event_id)
-    driver_options = [row for row in overview["driver_rows"] if int(row.get("seats_available") or 0) > 0]
-    return render_template(
-        "admin_transport.html",
-        team=team,
-        event=event_data,
-        driver_rows=overview["driver_rows"],
-        driver_cards=overview["driver_cards"],
-        passenger_rows=overview["passenger_rows"],
-        direct_rows=overview["direct_rows"],
-        none_rows=overview["none_rows"],
-        summary=overview["summary"],
-        driver_options=driver_options,
-        transport_role_labels=TRANSPORT_ROLE_LABELS,
-        error_message=request.args.get("error_message", "").strip(),
-        success_message=request.args.get("success_message", "").strip(),
-    )
-
-
 @app.route("/admin/teams/<int:team_id>/collections", methods=["GET", "POST"])
 @admin_login_required
 def admin_team_collections(team_id):

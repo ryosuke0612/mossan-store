@@ -418,7 +418,6 @@
               <th class="col-time">時間</th>
               <th>内容</th>
               <th>場所</th>
-              <th class="col-transport">配車</th>
             </tr>
           </thead>
           <tbody>
@@ -431,9 +430,6 @@
               <td class="col-time">{{ event['start_time'] }} - {{ event['end_time'] }}</td>
               <td>{{ event['opponent'] }}</td>
               <td>{{ event['place'] }}</td>
-              <td class="col-transport">
-                <a class="btn secondary" style="padding:4px 10px; font-size:12px;" href="{{ url_for('admin_team_event_transport', team_id=team['id'], event_id=event['id']) }}">配車管理</a>
-              </td>
             </tr>
             {% endfor %}
           </tbody>
