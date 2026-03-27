@@ -123,6 +123,7 @@ ADMIN_PLAN_REQUEST_STATUS_LABELS = {
     ADMIN_PLAN_REQUEST_STATUS_APPROVED: "承認済み",
     ADMIN_PLAN_REQUEST_STATUS_REJECTED: "却下",
 }
+ADMIN_PLAN_REQUESTS_ENABLED = False
 ADMIN_PLAN_REQUEST_PAYMENT_VERIFICATION_LABELS = {
     ADMIN_PLAN_REQUEST_PAYMENT_VERIFICATION_PENDING: "確認待ち",
     ADMIN_PLAN_REQUEST_PAYMENT_VERIFICATION_VERIFIED: "確認済み",
@@ -909,6 +910,11 @@ def portal_get_team_details_by_admin():
                 FROM portal_events pe
                 WHERE pe.team_id = t.id
             ) AS event_count,
+            (
+                SELECT COUNT(1)
+                FROM portal_collection_events pce
+                WHERE pce.team_id = t.id
+            ) AS collection_event_count,
             (
                 SELECT MAX(updated_value)
                 FROM (
@@ -7885,6 +7891,7 @@ def admin_dashboard():
         admin_email=session.get("admin_email", ""),
         teams=teams,
         can_create_team=can_create_team,
+        admin_plan_requests_enabled=ADMIN_PLAN_REQUESTS_ENABLED,
         team_limit_message=get_plan_restriction_message(PLAN_FEATURE_TEAM_CREATE),
         free_team_limit=ADMIN_FREE_TEAM_LIMIT,
         current_plan_type=get_admin_plan_type(admin),
@@ -8468,6 +8475,9 @@ def admin_create_plan_request():
         session.pop("admin_id", None)
         session.pop("admin_email", None)
         return redirect(url_for("admin_login_entry"))
+
+    if not ADMIN_PLAN_REQUESTS_ENABLED:
+        return redirect(url_for("admin_dashboard", error_message="有料プラン申請は現在準備中です。"))
 
     if request.method == "GET":
         context = build_admin_plan_request_page_context(admin)

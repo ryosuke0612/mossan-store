@@ -304,20 +304,6 @@
 <h1 class="page-title dashboard-reggae-title">イベント管理</h1>
 
 <section class="panel">
-  <h2 class="dashboard-reggae-heading" style="margin-top:0;">対象チーム</h2>
-  <div class="grid-2">
-    <div>
-      <label>チーム名</label>
-      <div>{{ team['name'] }}</div>
-    </div>
-    <div>
-      <label>公開ID</label>
-      <div>{{ team['public_id'] }}</div>
-    </div>
-  </div>
-</section>
-
-<section class="panel">
   {% if error_message %}
   <div class="notice error">{{ error_message }}</div>
   {% endif %}
@@ -465,7 +451,6 @@
 </section>
 
 <div class="btn-row" style="margin-top:16px;">
-  <a class="btn" href="{{ url_for('admin_team_collections', team_id=team['id']) }}">集金管理</a>
   <a class="btn secondary" href="{{ url_for('admin_dashboard') }}">ダッシュボードに戻る</a>
 </div>
 {% endblock %}

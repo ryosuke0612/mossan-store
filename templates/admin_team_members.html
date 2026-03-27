@@ -17,27 +17,6 @@
   letter-spacing: 0.02em;
   color: #ead7b3;
 }
-.member-summary {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 12px;
-}
-.member-stat {
-  border: 1px solid rgba(255, 43, 43, 0.22);
-  border-radius: 12px;
-  padding: 12px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
-}
-.member-stat label {
-  margin: 0;
-  font-size: 12px;
-}
-.member-stat .value {
-  margin-top: 6px;
-  font-size: 24px;
-  font-weight: 700;
-}
 .member-editor {
   border: 1px solid rgba(255, 43, 43, 0.24);
   border-radius: 14px;
@@ -248,9 +227,6 @@
     linear-gradient(180deg, #9d1f3c 0%, #681328 100%);
 }
 @media (max-width: 760px) {
-  .member-summary {
-    grid-template-columns: 1fr;
-  }
   .member-table th,
   .member-table td {
     padding: 8px 6px;
@@ -285,43 +261,6 @@
 
 {% block content %}
 <h1 class="page-title dashboard-reggae-title">メンバー管理</h1>
-
-<section class="panel">
-  <div class="grid-2">
-    <div>
-      <label>チーム名</label>
-      <div>{{ team["name"] }}</div>
-    </div>
-    <div>
-      <label>メンバー用URL</label>
-      <div>
-        <a href="{{ url_for('member_team_page', public_id=team['public_id']) }}">
-          /team/{{ team["public_id"] }}
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <div class="member-summary">
-    <div class="member-stat">
-      <label>登録メンバー数</label>
-      <div class="value" id="totalMembersCount">{{ total_members }}</div>
-    </div>
-    <div class="member-stat">
-      <label>有効メンバー数</label>
-      <div class="value" id="activeMembersCount">{{ active_members }}</div>
-    </div>
-    <div class="member-stat">
-      <label>無効メンバー数</label>
-      <div class="value" id="inactiveMembersCount">{{ inactive_members }}</div>
-    </div>
-  </div>
-
-  <div class="btn-row" style="margin-top: 12px;">
-    <a class="btn" href="{{ url_for('admin_team_collections', team_id=team['id']) }}">集金管理</a>
-    <a class="btn secondary" href="{{ url_for('admin_dashboard') }}">ダッシュボードに戻る</a>
-  </div>
-</section>
 
 <section class="panel">
   {% if error_message %}
@@ -406,6 +345,10 @@
   <div class="notice success">メンバーはまだ登録されていません。</div>
   {% endif %}
 </section>
+
+<div class="btn-row" style="margin-top: 16px;">
+  <a class="btn secondary" href="{{ url_for('admin_dashboard') }}">ダッシュボードに戻る</a>
+</div>
 {% endblock %}
 
 {% block scripts %}

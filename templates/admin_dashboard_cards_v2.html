@@ -74,6 +74,7 @@
   gap: 14px;
 }
 .team-card {
+  position: relative;
   display: grid;
   gap: 12px;
   padding: 16px;
@@ -112,29 +113,110 @@
 }
 .member-url-wrap {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
   width: 100%;
-  flex-wrap: nowrap;
-  flex-direction: column;
+  flex-wrap: wrap;
 }
 .member-url-wrap a {
   flex: 0 0 auto;
   display: inline-block;
+  max-width: 100%;
 }
 .copy-url-btn {
-  margin-left: 0;
-  padding: 8px 12px;
-  font-size: 13px;
+  flex: 0 0 auto;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0;
+  line-height: 1;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+.copy-url-btn svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.copy-url-btn::before,
+.copy-url-btn::after {
+  display: none;
+}
+.copy-url-btn:hover {
+  filter: none;
+  color: #ffd0d0;
+  background: transparent;
+}
+.member-url-wrap .copy-feedback {
+  display: inline-block;
+  font-size: 12px;
   line-height: 1.2;
+  color: #9fe3b6;
+  opacity: 0;
+  transform: translateY(1px);
+  transition: opacity 0.18s ease;
+  pointer-events: none;
+}
+.member-url-wrap .copy-feedback.is-visible {
+  opacity: 1;
 }
 .team-delete-form {
-  margin: 0 0 0 auto;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  margin: 0;
 }
 .delete-team-btn {
-  padding: 8px 12px;
-  font-size: 13px;
-  line-height: 1.2;
+  position: relative;
+  width: 43px;
+  height: 43px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.16s ease, filter 0.16s ease;
+  font-size: 0;
+}
+.delete-team-btn:hover {
+  filter: brightness(1.06);
+}
+.delete-team-btn:active {
+  transform: scale(0.94);
+}
+.delete-team-btn::before,
+.delete-team-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 41px;
+  height: 13px;
+  border-radius: 999px;
+  transform-origin: center;
+  background: linear-gradient(180deg, #ff8d80 0%, #e43b2f 42%, #b51412 100%);
+  box-shadow:
+    inset 0 2px 2px rgba(255, 255, 255, 0.28),
+    inset 0 -2px 2px rgba(104, 7, 7, 0.28),
+    0 2px 5px rgba(125, 12, 12, 0.3);
+}
+.delete-team-btn::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.delete-team-btn::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 .team-manage-actions {
   display: flex;
@@ -237,12 +319,27 @@
 .fancy-admin-btn:active {
   transform: translateY(0);
 }
+.fancy-admin-btn.is-disabled,
+.fancy-admin-btn[aria-disabled="true"] {
+  border-color: #4f545a;
+  color: #8d97a3;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.03) 0 3px,
+      rgba(0, 0, 0, 0.05) 3px 6px
+    ),
+    linear-gradient(180deg, #3f454c 0%, #2a2f35 100%);
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 3px 8px rgba(0, 0, 0, 0.24);
+  text-shadow: none;
+  filter: none;
+}
 .delete-team-btn {
-  min-width: 90px;
-  min-height: 36px;
-  padding: 8px 12px;
-  font-size: 13px;
-  letter-spacing: 0.03em;
+  min-width: 0;
+  min-height: 0;
+  letter-spacing: 0;
 }
 @media (max-width: 900px) {
   .dashboard-top {
@@ -286,7 +383,11 @@
         </div>
         <div class="btn-row">
           <a class="btn secondary" href="{{ url_for('admin_account_settings') }}">アカウント設定</a>
+          {% if admin_plan_requests_enabled %}
           <a class="btn fancy-admin-btn gold" href="{{ url_for('admin_create_plan_request') }}">有料プラン申請</a>
+          {% else %}
+          <span class="btn fancy-admin-btn gold is-disabled" aria-disabled="true" title="現在準備中です">有料プラン申請</span>
+          {% endif %}
         </div>
       </div>
     </section>
@@ -330,7 +431,7 @@
                 action="{{ url_for('admin_delete_team', team_id=team['id']) }}"
                 onsubmit="return confirm('このチームを削除します。よろしいですか？');"
               >
-                <button class="btn fancy-admin-btn maroon-dark delete-team-btn" type="submit">削除</button>
+                <button class="delete-team-btn" type="submit" aria-label="削除" title="削除"></button>
               </form>
             </div>
           </div>
@@ -344,9 +445,15 @@
                 class="btn secondary copy-url-btn"
                 type="button"
                 data-copy-url="{{ url_for('member_team_page', public_id=team['public_id']) }}"
+                aria-label="URLをコピー"
+                title="URLをコピー"
               >
-                URLをコピー
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <rect x="9" y="9" width="10" height="10" rx="2"></rect>
+                  <path d="M7 15H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1"></path>
+                </svg>
               </button>
+              <span class="copy-feedback" aria-live="polite"></span>
             </div>
           </div>
           <div class="team-meta-item">
@@ -400,24 +507,40 @@ async function copyMemberUrl(urlText) {
 }
 
 document.querySelectorAll("[data-copy-url]").forEach((button) => {
+  let resetTimerId = null;
+
   button.addEventListener("click", async () => {
-    const originalLabel = button.textContent;
+    const feedback = button.parentElement ? button.parentElement.querySelector(".copy-feedback") : null;
     const relativeUrl = button.getAttribute("data-copy-url");
     const absoluteUrl = new URL(relativeUrl, window.location.origin).toString();
 
+    if (resetTimerId) {
+      clearTimeout(resetTimerId);
+      resetTimerId = null;
+    }
+
     try {
       await copyMemberUrl(absoluteUrl);
-      button.textContent = "コピーしました";
-      setTimeout(() => {
-        button.textContent = originalLabel;
-      }, 1400);
+      if (feedback) {
+        feedback.textContent = "\u30b3\u30d4\u30fc\u3057\u307e\u3057\u305f";
+        feedback.classList.add("is-visible");
+      }
     } catch (error) {
-      button.textContent = "コピー失敗";
-      setTimeout(() => {
-        button.textContent = originalLabel;
-      }, 1400);
+      if (feedback) {
+        feedback.textContent = "\u30b3\u30d4\u30fc\u5931\u6557";
+        feedback.classList.add("is-visible");
+      }
     }
+
+    resetTimerId = window.setTimeout(() => {
+      if (feedback) {
+        feedback.classList.remove("is-visible");
+        feedback.textContent = "";
+      }
+      resetTimerId = null;
+    }, 1400);
   });
 });
 </script>
 {% endblock %}
+

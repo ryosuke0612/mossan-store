@@ -1,0 +1,100 @@
+<svg width="1400" height="900" viewBox="0 0 1400 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1400" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#13171c"/>
+      <stop offset="1" stop-color="#1d242c"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#2a3139"/>
+      <stop offset="1" stop-color="#181d23"/>
+    </linearGradient>
+    <linearGradient id="danger" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ff8d80"/>
+      <stop offset="0.45" stop-color="#e43b2f"/>
+      <stop offset="1" stop-color="#b51412"/>
+    </linearGradient>
+    <style>
+      .title { font: 700 38px 'Noto Sans JP', sans-serif; fill: #f5f7fb; }
+      .subtitle { font: 400 18px 'Noto Sans JP', sans-serif; fill: #b7c0ca; }
+      .label { font: 700 24px 'Noto Sans JP', sans-serif; fill: #f5f7fb; }
+      .desc { font: 400 17px 'Noto Sans JP', sans-serif; fill: #b7c0ca; }
+      .chip { font: 700 16px 'Noto Sans JP', sans-serif; fill: #0f1419; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="900" fill="url(#bg)"/>
+  <text x="70" y="84" class="title">削除アイコン案 比較</text>
+  <text x="70" y="118" class="subtitle">管理者ダッシュボードのチームカード右上に置く想定のイメージです</text>
+
+  <!-- Card 1 -->
+  <g transform="translate(60 170)">
+    <rect width="240" height="290" rx="26" fill="url(#panel)" stroke="#39424d"/>
+    <rect x="170" y="18" width="46" height="40" rx="10" fill="rgba(177,43,75,0.20)" stroke="rgba(177,43,75,0.58)"/>
+    <rect x="183" y="29" width="18" height="2" rx="999" fill="#ffe7ec" transform="rotate(45 183 29) translate(6 0)"/>
+    <rect x="183" y="45" width="18" height="2" rx="999" fill="#ffe7ec" transform="rotate(-45 183 45) translate(0 -6)"/>
+    <text x="22" y="96" class="label">1. 枠ありの細線 ✖</text>
+    <text x="22" y="134" class="desc">角丸枠つきで、閉じる操作として</text>
+    <text x="22" y="160" class="desc">安定感のある見た目です。</text>
+    <rect x="22" y="214" width="94" height="34" rx="17" fill="#ead7b3"/>
+    <text x="44" y="236" class="chip">安定感</text>
+  </g>
+
+  <!-- Card 2 -->
+  <g transform="translate(325 170)">
+    <rect width="240" height="290" rx="26" fill="url(#panel)" stroke="#39424d"/>
+    <text x="188" y="50" font-family="Noto Sans JP, sans-serif" font-size="36" font-weight="700" fill="#ff6b7b">×</text>
+    <text x="22" y="96" class="label">2. 枠なしのシンプル ×</text>
+    <text x="22" y="134" class="desc">文字だけで見せる最小構成。</text>
+    <text x="22" y="160" class="desc">軽くてすっきりした印象です。</text>
+    <rect x="22" y="214" width="84" height="34" rx="17" fill="#ead7b3"/>
+    <text x="44" y="236" class="chip">軽量</text>
+  </g>
+
+  <!-- Card 3 -->
+  <g transform="translate(590 170)">
+    <rect width="240" height="290" rx="26" fill="url(#panel)" stroke="#39424d"/>
+    <rect x="177" y="30" width="38" height="12" rx="999" fill="url(#danger)" transform="rotate(45 196 36)"/>
+    <rect x="177" y="30" width="38" height="12" rx="999" fill="url(#danger)" transform="rotate(-45 196 36)"/>
+    <text x="22" y="96" class="label">3. 太めで丸みのある ✖</text>
+    <text x="22" y="134" class="desc">柔らかく目立つ赤いクロスで、</text>
+    <text x="22" y="160" class="desc">注意喚起の強さがあります。</text>
+    <rect x="22" y="214" width="104" height="34" rx="17" fill="#ead7b3"/>
+    <text x="44" y="236" class="chip">注意強め</text>
+  </g>
+
+  <!-- Card 4 -->
+  <g transform="translate(855 170)">
+    <rect width="240" height="290" rx="26" fill="url(#panel)" stroke="#39424d"/>
+    <path d="M182 24L210 52" stroke="#ff8d96" stroke-width="3" stroke-linecap="round"/>
+    <path d="M210 24L182 52" stroke="#ff8d96" stroke-width="3" stroke-linecap="round"/>
+    <text x="22" y="96" class="label">4. ミニマル線アイコン ✕</text>
+    <text x="22" y="134" class="desc">細い線2本で描く、静かで</text>
+    <text x="22" y="160" class="desc">シャープな見た目です。</text>
+    <rect x="22" y="214" width="92" height="34" rx="17" fill="#ead7b3"/>
+    <text x="44" y="236" class="chip">静か</text>
+  </g>
+
+  <!-- Card 5 -->
+  <g transform="translate(1120 170)">
+    <rect width="220" height="290" rx="26" fill="url(#panel)" stroke="#39424d"/>
+    <circle cx="184" cy="38" r="19" fill="#cf2e2e"/>
+    <path d="M176 30L192 46" stroke="#fff4f4" stroke-width="3.2" stroke-linecap="round"/>
+    <path d="M192 30L176 46" stroke="#fff4f4" stroke-width="3.2" stroke-linecap="round"/>
+    <text x="22" y="96" class="label">5. 円形バッジ内の ✖</text>
+    <text x="22" y="134" class="desc">危険操作としての視認性が</text>
+    <text x="22" y="160" class="desc">かなり高い案です。</text>
+    <rect x="22" y="214" width="94" height="34" rx="17" fill="#ead7b3"/>
+    <text x="44" y="236" class="chip">明快</text>
+  </g>
+
+  <!-- Footer guidance -->
+  <g transform="translate(60 520)">
+    <rect width="1280" height="290" rx="28" fill="#161c22" stroke="#39424d"/>
+    <text x="28" y="48" class="label">選び方の目安</text>
+    <text x="28" y="96" class="desc">1. 枠ありの細線 ✖: 管理画面に自然になじみやすく、閉じる操作として違和感が少ない案。</text>
+    <text x="28" y="132" class="desc">2. 枠なしのシンプル ×: 最も軽量で、カードの情報量を増やしにくい案。</text>
+    <text x="28" y="168" class="desc">3. 太めで丸みのある ✖: 削除の存在をしっかり目立たせたいときに向いています。</text>
+    <text x="28" y="204" class="desc">4. ミニマル線アイコン ✕: UIのトーンを落ち着かせたいときに相性が良いです。</text>
+    <text x="28" y="240" class="desc">5. 円形バッジ内の ✖: 危険操作を明快に区別したいときに分かりやすい案です。</text>
+  </g>
+</svg>

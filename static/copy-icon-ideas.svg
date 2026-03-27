@@ -1,0 +1,96 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#14181d"/>
+      <stop offset="1" stop-color="#20262d"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#2A3139"/>
+      <stop offset="1" stop-color="#1A1F25"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#FFB7B7"/>
+      <stop offset="1" stop-color="#EAD7B3"/>
+    </linearGradient>
+    <style>
+      .title { font: 700 34px 'Noto Sans JP', sans-serif; fill: #F6F7F9; }
+      .subtitle { font: 400 18px 'Noto Sans JP', sans-serif; fill: #B7C0C9; }
+      .label { font: 700 24px 'Noto Sans JP', sans-serif; fill: #F1F5F9; }
+      .desc { font: 400 17px 'Noto Sans JP', sans-serif; fill: #B8C1CB; }
+      .chip { font: 700 18px 'Noto Sans JP', sans-serif; fill: #0F1419; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="720" fill="url(#bg)"/>
+  <text x="72" y="84" class="title">コピーアイコン案</text>
+  <text x="72" y="118" class="subtitle">管理者ダッシュボードの「メンバー用URL」横に置く想定の比較イメージです</text>
+
+  <g transform="translate(60 160)">
+    <rect x="0" y="0" width="250" height="240" rx="24" fill="url(#card)" stroke="#36404A"/>
+    <rect x="20" y="20" width="210" height="36" rx="18" fill="#10151A" stroke="#39434E"/>
+    <text x="36" y="44" class="desc">/team/example-team</text>
+    <circle cx="198" cy="38" r="16" fill="#2B333C" stroke="#4D5966"/>
+    <rect x="184" y="26" width="14" height="14" rx="2.5" stroke="url(#accent)" stroke-width="2"/>
+    <path d="M190 44H186C183.791 44 182 42.209 182 40V30C182 27.791 183.791 26 186 26H196C198.209 26 200 27.791 200 30V34" stroke="url(#accent)" stroke-width="2" stroke-linecap="round"/>
+    <text x="24" y="100" class="label">1. 二重書類</text>
+    <text x="24" y="134" class="desc">いちばん定番で、</text>
+    <text x="24" y="160" class="desc">「コピー」と伝わりやすい案。</text>
+    <rect x="24" y="186" width="92" height="34" rx="17" fill="url(#accent)"/>
+    <text x="43" y="208" class="chip">定番</text>
+  </g>
+
+  <g transform="translate(340 160)">
+    <rect x="0" y="0" width="250" height="240" rx="24" fill="url(#card)" stroke="#36404A"/>
+    <rect x="20" y="20" width="210" height="36" rx="18" fill="#10151A" stroke="#39434E"/>
+    <text x="36" y="44" class="desc">/team/example-team</text>
+    <circle cx="198" cy="38" r="16" fill="#2B333C" stroke="#4D5966"/>
+    <path d="M192 27H204C205.657 27 207 28.343 207 30V45C207 46.657 205.657 48 204 48H192C190.343 48 189 46.657 189 45V30C189 28.343 190.343 27 192 27Z" stroke="url(#accent)" stroke-width="2"/>
+    <path d="M194.5 24.5H201.5" stroke="url(#accent)" stroke-width="2" stroke-linecap="round"/>
+    <path d="M195.5 34.5H200.5" stroke="url(#accent)" stroke-width="2" stroke-linecap="round"/>
+    <text x="24" y="100" class="label">2. クリップボード</text>
+    <text x="24" y="134" class="desc">業務ツール感が強く、</text>
+    <text x="24" y="160" class="desc">管理画面になじみやすい案。</text>
+    <rect x="24" y="186" width="110" height="34" rx="17" fill="url(#accent)"/>
+    <text x="42" y="208" class="chip">実務的</text>
+  </g>
+
+  <g transform="translate(620 160)">
+    <rect x="0" y="0" width="250" height="240" rx="24" fill="url(#card)" stroke="#36404A"/>
+    <rect x="20" y="20" width="210" height="36" rx="18" fill="#10151A" stroke="#39434E"/>
+    <text x="36" y="44" class="desc">/team/example-team</text>
+    <circle cx="198" cy="38" r="16" fill="#2B333C" stroke="#4D5966"/>
+    <path d="M188 39C186.343 39 185 37.657 185 36C185 34.343 186.343 33 188 33H192" stroke="url(#accent)" stroke-width="2" stroke-linecap="round"/>
+    <path d="M208 39C209.657 39 211 37.657 211 36C211 34.343 209.657 33 208 33H204" stroke="url(#accent)" stroke-width="2" stroke-linecap="round"/>
+    <path d="M192 36H204" stroke="url(#accent)" stroke-width="2" stroke-linecap="round"/>
+    <rect x="196" y="38" width="8" height="8" rx="1.5" stroke="url(#accent)" stroke-width="1.8"/>
+    <rect x="193" y="41" width="8" height="8" rx="1.5" stroke="url(#accent)" stroke-width="1.8"/>
+    <text x="24" y="100" class="label">3. リンク + 複製</text>
+    <text x="24" y="134" class="desc">URL専用の操作だと</text>
+    <text x="24" y="160" class="desc">伝わりやすい案。</text>
+    <rect x="24" y="186" width="118" height="34" rx="17" fill="url(#accent)"/>
+    <text x="42" y="208" class="chip">URL向け</text>
+  </g>
+
+  <g transform="translate(900 160)">
+    <rect x="0" y="0" width="250" height="240" rx="24" fill="url(#card)" stroke="#36404A"/>
+    <rect x="20" y="20" width="210" height="36" rx="18" fill="#10151A" stroke="#39434E"/>
+    <text x="36" y="44" class="desc">/team/example-team</text>
+    <circle cx="198" cy="38" r="16" fill="#2B333C" stroke="#4D5966"/>
+    <rect x="189" y="29" width="12" height="12" rx="2" stroke="url(#accent)" stroke-width="1.8"/>
+    <rect x="195" y="35" width="12" height="12" rx="2" stroke="url(#accent)" stroke-width="1.8"/>
+    <text x="24" y="100" class="label">4. ミニマル複製</text>
+    <text x="24" y="134" class="desc">主張を抑えたいときに</text>
+    <text x="24" y="160" class="desc">相性がいい案。</text>
+    <rect x="24" y="186" width="106" height="34" rx="17" fill="url(#accent)"/>
+    <text x="42" y="208" class="chip">控えめ</text>
+  </g>
+
+  <g transform="translate(60 460)">
+    <rect x="0" y="0" width="1090" height="180" rx="24" fill="#161C22" stroke="#36404A"/>
+    <text x="28" y="42" class="label">おすすめの見分け方</text>
+    <text x="28" y="80" class="desc">二重書類: 迷ったらこれ。最も分かりやすいです。</text>
+    <text x="28" y="110" class="desc">クリップボード: 管理画面らしい落ち着いた印象になります。</text>
+    <text x="28" y="140" class="desc">リンク + 複製: URL専用のコピー操作だと一目で伝わります。</text>
+    <text x="28" y="170" class="desc">ミニマル複製: 画面を静かに保ちたいときに向いています。</text>
+  </g>
+</svg>
