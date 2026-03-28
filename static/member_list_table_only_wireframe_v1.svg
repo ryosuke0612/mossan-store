@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1600" viewBox="0 0 1440 1600" role="img" aria-labelledby="title desc">
+  <title id="title">メンバーリスト表のみの初版ワイヤー</title>
+  <desc id="desc">ページネーションなしでメンバー一覧表のみを表示する管理画面ワイヤーです。</desc>
+  <defs>
+    <style>
+      .bg { fill: #f5efe4; }
+      .nav { fill: #17352d; }
+      .panel { fill: #fffdf8; stroke: #27483c; stroke-width: 2; rx: 22; ry: 22; }
+      .soft { fill: #edf3ec; stroke: #6a8477; stroke-width: 1.4; rx: 16; ry: 16; }
+      .danger { fill: #fbe5de; stroke: #b34b40; stroke-width: 1.4; rx: 14; ry: 14; }
+      .alert { fill: #fff1de; stroke: #bf7b37; stroke-width: 1.4; rx: 14; ry: 14; }
+      .text { fill: #19332c; font-family: 'Yu Gothic', 'Hiragino Sans', sans-serif; }
+      .muted { fill: #5d6d64; font-family: 'Yu Gothic', 'Hiragino Sans', sans-serif; }
+      .title { font-size: 34px; font-weight: 700; }
+      .h1 { font-size: 28px; font-weight: 700; }
+      .h2 { font-size: 22px; font-weight: 700; }
+      .body { font-size: 16px; font-weight: 500; }
+      .small { font-size: 14px; font-weight: 500; }
+      .good { fill: #2d6b51; }
+      .warn { fill: #9b571f; }
+      .bad { fill: #a33c34; }
+      .line { stroke: #d8ddd8; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1440" height="1600" />
+
+  <rect class="nav" x="0" y="0" width="1440" height="88" />
+  <text x="72" y="56" class="title" fill="#f6f2e9">メンバー一覧</text>
+  <text x="1168" y="54" class="body" fill="#dfe7e0">対象: FC Sample</text>
+
+  <text x="72" y="156" class="h1 text">メンバーリスト表のみの初版</text>
+  <text x="72" y="190" class="body muted">まずは一覧表だけを表示し、あとで絞り込み条件や表示切替を追加しやすい構成にします。</text>
+
+  <rect class="panel" x="72" y="236" width="1296" height="1240" />
+
+  <rect class="soft" x="104" y="272" width="1232" height="64" />
+  <text x="132" y="311" class="body text">メンバー数 28名</text>
+  <text x="1030" y="311" class="body muted">CSV出力</text>
+  <text x="1142" y="311" class="body muted">並び替え</text>
+  <text x="1238" y="311" class="body muted">列設定</text>
+
+  <text x="104" y="388" class="small muted">将来的にこの上へフィルターエリアを追加可能</text>
+  <rect class="soft" x="104" y="410" width="1232" height="56" />
+  <text x="132" y="446" class="body muted">今は一覧表示のみ。あとから検索・出席率・支払い状況などを追加。</text>
+
+  <rect class="soft" x="104" y="500" width="1232" height="62" />
+  <text x="130" y="539" class="body text">メンバー名</text>
+  <text x="336" y="539" class="body text">ステータス</text>
+  <text x="474" y="539" class="body text">出席率</text>
+  <text x="592" y="539" class="body text">未払い</text>
+  <text x="722" y="539" class="body text">未回答</text>
+  <text x="844" y="539" class="body text">最終参加</text>
+  <text x="986" y="539" class="body text">要対応理由</text>
+  <text x="1212" y="539" class="body text">メモ</text>
+
+  <rect class="danger" x="104" y="580" width="1232" height="82" />
+  <rect class="alert" x="104" y="674" width="1232" height="82" />
+  <rect class="soft" x="104" y="768" width="1232" height="82" />
+  <rect class="soft" x="104" y="862" width="1232" height="82" />
+  <rect class="soft" x="104" y="956" width="1232" height="82" />
+  <rect class="soft" x="104" y="1050" width="1232" height="82" />
+  <rect class="soft" x="104" y="1144" width="1232" height="82" />
+  <rect class="soft" x="104" y="1238" width="1232" height="82" />
+
+  <text x="130" y="628" class="body text">田中 太郎</text>
+  <text x="336" y="628" class="body text">在籍中</text>
+  <text x="474" y="628" class="body text">42%</text>
+  <text x="592" y="628" class="body bad">8,000円</text>
+  <text x="722" y="628" class="body text">3件</text>
+  <text x="844" y="628" class="body text">2/11</text>
+  <text x="986" y="628" class="body text">2か月未払い</text>
+  <text x="1212" y="628" class="small text">連絡優先</text>
+
+  <text x="130" y="722" class="body text">鈴木 花</text>
+  <text x="336" y="722" class="body text">在籍中</text>
+  <text x="474" y="722" class="body text">51%</text>
+  <text x="592" y="722" class="body good">0円</text>
+  <text x="722" y="722" class="body text">0件</text>
+  <text x="844" y="722" class="body text">3/20</text>
+  <text x="986" y="722" class="body text">参加率低下</text>
+  <text x="1212" y="722" class="small text">最近少なめ</text>
+
+  <text x="130" y="816" class="body text">佐藤 颯</text>
+  <text x="336" y="816" class="body text">在籍中</text>
+  <text x="474" y="816" class="body text">77%</text>
+  <text x="592" y="816" class="body good">0円</text>
+  <text x="722" y="816" class="body text">2件</text>
+  <text x="844" y="816" class="body text">3/23</text>
+  <text x="986" y="816" class="body text">返信が遅い傾向</text>
+  <text x="1212" y="816" class="small text">様子見</text>
+
+  <text x="130" y="910" class="body text">高橋 遼</text>
+  <text x="336" y="910" class="body text">在籍中</text>
+  <text x="474" y="910" class="body text">33%</text>
+  <text x="592" y="910" class="body good">0円</text>
+  <text x="722" y="910" class="body text">1件</text>
+  <text x="844" y="910" class="body text">1/28</text>
+  <text x="986" y="910" class="body text">今月未参加</text>
+  <text x="1212" y="910" class="small text">確認推奨</text>
+
+  <text x="130" y="1004" class="body text">中村 陸</text>
+  <text x="336" y="1004" class="body text">在籍中</text>
+  <text x="474" y="1004" class="body text">91%</text>
+  <text x="592" y="1004" class="body good">0円</text>
+  <text x="722" y="1004" class="body text">0件</text>
+  <text x="844" y="1004" class="body text">3/24</text>
+  <text x="986" y="1004" class="body good">問題なし</text>
+  <text x="1212" y="1004" class="small text">主力</text>
+
+  <text x="130" y="1098" class="body text">山田 海</text>
+  <text x="336" y="1098" class="body text">在籍中</text>
+  <text x="474" y="1098" class="body text">95%</text>
+  <text x="592" y="1098" class="body good">0円</text>
+  <text x="722" y="1098" class="body text">0件</text>
+  <text x="844" y="1098" class="body text">3/26</text>
+  <text x="986" y="1098" class="body good">安定参加</text>
+  <text x="1212" y="1098" class="small text">優先不要</text>
+
+  <text x="130" y="1192" class="body text">伊藤 凛</text>
+  <text x="336" y="1192" class="body text">休会</text>
+  <text x="474" y="1192" class="body text">12%</text>
+  <text x="592" y="1192" class="body good">0円</text>
+  <text x="722" y="1192" class="body text">0件</text>
+  <text x="844" y="1192" class="body text">12/10</text>
+  <text x="986" y="1192" class="body warn">休会中</text>
+  <text x="1212" y="1192" class="small text">表示確認</text>
+
+  <text x="130" y="1286" class="body text">加藤 蓮</text>
+  <text x="336" y="1286" class="body text">在籍中</text>
+  <text x="474" y="1286" class="body text">73%</text>
+  <text x="592" y="1286" class="body good">0円</text>
+  <text x="722" y="1286" class="body text">1件</text>
+  <text x="844" y="1286" class="body text">3/18</text>
+  <text x="986" y="1286" class="body text">回答やや遅め</text>
+  <text x="1212" y="1286" class="small text">通常</text>
+
+  <text x="130" y="1380" class="body text">井上 陽</text>
+  <text x="336" y="1380" class="body text">在籍中</text>
+  <text x="474" y="1380" class="body text">64%</text>
+  <text x="592" y="1380" class="body warn">2,000円</text>
+  <text x="722" y="1380" class="body text">0件</text>
+  <text x="844" y="1380" class="body text">3/15</text>
+  <text x="986" y="1380" class="body text">一部未払い</text>
+  <text x="1212" y="1380" class="small text">確認</text>
+
+  <line class="line" x1="104" y1="1470" x2="1336" y2="1470" />
+  <text x="104" y="1512" class="small muted">スクロールで全メンバーを確認。ページネーションは設けず、1画面で連続して見られる前提です。</text>
+</svg>

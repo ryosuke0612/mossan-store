@@ -1,0 +1,435 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1500" viewBox="0 0 2200 1500" role="img" aria-labelledby="title desc">
+  <title id="title">メンバー分析一覧表ワイヤー 既存テーブルデザイン準拠</title>
+  <desc id="desc">既存の管理画面テーブルデザインに合わせ、出席、欠席、未回答、集金、配車関連の各指標を列表示したメンバー一覧表のワイヤーです。</desc>
+  <defs>
+    <style>
+      .bg { fill: #0d1117; }
+      .frame { fill: #121821; stroke: #2f3946; stroke-width: 2; rx: 18; ry: 18; }
+      .table-bg { fill: #11151b; }
+      .th { fill: url(#headGrad); stroke: #2f6d44; stroke-width: 1.2; }
+      .td { fill: #11151b; stroke: #2f3946; stroke-width: 1; }
+      .td-hover { fill: #1b222c; stroke: #2f3946; stroke-width: 1; }
+      .toolbar { fill: #171d26; stroke: #2f3946; stroke-width: 1.2; rx: 10; ry: 10; }
+      .pill { fill: #1f2732; stroke: #31404f; stroke-width: 1; rx: 999; ry: 999; }
+      .text { fill: #e5e7eb; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; }
+      .muted { fill: #9aa4b2; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; }
+      .header { fill: #f2fff6; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; font-weight: 700; }
+      .title { font-size: 34px; font-weight: 700; }
+      .h1 { font-size: 26px; font-weight: 700; }
+      .body { font-size: 15px; font-weight: 500; }
+      .small { font-size: 13px; font-weight: 500; }
+      .tiny { font-size: 12px; font-weight: 500; }
+      .num { font-size: 15px; font-weight: 700; }
+      .good { fill: #7dd3a6; }
+      .warn { fill: #f6c66d; }
+      .bad { fill: #f29c9c; }
+      .strong { fill: #ffffff; font-weight: 700; }
+    </style>
+    <linearGradient id="headGrad" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#3b8f5f"/>
+      <stop offset="100%" stop-color="#2a6d48"/>
+    </linearGradient>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="2200" height="1500" />
+
+  <text x="52" y="62" class="text title">メンバー分析一覧</text>
+  <text x="52" y="100" class="muted body">既存の管理画面テーブルデザインに合わせた初版イメージ。横スクロール前提で全指標を1表に集約します。</text>
+
+  <rect class="frame" x="36" y="128" width="2128" height="1300" />
+
+  <rect class="toolbar" x="60" y="156" width="2080" height="62" />
+  <text x="86" y="194" class="text body">メンバー数 28名</text>
+  <rect class="pill" x="1710" y="170" width="116" height="34" />
+  <rect class="pill" x="1840" y="170" width="116" height="34" />
+  <rect class="pill" x="1970" y="170" width="146" height="34" />
+  <text x="1745" y="192" class="muted small">CSV出力</text>
+  <text x="1873" y="192" class="muted small">列設定</text>
+  <text x="2004" y="192" class="muted small">横スクロール案内</text>
+
+  <text x="60" y="262" class="muted small">フィルターは後付け想定。この版では表のみ表示。</text>
+
+  <rect class="table-bg" x="60" y="286" width="2080" height="1098" />
+
+  <!-- Header -->
+  <rect class="th" x="60" y="286" width="170" height="78" />
+  <rect class="th" x="230" y="286" width="92" height="78" />
+  <rect class="th" x="322" y="286" width="92" height="78" />
+  <rect class="th" x="414" y="286" width="92" height="78" />
+  <rect class="th" x="506" y="286" width="92" height="78" />
+  <rect class="th" x="598" y="286" width="92" height="78" />
+  <rect class="th" x="690" y="286" width="92" height="78" />
+  <rect class="th" x="782" y="286" width="102" height="78" />
+  <rect class="th" x="884" y="286" width="116" height="78" />
+  <rect class="th" x="1000" y="286" width="102" height="78" />
+  <rect class="th" x="1102" y="286" width="126" height="78" />
+  <rect class="th" x="1228" y="286" width="126" height="78" />
+  <rect class="th" x="1354" y="286" width="126" height="78" />
+  <rect class="th" x="1480" y="286" width="110" height="78" />
+  <rect class="th" x="1590" y="286" width="126" height="78" />
+  <rect class="th" x="1716" y="286" width="140" height="78" />
+  <rect class="th" x="1856" y="286" width="126" height="78" />
+  <rect class="th" x="1982" y="286" width="158" height="78" />
+
+  <text x="78" y="332" class="header body">メンバー名</text>
+  <text x="249" y="322" class="header tiny">出席</text>
+  <text x="242" y="342" class="header tiny">回数</text>
+  <text x="341" y="322" class="header tiny">出席</text>
+  <text x="341" y="342" class="header tiny">率</text>
+  <text x="434" y="322" class="header tiny">欠席</text>
+  <text x="426" y="342" class="header tiny">回数</text>
+  <text x="526" y="322" class="header tiny">欠席</text>
+  <text x="526" y="342" class="header tiny">率</text>
+  <text x="610" y="322" class="header tiny">未回答</text>
+  <text x="610" y="342" class="header tiny">回数</text>
+  <text x="713" y="322" class="header tiny">未回答</text>
+  <text x="713" y="342" class="header tiny">率</text>
+  <text x="799" y="322" class="header tiny">集金</text>
+  <text x="799" y="342" class="header tiny">回数</text>
+  <text x="913" y="322" class="header tiny">集金額</text>
+  <text x="1026" y="322" class="header tiny">運転対応</text>
+  <text x="1034" y="342" class="header tiny">回数</text>
+  <text x="1138" y="322" class="header tiny">乗せてもらった</text>
+  <text x="1145" y="342" class="header tiny">回数</text>
+  <text x="1267" y="322" class="header tiny">現地集合</text>
+  <text x="1276" y="342" class="header tiny">回数</text>
+  <text x="1501" y="322" class="header tiny">運転対応率</text>
+  <text x="1614" y="322" class="header tiny">乗せてもらった</text>
+  <text x="1638" y="342" class="header tiny">率</text>
+  <text x="1754" y="322" class="header tiny">現地集合率</text>
+  <text x="1886" y="322" class="header tiny">最終参加日</text>
+  <text x="2028" y="322" class="header tiny">ひとこと</text>
+  <text x="2036" y="342" class="header tiny">メモ</text>
+
+  <!-- Rows -->
+  <!-- row 1 -->
+  <rect class="td-hover" x="60" y="364" width="170" height="84" />
+  <rect class="td-hover" x="230" y="364" width="92" height="84" />
+  <rect class="td-hover" x="322" y="364" width="92" height="84" />
+  <rect class="td-hover" x="414" y="364" width="92" height="84" />
+  <rect class="td-hover" x="506" y="364" width="92" height="84" />
+  <rect class="td-hover" x="598" y="364" width="92" height="84" />
+  <rect class="td-hover" x="690" y="364" width="92" height="84" />
+  <rect class="td-hover" x="782" y="364" width="102" height="84" />
+  <rect class="td-hover" x="884" y="364" width="116" height="84" />
+  <rect class="td-hover" x="1000" y="364" width="102" height="84" />
+  <rect class="td-hover" x="1102" y="364" width="126" height="84" />
+  <rect class="td-hover" x="1228" y="364" width="126" height="84" />
+  <rect class="td-hover" x="1354" y="364" width="126" height="84" />
+  <rect class="td-hover" x="1480" y="364" width="110" height="84" />
+  <rect class="td-hover" x="1590" y="364" width="126" height="84" />
+  <rect class="td-hover" x="1716" y="364" width="140" height="84" />
+  <rect class="td-hover" x="1856" y="364" width="126" height="84" />
+  <rect class="td-hover" x="1982" y="364" width="158" height="84" />
+
+  <!-- row 2 -->
+  <rect class="td" x="60" y="448" width="170" height="84" />
+  <rect class="td" x="230" y="448" width="92" height="84" />
+  <rect class="td" x="322" y="448" width="92" height="84" />
+  <rect class="td" x="414" y="448" width="92" height="84" />
+  <rect class="td" x="506" y="448" width="92" height="84" />
+  <rect class="td" x="598" y="448" width="92" height="84" />
+  <rect class="td" x="690" y="448" width="92" height="84" />
+  <rect class="td" x="782" y="448" width="102" height="84" />
+  <rect class="td" x="884" y="448" width="116" height="84" />
+  <rect class="td" x="1000" y="448" width="102" height="84" />
+  <rect class="td" x="1102" y="448" width="126" height="84" />
+  <rect class="td" x="1228" y="448" width="126" height="84" />
+  <rect class="td" x="1354" y="448" width="126" height="84" />
+  <rect class="td" x="1480" y="448" width="110" height="84" />
+  <rect class="td" x="1590" y="448" width="126" height="84" />
+  <rect class="td" x="1716" y="448" width="140" height="84" />
+  <rect class="td" x="1856" y="448" width="126" height="84" />
+  <rect class="td" x="1982" y="448" width="158" height="84" />
+
+  <!-- row 3 -->
+  <rect class="td" x="60" y="532" width="170" height="84" />
+  <rect class="td" x="230" y="532" width="92" height="84" />
+  <rect class="td" x="322" y="532" width="92" height="84" />
+  <rect class="td" x="414" y="532" width="92" height="84" />
+  <rect class="td" x="506" y="532" width="92" height="84" />
+  <rect class="td" x="598" y="532" width="92" height="84" />
+  <rect class="td" x="690" y="532" width="92" height="84" />
+  <rect class="td" x="782" y="532" width="102" height="84" />
+  <rect class="td" x="884" y="532" width="116" height="84" />
+  <rect class="td" x="1000" y="532" width="102" height="84" />
+  <rect class="td" x="1102" y="532" width="126" height="84" />
+  <rect class="td" x="1228" y="532" width="126" height="84" />
+  <rect class="td" x="1354" y="532" width="126" height="84" />
+  <rect class="td" x="1480" y="532" width="110" height="84" />
+  <rect class="td" x="1590" y="532" width="126" height="84" />
+  <rect class="td" x="1716" y="532" width="140" height="84" />
+  <rect class="td" x="1856" y="532" width="126" height="84" />
+  <rect class="td" x="1982" y="532" width="158" height="84" />
+
+  <!-- row 4 -->
+  <rect class="td" x="60" y="616" width="170" height="84" />
+  <rect class="td" x="230" y="616" width="92" height="84" />
+  <rect class="td" x="322" y="616" width="92" height="84" />
+  <rect class="td" x="414" y="616" width="92" height="84" />
+  <rect class="td" x="506" y="616" width="92" height="84" />
+  <rect class="td" x="598" y="616" width="92" height="84" />
+  <rect class="td" x="690" y="616" width="92" height="84" />
+  <rect class="td" x="782" y="616" width="102" height="84" />
+  <rect class="td" x="884" y="616" width="116" height="84" />
+  <rect class="td" x="1000" y="616" width="102" height="84" />
+  <rect class="td" x="1102" y="616" width="126" height="84" />
+  <rect class="td" x="1228" y="616" width="126" height="84" />
+  <rect class="td" x="1354" y="616" width="126" height="84" />
+  <rect class="td" x="1480" y="616" width="110" height="84" />
+  <rect class="td" x="1590" y="616" width="126" height="84" />
+  <rect class="td" x="1716" y="616" width="140" height="84" />
+  <rect class="td" x="1856" y="616" width="126" height="84" />
+  <rect class="td" x="1982" y="616" width="158" height="84" />
+
+  <!-- row 5 -->
+  <rect class="td" x="60" y="700" width="170" height="84" />
+  <rect class="td" x="230" y="700" width="92" height="84" />
+  <rect class="td" x="322" y="700" width="92" height="84" />
+  <rect class="td" x="414" y="700" width="92" height="84" />
+  <rect class="td" x="506" y="700" width="92" height="84" />
+  <rect class="td" x="598" y="700" width="92" height="84" />
+  <rect class="td" x="690" y="700" width="92" height="84" />
+  <rect class="td" x="782" y="700" width="102" height="84" />
+  <rect class="td" x="884" y="700" width="116" height="84" />
+  <rect class="td" x="1000" y="700" width="102" height="84" />
+  <rect class="td" x="1102" y="700" width="126" height="84" />
+  <rect class="td" x="1228" y="700" width="126" height="84" />
+  <rect class="td" x="1354" y="700" width="126" height="84" />
+  <rect class="td" x="1480" y="700" width="110" height="84" />
+  <rect class="td" x="1590" y="700" width="126" height="84" />
+  <rect class="td" x="1716" y="700" width="140" height="84" />
+  <rect class="td" x="1856" y="700" width="126" height="84" />
+  <rect class="td" x="1982" y="700" width="158" height="84" />
+
+  <!-- row 6 -->
+  <rect class="td" x="60" y="784" width="170" height="84" />
+  <rect class="td" x="230" y="784" width="92" height="84" />
+  <rect class="td" x="322" y="784" width="92" height="84" />
+  <rect class="td" x="414" y="784" width="92" height="84" />
+  <rect class="td" x="506" y="784" width="92" height="84" />
+  <rect class="td" x="598" y="784" width="92" height="84" />
+  <rect class="td" x="690" y="784" width="92" height="84" />
+  <rect class="td" x="782" y="784" width="102" height="84" />
+  <rect class="td" x="884" y="784" width="116" height="84" />
+  <rect class="td" x="1000" y="784" width="102" height="84" />
+  <rect class="td" x="1102" y="784" width="126" height="84" />
+  <rect class="td" x="1228" y="784" width="126" height="84" />
+  <rect class="td" x="1354" y="784" width="126" height="84" />
+  <rect class="td" x="1480" y="784" width="110" height="84" />
+  <rect class="td" x="1590" y="784" width="126" height="84" />
+  <rect class="td" x="1716" y="784" width="140" height="84" />
+  <rect class="td" x="1856" y="784" width="126" height="84" />
+  <rect class="td" x="1982" y="784" width="158" height="84" />
+
+  <!-- row 7 -->
+  <rect class="td" x="60" y="868" width="170" height="84" />
+  <rect class="td" x="230" y="868" width="92" height="84" />
+  <rect class="td" x="322" y="868" width="92" height="84" />
+  <rect class="td" x="414" y="868" width="92" height="84" />
+  <rect class="td" x="506" y="868" width="92" height="84" />
+  <rect class="td" x="598" y="868" width="92" height="84" />
+  <rect class="td" x="690" y="868" width="92" height="84" />
+  <rect class="td" x="782" y="868" width="102" height="84" />
+  <rect class="td" x="884" y="868" width="116" height="84" />
+  <rect class="td" x="1000" y="868" width="102" height="84" />
+  <rect class="td" x="1102" y="868" width="126" height="84" />
+  <rect class="td" x="1228" y="868" width="126" height="84" />
+  <rect class="td" x="1354" y="868" width="126" height="84" />
+  <rect class="td" x="1480" y="868" width="110" height="84" />
+  <rect class="td" x="1590" y="868" width="126" height="84" />
+  <rect class="td" x="1716" y="868" width="140" height="84" />
+  <rect class="td" x="1856" y="868" width="126" height="84" />
+  <rect class="td" x="1982" y="868" width="158" height="84" />
+
+  <!-- row 8 -->
+  <rect class="td" x="60" y="952" width="170" height="84" />
+  <rect class="td" x="230" y="952" width="92" height="84" />
+  <rect class="td" x="322" y="952" width="92" height="84" />
+  <rect class="td" x="414" y="952" width="92" height="84" />
+  <rect class="td" x="506" y="952" width="92" height="84" />
+  <rect class="td" x="598" y="952" width="92" height="84" />
+  <rect class="td" x="690" y="952" width="92" height="84" />
+  <rect class="td" x="782" y="952" width="102" height="84" />
+  <rect class="td" x="884" y="952" width="116" height="84" />
+  <rect class="td" x="1000" y="952" width="102" height="84" />
+  <rect class="td" x="1102" y="952" width="126" height="84" />
+  <rect class="td" x="1228" y="952" width="126" height="84" />
+  <rect class="td" x="1354" y="952" width="126" height="84" />
+  <rect class="td" x="1480" y="952" width="110" height="84" />
+  <rect class="td" x="1590" y="952" width="126" height="84" />
+  <rect class="td" x="1716" y="952" width="140" height="84" />
+  <rect class="td" x="1856" y="952" width="126" height="84" />
+  <rect class="td" x="1982" y="952" width="158" height="84" />
+
+  <!-- Sample text row 1 -->
+  <text x="78" y="400" class="text body strong">田中 太郎</text>
+  <text x="262" y="400" class="text num">9</text>
+  <text x="351" y="400" class="bad num">42%</text>
+  <text x="446" y="400" class="text num">8</text>
+  <text x="536" y="400" class="warn num">38%</text>
+  <text x="630" y="400" class="text num">4</text>
+  <text x="719" y="400" class="bad num">20%</text>
+  <text x="819" y="400" class="text num">3</text>
+  <text x="911" y="400" class="bad num">8,000円</text>
+  <text x="1041" y="400" class="text num">1</text>
+  <text x="1150" y="400" class="text num">5</text>
+  <text x="1274" y="400" class="text num">3</text>
+  <text x="1510" y="400" class="warn num">11%</text>
+  <text x="1643" y="400" class="strong num">56%</text>
+  <text x="1764" y="400" class="warn num">33%</text>
+  <text x="1889" y="400" class="text num">2/11</text>
+  <text x="2004" y="392" class="muted small">要フォロー</text>
+  <text x="2004" y="413" class="muted small">未払いあり</text>
+
+  <!-- Sample text row 2 -->
+  <text x="78" y="484" class="text body">鈴木 花</text>
+  <text x="258" y="484" class="text num">11</text>
+  <text x="347" y="484" class="warn num">51%</text>
+  <text x="446" y="484" class="text num">7</text>
+  <text x="536" y="484" class="warn num">33%</text>
+  <text x="630" y="484" class="text num">3</text>
+  <text x="719" y="484" class="warn num">16%</text>
+  <text x="819" y="484" class="text num">2</text>
+  <text x="926" y="484" class="good num">4,000円</text>
+  <text x="1041" y="484" class="text num">0</text>
+  <text x="1150" y="484" class="text num">4</text>
+  <text x="1274" y="484" class="text num">7</text>
+  <text x="1510" y="484" class="text num">0%</text>
+  <text x="1643" y="484" class="warn num">36%</text>
+  <text x="1764" y="484" class="strong num">64%</text>
+  <text x="1889" y="484" class="text num">3/20</text>
+  <text x="2004" y="476" class="muted small">参加率</text>
+  <text x="2004" y="497" class="muted small">やや低下</text>
+
+  <!-- Sample text row 3 -->
+  <text x="78" y="568" class="text body">佐藤 颯</text>
+  <text x="258" y="568" class="text num">17</text>
+  <text x="347" y="568" class="strong num">77%</text>
+  <text x="446" y="568" class="text num">3</text>
+  <text x="540" y="568" class="good num">14%</text>
+  <text x="630" y="568" class="text num">2</text>
+  <text x="723" y="568" class="warn num">9%</text>
+  <text x="819" y="568" class="text num">4</text>
+  <text x="926" y="568" class="good num">8,000円</text>
+  <text x="1041" y="568" class="text num">2</text>
+  <text x="1150" y="568" class="text num">6</text>
+  <text x="1270" y="568" class="text num">9</text>
+  <text x="1510" y="568" class="warn num">12%</text>
+  <text x="1643" y="568" class="warn num">35%</text>
+  <text x="1764" y="568" class="strong num">53%</text>
+  <text x="1889" y="568" class="text num">3/23</text>
+  <text x="2004" y="560" class="muted small">返信やや</text>
+  <text x="2004" y="581" class="muted small">遅め</text>
+
+  <!-- Sample text row 4 -->
+  <text x="78" y="652" class="text body">高橋 遼</text>
+  <text x="258" y="652" class="text num">7</text>
+  <text x="347" y="652" class="bad num">33%</text>
+  <text x="446" y="652" class="text num">10</text>
+  <text x="532" y="652" class="bad num">48%</text>
+  <text x="630" y="652" class="text num">4</text>
+  <text x="719" y="652" class="bad num">19%</text>
+  <text x="819" y="652" class="text num">1</text>
+  <text x="926" y="652" class="good num">2,000円</text>
+  <text x="1041" y="652" class="text num">0</text>
+  <text x="1150" y="652" class="text num">2</text>
+  <text x="1274" y="652" class="text num">5</text>
+  <text x="1510" y="652" class="text num">0%</text>
+  <text x="1643" y="652" class="warn num">29%</text>
+  <text x="1764" y="652" class="strong num">71%</text>
+  <text x="1889" y="652" class="text num">1/28</text>
+  <text x="2004" y="644" class="muted small">今月</text>
+  <text x="2004" y="665" class="muted small">未参加</text>
+
+  <!-- Sample text row 5 -->
+  <text x="78" y="736" class="text body">中村 陸</text>
+  <text x="258" y="736" class="text num">20</text>
+  <text x="347" y="736" class="strong num">91%</text>
+  <text x="450" y="736" class="text num">1</text>
+  <text x="540" y="736" class="good num">5%</text>
+  <text x="634" y="736" class="text num">1</text>
+  <text x="723" y="736" class="good num">4%</text>
+  <text x="819" y="736" class="text num">4</text>
+  <text x="926" y="736" class="good num">8,000円</text>
+  <text x="1037" y="736" class="text num">4</text>
+  <text x="1150" y="736" class="text num">3</text>
+  <text x="1270" y="736" class="text num">5</text>
+  <text x="1506" y="736" class="strong num">20%</text>
+  <text x="1643" y="736" class="warn num">15%</text>
+  <text x="1764" y="736" class="warn num">25%</text>
+  <text x="1889" y="736" class="text num">3/24</text>
+  <text x="2004" y="736" class="muted small">安定</text>
+
+  <!-- Sample text row 6 -->
+  <text x="78" y="820" class="text body">山田 海</text>
+  <text x="258" y="820" class="text num">21</text>
+  <text x="347" y="820" class="strong num">95%</text>
+  <text x="450" y="820" class="text num">0</text>
+  <text x="540" y="820" class="good num">0%</text>
+  <text x="634" y="820" class="text num">1</text>
+  <text x="723" y="820" class="good num">5%</text>
+  <text x="819" y="820" class="text num">4</text>
+  <text x="926" y="820" class="good num">8,000円</text>
+  <text x="1037" y="820" class="strong num">6</text>
+  <text x="1150" y="820" class="text num">2</text>
+  <text x="1270" y="820" class="text num">3</text>
+  <text x="1506" y="820" class="strong num">29%</text>
+  <text x="1643" y="820" class="text num">10%</text>
+  <text x="1764" y="820" class="text num">14%</text>
+  <text x="1889" y="820" class="text num">3/26</text>
+  <text x="2004" y="812" class="muted small">運転協力</text>
+  <text x="2004" y="833" class="muted small">多め</text>
+
+  <!-- Sample text row 7 -->
+  <text x="78" y="904" class="text body">伊藤 凛</text>
+  <text x="258" y="904" class="text num">2</text>
+  <text x="347" y="904" class="bad num">12%</text>
+  <text x="446" y="904" class="text num">4</text>
+  <text x="532" y="904" class="warn num">24%</text>
+  <text x="630" y="904" class="text num">11</text>
+  <text x="715" y="904" class="bad num">64%</text>
+  <text x="819" y="904" class="text num">0</text>
+  <text x="926" y="904" class="good num">0円</text>
+  <text x="1041" y="904" class="text num">0</text>
+  <text x="1150" y="904" class="text num">1</text>
+  <text x="1270" y="904" class="text num">1</text>
+  <text x="1510" y="904" class="text num">0%</text>
+  <text x="1643" y="904" class="warn num">50%</text>
+  <text x="1764" y="904" class="warn num">50%</text>
+  <text x="1889" y="904" class="text num">12/10</text>
+  <text x="2004" y="896" class="muted small">休会中</text>
+  <text x="2004" y="917" class="muted small">表示例</text>
+
+  <!-- Sample text row 8 -->
+  <text x="78" y="988" class="text body">加藤 蓮</text>
+  <text x="258" y="988" class="text num">16</text>
+  <text x="347" y="988" class="strong num">73%</text>
+  <text x="446" y="988" class="text num">4</text>
+  <text x="540" y="988" class="good num">18%</text>
+  <text x="630" y="988" class="text num">2</text>
+  <text x="723" y="988" class="warn num">9%</text>
+  <text x="819" y="988" class="text num">3</text>
+  <text x="926" y="988" class="good num">6,000円</text>
+  <text x="1037" y="988" class="text num">1</text>
+  <text x="1150" y="988" class="text num">7</text>
+  <text x="1270" y="988" class="text num">5</text>
+  <text x="1510" y="988" class="text num">6%</text>
+  <text x="1643" y="988" class="strong num">44%</text>
+  <text x="1764" y="988" class="warn num">31%</text>
+  <text x="1889" y="988" class="text num">3/18</text>
+  <text x="2004" y="980" class="muted small">通常運用</text>
+  <text x="2004" y="1001" class="muted small">メンバー</text>
+
+  <!-- Additional blank rows for density -->
+  <rect class="td" x="60" y="1036" width="2080" height="84" />
+  <rect class="td" x="60" y="1120" width="2080" height="84" />
+  <rect class="td" x="60" y="1204" width="2080" height="84" />
+  <rect class="td" x="60" y="1288" width="2080" height="96" />
+
+  <line x1="60" y1="1120" x2="2140" y2="1120" stroke="#2f3946" stroke-width="1" opacity="0.2"/>
+  <line x1="60" y1="1204" x2="2140" y2="1204" stroke="#2f3946" stroke-width="1" opacity="0.2"/>
+  <line x1="60" y1="1288" x2="2140" y2="1288" stroke="#2f3946" stroke-width="1" opacity="0.2"/>
+
+  <text x="60" y="1418" class="muted small">列数が多いため、実装時は [table-wrap] の横スクロールで見る想定です。見出し色、罫線、暗色背景は既存の [events-table] 系に合わせています。</text>
+</svg>

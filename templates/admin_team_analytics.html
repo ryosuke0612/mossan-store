@@ -1,0 +1,246 @@
+{% extends "admin_base_clean.html" %}
+
+{% block title %}メンバー分析一覧 | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
+<style>
+.page-wrap,
+.page-wrap * {
+  font-family: "07YasashisaGothic", "Noto Sans JP", sans-serif;
+}
+.dashboard-reggae-title {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.04em;
+  color: #ead7b3;
+}
+.dashboard-reggae-heading {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.02em;
+  color: #ead7b3;
+}
+.toolbar-stack {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.toolbar-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+.summary-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.summary-pill,
+.toolbar-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 41px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  border: 1px solid #4a4f55;
+  color: #eef2f6;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.32);
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.05) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #5f666e 0%, #3d434a 100%);
+}
+.summary-pill::before,
+.summary-pill::after,
+.toolbar-link::before,
+.toolbar-link::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(22, 24, 27, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.summary-pill::before,
+.toolbar-link::before {
+  left: 8px;
+}
+.summary-pill::after,
+.toolbar-link::after {
+  right: 8px;
+}
+.toolbar-link:hover {
+  filter: brightness(1.06) contrast(1.04);
+}
+.toolbar-link.back {
+  border-color: #555d66;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.05) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #66707a 0%, #454c55 100%);
+}
+.toolbar-link.events {
+  border-color: #2f5b3f;
+  color: #e9ffef;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #2f7a4f 0%, #205838 100%);
+}
+.helper-note {
+  margin: 0;
+  color: #9aa4b2;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.analytics-table-wrap {
+  overflow-x: auto;
+}
+.events-table.analytics-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  table-layout: fixed;
+  background: #11151b;
+}
+.events-table.analytics-table thead th {
+  border: 1px solid #2f6d44;
+  background: linear-gradient(180deg, #3b8f5f 0%, #2a6d48 100%);
+  color: #f2fff6;
+  padding: 10px 12px;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.events-table.analytics-table tbody td {
+  border: 1px solid #2f3946;
+  background: #11151b;
+  color: #e5e7eb;
+  padding: 10px 12px;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.events-table.analytics-table tbody tr:hover td {
+  background: #1b222c;
+}
+.events-table.analytics-table .col-member {
+  min-width: 190px;
+  text-align: left;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+.events-table.analytics-table thead .col-member {
+  z-index: 2;
+}
+.events-table.analytics-table tbody .col-member {
+  background: #11151b;
+}
+.events-table.analytics-table tbody tr:hover .col-member {
+  background: #1b222c;
+}
+.metric-strong {
+  color: #ffffff;
+  font-weight: 700;
+}
+@media (max-width: 760px) {
+  .toolbar-row {
+    align-items: flex-start;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title dashboard-reggae-title">メンバー分析一覧</h1>
+
+<section class="panel">
+  <div class="toolbar-stack">
+    <div class="toolbar-row">
+      <div class="summary-pills">
+        <span class="summary-pill">メンバー数 {{ member_count }}人</span>
+        <span class="summary-pill">イベント数 {{ event_count }}件</span>
+      </div>
+      <div class="summary-pills">
+        <a class="toolbar-link events" href="{{ url_for('admin_team_events', team_id=team['id']) }}">イベント管理</a>
+        <a class="toolbar-link back" href="{{ url_for('admin_dashboard') }}">管理者ダッシュボードへ</a>
+      </div>
+    </div>
+    <p class="helper-note">
+      出席率・欠席率・未回答率は全イベント数を分母に集計しています。未回答は「参加」「不参加」以外の状態をまとめて扱い、配車系の率は参加回数を分母にしています。
+    </p>
+  </div>
+
+  {% if analytics_rows %}
+  <div class="table-wrap analytics-table-wrap">
+    <table class="events-table analytics-table">
+      <thead>
+        <tr>
+          <th class="col-member">メンバー名</th>
+          <th>出席回数</th>
+          <th>出席率</th>
+          <th>欠席回数</th>
+          <th>欠席率</th>
+          <th>未回答回数</th>
+          <th>未回答率</th>
+          <th>集金回数</th>
+          <th>集金額</th>
+          <th>運転対応した回数</th>
+          <th>乗せてもらった回数</th>
+          <th>現地集合した回数</th>
+          <th>運転対応率</th>
+          <th>乗せてもらった率</th>
+          <th>現地集合した率</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in analytics_rows %}
+        <tr>
+          <td class="col-member metric-strong">{{ row.member_name }}</td>
+          <td>{{ row.attendance_count }}</td>
+          <td>{{ row.attendance_rate }}</td>
+          <td>{{ row.absence_count }}</td>
+          <td>{{ row.absence_rate }}</td>
+          <td>{{ row.unanswered_count }}</td>
+          <td>{{ row.unanswered_rate }}</td>
+          <td>{{ row.collection_count }}</td>
+          <td>{{ row.collection_amount_label }}</td>
+          <td>{{ row.driver_count }}</td>
+          <td>{{ row.passenger_count }}</td>
+          <td>{{ row.direct_count }}</td>
+          <td>{{ row.driver_rate }}</td>
+          <td>{{ row.passenger_rate }}</td>
+          <td>{{ row.direct_rate }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="notice success">表示できるメンバーがまだいません。メンバー登録後に一覧が表示されます。</div>
+  {% endif %}
+</section>
+{% endblock %}

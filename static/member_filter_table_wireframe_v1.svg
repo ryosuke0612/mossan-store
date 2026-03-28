@@ -1,0 +1,191 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1900" viewBox="0 0 1440 1900" role="img" aria-labelledby="title desc">
+  <title id="title">フィルター付きメンバー一覧表 初版ワイヤー</title>
+  <desc id="desc">管理者がメンバー情報をフィルターしながら一覧で確認できる画面の初版ワイヤーです。</desc>
+  <defs>
+    <style>
+      .bg { fill: #f4efe6; }
+      .nav { fill: #17362e; }
+      .panel { fill: #fffdf8; stroke: #26463b; stroke-width: 2; rx: 22; ry: 22; }
+      .soft { fill: #edf3ec; stroke: #698275; stroke-width: 1.5; rx: 16; ry: 16; }
+      .tag { fill: #dde9dc; stroke: #26463b; stroke-width: 1.2; rx: 999; ry: 999; }
+      .active-tag { fill: #26463b; stroke: #26463b; stroke-width: 1.2; rx: 999; ry: 999; }
+      .alert { fill: #fff1de; stroke: #bd7a35; stroke-width: 1.5; rx: 16; ry: 16; }
+      .danger { fill: #fbe6df; stroke: #b14b3f; stroke-width: 1.5; rx: 16; ry: 16; }
+      .text { fill: #17332b; font-family: 'Yu Gothic', 'Hiragino Sans', sans-serif; }
+      .muted { fill: #5a6a61; font-family: 'Yu Gothic', 'Hiragino Sans', sans-serif; }
+      .title { font-size: 34px; font-weight: 700; }
+      .h1 { font-size: 28px; font-weight: 700; }
+      .h2 { font-size: 22px; font-weight: 700; }
+      .body { font-size: 16px; font-weight: 500; }
+      .small { font-size: 14px; font-weight: 500; }
+      .num { font-size: 26px; font-weight: 800; }
+      .good { fill: #2b6b50; }
+      .warn { fill: #97551e; }
+      .bad { fill: #a33c34; }
+      .line { stroke: #d6ddd6; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1440" height="1900" />
+
+  <rect class="nav" x="0" y="0" width="1440" height="88" />
+  <text x="72" y="56" class="title" fill="#f7f3ea">メンバー分析一覧</text>
+  <text x="1170" y="54" class="body" fill="#dfe8e1">対象: FC Sample</text>
+
+  <text x="72" y="154" class="h1 text">1. まずは絞り込む</text>
+  <text x="72" y="186" class="body muted">実務でよく使う条件を上部にまとめ、検索してすぐ対象者を絞れる形にします。</text>
+
+  <rect class="panel" x="72" y="222" width="1296" height="320" />
+  <rect class="soft" x="104" y="258" width="350" height="64" />
+  <text x="128" y="296" class="body muted">名前・メモで検索</text>
+
+  <rect class="tag" x="486" y="258" width="126" height="44" />
+  <rect class="active-tag" x="628" y="258" width="126" height="44" />
+  <rect class="tag" x="770" y="258" width="126" height="44" />
+  <rect class="tag" x="912" y="258" width="126" height="44" />
+  <rect class="tag" x="1054" y="258" width="126" height="44" />
+  <text x="526" y="286" class="body text">全員</text>
+  <text x="650" y="286" class="body" fill="#f4efe6">要対応</text>
+  <text x="802" y="286" class="body text">未払い</text>
+  <text x="943" y="286" class="body text">未回答</text>
+  <text x="1079" y="286" class="body text">休会含む</text>
+
+  <text x="104" y="366" class="small muted">出席率</text>
+  <rect class="tag" x="104" y="382" width="110" height="40" />
+  <rect class="tag" x="226" y="382" width="110" height="40" />
+  <rect class="active-tag" x="348" y="382" width="110" height="40" />
+  <rect class="tag" x="470" y="382" width="110" height="40" />
+  <text x="134" y="408" class="small text">すべて</text>
+  <text x="252" y="408" class="small text">80%以上</text>
+  <text x="377" y="408" class="small" fill="#f4efe6">50%未満</text>
+  <text x="502" y="408" class="small text">連続欠席</text>
+
+  <text x="622" y="366" class="small muted">支払い</text>
+  <rect class="tag" x="622" y="382" width="110" height="40" />
+  <rect class="active-tag" x="744" y="382" width="110" height="40" />
+  <rect class="tag" x="866" y="382" width="132" height="40" />
+  <text x="652" y="408" class="small text">すべて</text>
+  <text x="775" y="408" class="small" fill="#f4efe6">未払いあり</text>
+  <text x="893" y="408" class="small text">一部未払い</text>
+
+  <text x="1040" y="366" class="small muted">期間</text>
+  <rect class="tag" x="1040" y="382" width="96" height="40" />
+  <rect class="tag" x="1148" y="382" width="110" height="40" />
+  <rect class="active-tag" x="1270" y="382" width="66" height="40" />
+  <text x="1068" y="408" class="small text">今月</text>
+  <text x="1172" y="408" class="small text">3か月</text>
+  <text x="1289" y="408" class="small" fill="#f4efe6">年</text>
+
+  <rect class="soft" x="104" y="454" width="310" height="52" />
+  <rect class="soft" x="434" y="454" width="220" height="52" />
+  <rect class="soft" x="674" y="454" width="220" height="52" />
+  <rect class="soft" x="914" y="454" width="220" height="52" />
+  <rect class="panel" x="1160" y="454" width="176" height="52" />
+  <text x="126" y="487" class="body muted">学年・カテゴリで絞る</text>
+  <text x="459" y="487" class="body muted">最終参加日</text>
+  <text x="702" y="487" class="body muted">表示列の選択</text>
+  <text x="944" y="487" class="body muted">並び替え</text>
+  <text x="1214" y="487" class="body text">フィルター解除</text>
+
+  <text x="72" y="614" class="h1 text">2. 表示プリセット</text>
+  <text x="72" y="646" class="body muted">管理者ごとに見たい軸が違うので、列の出し分けをプリセット化します。</text>
+
+  <rect class="tag" x="72" y="678" width="118" height="44" />
+  <rect class="active-tag" x="206" y="678" width="118" height="44" />
+  <rect class="tag" x="340" y="678" width="118" height="44" />
+  <rect class="tag" x="474" y="678" width="140" height="44" />
+  <text x="108" y="706" class="body text">基本</text>
+  <text x="241" y="706" class="body" fill="#f4efe6">要対応</text>
+  <text x="377" y="706" class="body text">出席</text>
+  <text x="507" y="706" class="body text">支払い</text>
+
+  <rect class="panel" x="72" y="760" width="1296" height="920" />
+
+  <rect class="soft" x="104" y="794" width="1232" height="54" />
+  <text x="126" y="827" class="body text">12件を表示中</text>
+  <text x="962" y="827" class="body muted">CSV出力</text>
+  <text x="1066" y="827" class="body muted">一括連絡</text>
+  <text x="1182" y="827" class="body muted">列設定</text>
+
+  <rect class="soft" x="104" y="874" width="1232" height="58" />
+  <text x="132" y="910" class="body text">選択</text>
+  <text x="210" y="910" class="body text">メンバー名</text>
+  <text x="410" y="910" class="body text">要対応理由</text>
+  <text x="706" y="910" class="body text">出席率</text>
+  <text x="816" y="910" class="body text">未払い</text>
+  <text x="934" y="910" class="body text">未回答</text>
+  <text x="1048" y="910" class="body text">最終参加</text>
+  <text x="1172" y="910" class="body text">状態</text>
+
+  <rect class="danger" x="104" y="948" width="1232" height="86" />
+  <rect class="alert" x="104" y="1046" width="1232" height="86" />
+  <rect class="soft" x="104" y="1144" width="1232" height="86" />
+  <rect class="soft" x="104" y="1242" width="1232" height="86" />
+  <rect class="soft" x="104" y="1340" width="1232" height="86" />
+  <rect class="soft" x="104" y="1438" width="1232" height="86" />
+
+  <text x="134" y="998" class="body text">□</text>
+  <text x="210" y="998" class="body text">田中 太郎</text>
+  <text x="410" y="998" class="body text">2か月未払い / 3回連続未回答</text>
+  <text x="716" y="998" class="body text">42%</text>
+  <text x="816" y="998" class="body bad">8,000円</text>
+  <text x="942" y="998" class="body text">3件</text>
+  <text x="1048" y="998" class="body text">2/11</text>
+  <text x="1172" y="998" class="body bad">要連絡</text>
+
+  <text x="134" y="1096" class="body text">□</text>
+  <text x="210" y="1096" class="body text">鈴木 花</text>
+  <text x="410" y="1096" class="body text">参加率が前月比 -35%</text>
+  <text x="716" y="1096" class="body text">51%</text>
+  <text x="816" y="1096" class="body good">0円</text>
+  <text x="942" y="1096" class="body text">0件</text>
+  <text x="1048" y="1096" class="body text">3/20</text>
+  <text x="1172" y="1096" class="body warn">確認推奨</text>
+
+  <text x="134" y="1194" class="body text">□</text>
+  <text x="210" y="1194" class="body text">佐藤 颯</text>
+  <text x="410" y="1194" class="body text">返信が遅い傾向</text>
+  <text x="716" y="1194" class="body text">77%</text>
+  <text x="816" y="1194" class="body good">0円</text>
+  <text x="942" y="1194" class="body text">2件</text>
+  <text x="1048" y="1194" class="body text">3/23</text>
+  <text x="1172" y="1194" class="body">経過観察</text>
+
+  <text x="134" y="1292" class="body text">□</text>
+  <text x="210" y="1292" class="body text">高橋 遼</text>
+  <text x="410" y="1292" class="body text">今月未参加</text>
+  <text x="716" y="1292" class="body text">33%</text>
+  <text x="816" y="1292" class="body good">0円</text>
+  <text x="942" y="1292" class="body text">1件</text>
+  <text x="1048" y="1292" class="body text">1/28</text>
+  <text x="1172" y="1292" class="body warn">確認推奨</text>
+
+  <text x="134" y="1390" class="body text">□</text>
+  <text x="210" y="1390" class="body text">中村 陸</text>
+  <text x="410" y="1390" class="body text">問題なし</text>
+  <text x="716" y="1390" class="body text">91%</text>
+  <text x="816" y="1390" class="body good">0円</text>
+  <text x="942" y="1390" class="body text">0件</text>
+  <text x="1048" y="1390" class="body text">3/24</text>
+  <text x="1172" y="1390" class="body good">安定</text>
+
+  <text x="134" y="1488" class="body text">□</text>
+  <text x="210" y="1488" class="body text">山田 海</text>
+  <text x="410" y="1488" class="body text">高参加率</text>
+  <text x="716" y="1488" class="body text">95%</text>
+  <text x="816" y="1488" class="body good">0円</text>
+  <text x="942" y="1488" class="body text">0件</text>
+  <text x="1048" y="1488" class="body text">3/26</text>
+  <text x="1172" y="1488" class="body good">安定</text>
+
+  <line class="line" x1="104" y1="1548" x2="1336" y2="1548" />
+  <text x="540" y="1600" class="body muted">‹ 前へ</text>
+  <text x="692" y="1600" class="body text">1</text>
+  <text x="732" y="1600" class="body muted">2</text>
+  <text x="772" y="1600" class="body muted">3</text>
+  <text x="840" y="1600" class="body muted">次へ ›</text>
+
+  <text x="72" y="1752" class="h1 text">3. 表の下でそのままアクション</text>
+  <rect class="panel" x="72" y="1788" width="1296" height="70" />
+  <text x="104" y="1832" class="body text">選択中メンバーに対して: 連絡する / 支払い催促 / メモ追加 / ステータス変更</text>
+ </svg>

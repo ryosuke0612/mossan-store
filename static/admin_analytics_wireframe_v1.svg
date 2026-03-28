@@ -1,0 +1,176 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="2200" viewBox="0 0 1440 2200" role="img" aria-labelledby="title desc">
+  <title id="title">管理者向け分析画面 初版ワイヤー</title>
+  <desc id="desc">出席率、支払い状況、要対応メンバー、月別推移をまとめた管理者向け分析画面のワイヤーです。</desc>
+  <defs>
+    <style>
+      .bg { fill: #f6f1e8; }
+      .panel { fill: #fffdf8; stroke: #2d4a3f; stroke-width: 2; rx: 24; ry: 24; }
+      .soft { fill: #eef3ea; stroke: #5f7b6f; stroke-width: 1.5; rx: 18; ry: 18; }
+      .alert { fill: #fff0de; stroke: #bf6c2c; stroke-width: 1.5; rx: 18; ry: 18; }
+      .danger { fill: #fde8e2; stroke: #b24c3d; stroke-width: 1.5; rx: 18; ry: 18; }
+      .nav { fill: #19352d; }
+      .tag { fill: #dce9dd; stroke: #2d4a3f; stroke-width: 1; rx: 999; ry: 999; }
+      .text { fill: #18322b; font-family: 'Yu Gothic', 'Hiragino Sans', sans-serif; }
+      .muted { fill: #5a6a61; font-family: 'Yu Gothic', 'Hiragino Sans', sans-serif; }
+      .title { font-size: 36px; font-weight: 700; }
+      .h1 { font-size: 28px; font-weight: 700; }
+      .h2 { font-size: 22px; font-weight: 700; }
+      .body { font-size: 16px; font-weight: 500; }
+      .small { font-size: 14px; font-weight: 500; }
+      .num { font-size: 42px; font-weight: 800; }
+      .num-sm { font-size: 28px; font-weight: 800; }
+      .line { stroke: #5f7b6f; stroke-width: 2; fill: none; }
+      .bar1 { fill: #295d4a; }
+      .bar2 { fill: #7ba488; }
+      .bar3 { fill: #d8b270; }
+      .grid { stroke: #d9dfd6; stroke-width: 1; }
+      .warn { fill: #a04f25; }
+      .bad { fill: #a63f35; }
+      .good { fill: #2f6d52; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1440" height="2200" />
+
+  <rect class="nav" x="0" y="0" width="1440" height="88" />
+  <text class="text title" x="72" y="56" fill="#f7f3ea">管理者分析ダッシュボード</text>
+  <text class="muted body" x="1140" y="54" fill="#dce7df">対象: FC Sample / 2026年3月</text>
+
+  <rect class="tag" x="72" y="122" width="164" height="42" />
+  <rect class="tag" x="252" y="122" width="164" height="42" />
+  <rect class="tag" x="432" y="122" width="176" height="42" />
+  <text class="text body" x="109" y="149">全期間</text>
+  <text class="text body" x="289" y="149">直近3か月</text>
+  <text class="text body" x="469" y="149">今月だけ表示</text>
+
+  <text class="text h1" x="72" y="222">1. 今日の要対応</text>
+  <text class="muted body" x="72" y="254">最初に見る場所。管理者が次に何をすべきかを先頭に配置します。</text>
+
+  <rect class="danger" x="72" y="286" width="410" height="190" />
+  <rect class="alert" x="515" y="286" width="410" height="190" />
+  <rect class="soft" x="958" y="286" width="410" height="190" />
+
+  <text class="text h2" x="104" y="334">未払いあり</text>
+  <text class="text num" x="104" y="402">6</text>
+  <text class="muted body" x="104" y="438">対象メンバーを今すぐ確認</text>
+  <rect class="panel" x="292" y="386" width="150" height="48" />
+  <text class="text body" x="327" y="417">一覧を見る</text>
+
+  <text class="text h2" x="547" y="334">未回答あり</text>
+  <text class="text num" x="547" y="402">9</text>
+  <text class="muted body" x="547" y="438">次回イベントの返答待ち</text>
+  <rect class="panel" x="735" y="386" width="150" height="48" />
+  <text class="text body" x="770" y="417">催促する</text>
+
+  <text class="text h2" x="990" y="334">参加率低下</text>
+  <text class="text num" x="990" y="402">4</text>
+  <text class="muted body" x="990" y="438">最近の参加傾向に変化あり</text>
+  <rect class="panel" x="1178" y="386" width="150" height="48" />
+  <text class="text body" x="1213" y="417">詳細を見る</text>
+
+  <text class="text h1" x="72" y="568">2. 主要サマリー</text>
+  <rect class="panel" x="72" y="604" width="1296" height="200" />
+
+  <rect class="soft" x="104" y="640" width="280" height="128" />
+  <rect class="soft" x="416" y="640" width="280" height="128" />
+  <rect class="soft" x="728" y="640" width="280" height="128" />
+  <rect class="soft" x="1040" y="640" width="280" height="128" />
+  <text class="text h2" x="132" y="682">平均出席率</text>
+  <text class="text num-sm" x="132" y="736">78%</text>
+  <text class="text h2" x="444" y="682">今月回収率</text>
+  <text class="text num-sm" x="444" y="736">91%</text>
+  <text class="text h2" x="756" y="682">直近回答率</text>
+  <text class="text num-sm" x="756" y="736">84%</text>
+  <text class="text h2" x="1068" y="682">要連絡人数</text>
+  <text class="text num-sm" x="1068" y="736">11名</text>
+
+  <text class="text h1" x="72" y="894">3. 要対応メンバー一覧</text>
+  <text class="muted body" x="72" y="926">行動につながる分析。グラフより先に「誰に連絡すべきか」を見せます。</text>
+  <rect class="panel" x="72" y="958" width="1296" height="458" />
+
+  <rect class="soft" x="104" y="1000" width="1232" height="60" />
+  <text class="text body" x="132" y="1038">メンバー名</text>
+  <text class="text body" x="388" y="1038">要対応理由</text>
+  <text class="text body" x="722" y="1038">出席率</text>
+  <text class="text body" x="870" y="1038">支払い</text>
+  <text class="text body" x="1008" y="1038">最終参加</text>
+  <text class="text body" x="1170" y="1038">アクション</text>
+
+  <rect class="danger" x="104" y="1078" width="1232" height="72" />
+  <rect class="alert" x="104" y="1166" width="1232" height="72" />
+  <rect class="soft" x="104" y="1254" width="1232" height="72" />
+  <rect class="soft" x="104" y="1342" width="1232" height="40" />
+
+  <text class="text body" x="132" y="1122">田中 太郎</text>
+  <text class="text body" x="388" y="1122">2か月未払い / 直近3回未回答</text>
+  <text class="text body" x="736" y="1122">42%</text>
+  <text class="bad body" x="870" y="1122">未払い 8,000円</text>
+  <text class="text body" x="1008" y="1122">2/11</text>
+  <rect class="panel" x="1162" y="1092" width="120" height="40" />
+  <text class="text small" x="1198" y="1118">連絡する</text>
+
+  <text class="text body" x="132" y="1210">鈴木 花</text>
+  <text class="text body" x="388" y="1210">参加率が前月比 -35%</text>
+  <text class="text body" x="736" y="1210">51%</text>
+  <text class="warn body" x="870" y="1210">支払い済み</text>
+  <text class="text body" x="1008" y="1210">3/20</text>
+  <rect class="panel" x="1162" y="1180" width="120" height="40" />
+  <text class="text small" x="1198" y="1206">詳細表示</text>
+
+  <text class="text body" x="132" y="1298">佐藤 颯</text>
+  <text class="text body" x="388" y="1298">イベント返信が遅い傾向</text>
+  <text class="text body" x="736" y="1298">77%</text>
+  <text class="good body" x="870" y="1298">支払い済み</text>
+  <text class="text body" x="1008" y="1298">3/23</text>
+  <rect class="panel" x="1162" y="1268" width="120" height="40" />
+  <text class="text small" x="1198" y="1294">様子を見る</text>
+
+  <text class="muted small" x="132" y="1368">下部に「もっと見る」やフィルタを配置。初版はまず3〜10件の重点表示でも十分です。</text>
+
+  <text class="text h1" x="72" y="1504">4. 出席率と支払い状況</text>
+  <rect class="panel" x="72" y="1542" width="630" height="438" />
+  <rect class="panel" x="738" y="1542" width="630" height="438" />
+
+  <text class="text h2" x="104" y="1588">メンバー別 出席率ランキング</text>
+  <line class="grid" x1="124" y1="1640" x2="668" y2="1640" />
+  <line class="grid" x1="124" y1="1710" x2="668" y2="1710" />
+  <line class="grid" x1="124" y1="1780" x2="668" y2="1780" />
+  <line class="grid" x1="124" y1="1850" x2="668" y2="1850" />
+  <rect class="bar1" x="244" y="1610" width="360" height="34" rx="10" />
+  <rect class="bar2" x="244" y="1680" width="302" height="34" rx="10" />
+  <rect class="bar2" x="244" y="1750" width="264" height="34" rx="10" />
+  <rect class="bar3" x="244" y="1820" width="198" height="34" rx="10" />
+  <text class="text body" x="132" y="1633">山田 海</text>
+  <text class="text body" x="616" y="1633">95%</text>
+  <text class="text body" x="132" y="1703">中村 陸</text>
+  <text class="text body" x="558" y="1703">82%</text>
+  <text class="text body" x="132" y="1773">加藤 蓮</text>
+  <text class="text body" x="520" y="1773">73%</text>
+  <text class="text body" x="132" y="1843">田中 太郎</text>
+  <text class="text body" x="454" y="1843">55%</text>
+  <text class="muted small" x="132" y="1918">切替: 全期間 / 直近3か月 / 種別ごと（練習・試合）</text>
+
+  <text class="text h2" x="770" y="1588">支払い状況サマリー</text>
+  <rect class="soft" x="770" y="1622" width="566" height="84" />
+  <text class="text body" x="798" y="1672">今月請求 88,000円</text>
+  <text class="text body" x="1048" y="1672">回収済 80,000円</text>
+  <text class="bad body" x="1240" y="1672">未収 8,000円</text>
+  <text class="text body" x="770" y="1760">月別回収推移</text>
+  <line class="grid" x1="790" y1="1890" x2="1320" y2="1890" />
+  <line class="grid" x1="790" y1="1830" x2="1320" y2="1830" />
+  <line class="grid" x1="790" y1="1770" x2="1320" y2="1770" />
+  <rect class="bar2" x="828" y="1816" width="56" height="74" rx="10" />
+  <rect class="bar2" x="938" y="1798" width="56" height="92" rx="10" />
+  <rect class="bar2" x="1048" y="1778" width="56" height="112" rx="10" />
+  <rect class="bar1" x="1158" y="1740" width="56" height="150" rx="10" />
+  <rect class="bar3" x="1268" y="1834" width="56" height="56" rx="10" />
+  <text class="muted small" x="822" y="1922">12月</text>
+  <text class="muted small" x="932" y="1922">1月</text>
+  <text class="muted small" x="1046" y="1922">2月</text>
+  <text class="muted small" x="1156" y="1922">3月</text>
+  <text class="muted small" x="1266" y="1922">未収</text>
+
+  <text class="text h1" x="72" y="2064">5. イベント運営の改善ヒント</text>
+  <rect class="panel" x="72" y="2102" width="1296" height="68" />
+  <text class="text body" x="104" y="2144">木曜夜の参加率が低い / 試合は回答が早いが練習は遅い / 会費未払いは新規加入2か月以内に集中</text>
+ </svg>

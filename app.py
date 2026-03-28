@@ -3300,6 +3300,149 @@ def portal_save_transport_assignments(team_id, event_id, requested_assignments):
     return True, "saved"
 
 
+def format_member_analytics_rate(numerator, denominator):
+    if denominator <= 0:
+        return "-"
+    return f"{(numerator / denominator) * 100:.1f}%"
+
+
+def build_admin_member_analytics(team_id):
+    members = portal_get_members_for_team(team_id, include_inactive=False)
+    member_order = []
+    member_stats = {}
+    for member in members:
+        member_name = (member.get("name") or "").strip()
+        if not member_name:
+            continue
+        member_order.append(member_name)
+        member_stats[member_name] = {
+            "member_name": member_name,
+            "attendance_count": 0,
+            "attendance_rate": "-",
+            "absence_count": 0,
+            "absence_rate": "-",
+            "unanswered_count": 0,
+            "unanswered_rate": "-",
+            "collection_count": 0,
+            "collection_amount": 0,
+            "collection_amount_label": format_currency_yen(0),
+            "driver_count": 0,
+            "passenger_count": 0,
+            "direct_count": 0,
+            "driver_rate": "-",
+            "passenger_rate": "-",
+            "direct_rate": "-",
+        }
+
+    conn = get_db_connection()
+    c = conn.cursor()
+
+    c.execute(
+        """
+        SELECT id
+        FROM portal_events
+        WHERE team_id=?
+        ORDER BY date, start_time, id
+        """,
+        (team_id,),
+    )
+    event_ids = {row["id"] for row in c.fetchall()}
+
+    c.execute(
+        """
+        SELECT event_id, member_name, status
+        FROM portal_attendance
+        WHERE team_id=?
+        """,
+        (team_id,),
+    )
+    attendance_rows = rows_to_dict(c.fetchall())
+
+    c.execute(
+        """
+        SELECT cem.member_name, cem.status, ce.amount
+        FROM portal_collection_event_members cem
+        INNER JOIN portal_collection_events ce
+            ON ce.id = cem.collection_event_id
+        WHERE ce.team_id=?
+        """,
+        (team_id,),
+    )
+    collection_rows = rows_to_dict(c.fetchall())
+
+    c.execute(
+        """
+        SELECT event_id, member_name, transport_role
+        FROM portal_transport_responses
+        WHERE team_id=?
+        """,
+        (team_id,),
+    )
+    transport_rows = rows_to_dict(c.fetchall())
+    conn.close()
+
+    total_event_count = len(event_ids)
+    for row in attendance_rows:
+        member_name = (row.get("member_name") or "").strip()
+        if member_name not in member_stats:
+            continue
+        event_id = row.get("event_id")
+        if event_id not in event_ids:
+            continue
+        status = normalize_status(row.get("status"))
+        if status == "参加":
+            member_stats[member_name]["attendance_count"] += 1
+        elif status == "不参加":
+            member_stats[member_name]["absence_count"] += 1
+
+    for row in collection_rows:
+        member_name = (row.get("member_name") or "").strip()
+        if member_name not in member_stats:
+            continue
+        normalized_status = normalize_collection_status(row.get("status"))
+        if normalized_status == COLLECTION_STATUS_COLLECTED:
+            member_stats[member_name]["collection_count"] += 1
+            member_stats[member_name]["collection_amount"] += int(row.get("amount") or 0)
+
+    for row in transport_rows:
+        member_name = (row.get("member_name") or "").strip()
+        if member_name not in member_stats:
+            continue
+        event_id = row.get("event_id")
+        if event_id not in event_ids:
+            continue
+        transport_role = normalize_transport_role(row.get("transport_role")) or TRANSPORT_ROLE_NONE
+        if transport_role == TRANSPORT_ROLE_DRIVER:
+            member_stats[member_name]["driver_count"] += 1
+        elif transport_role == TRANSPORT_ROLE_PASSENGER:
+            member_stats[member_name]["passenger_count"] += 1
+        elif transport_role == TRANSPORT_ROLE_DIRECT:
+            member_stats[member_name]["direct_count"] += 1
+
+    analytics_rows = []
+    for member_name in member_order:
+        stats = member_stats[member_name]
+        stats["unanswered_count"] = max(
+            0,
+            total_event_count - stats["attendance_count"] - stats["absence_count"],
+        )
+        stats["attendance_rate"] = format_member_analytics_rate(stats["attendance_count"], total_event_count)
+        stats["absence_rate"] = format_member_analytics_rate(stats["absence_count"], total_event_count)
+        stats["unanswered_rate"] = format_member_analytics_rate(stats["unanswered_count"], total_event_count)
+        stats["collection_amount_label"] = format_currency_yen(stats["collection_amount"])
+        attendance_denominator = stats["attendance_count"]
+        stats["driver_rate"] = format_member_analytics_rate(stats["driver_count"], attendance_denominator)
+        stats["passenger_rate"] = format_member_analytics_rate(stats["passenger_count"], attendance_denominator)
+        stats["direct_rate"] = format_member_analytics_rate(stats["direct_count"], attendance_denominator)
+        analytics_rows.append(stats)
+
+    return {
+        "rows": analytics_rows,
+        "member_count": len(analytics_rows),
+        "event_count": total_event_count,
+    }
+
+
 def build_portal_transport_overview(team_id, event_id, allowed_member_names=None):
     response_rows = portal_get_all_transport_responses_for_event(team_id, event_id)
     assignment_rows = portal_get_transport_assignments(team_id, event_id)
@@ -9092,6 +9235,25 @@ def admin_team_collections(team_id):
         editing_member_ids=editing_member_ids,
         error_message=error_message,
         success_message=success_message,
+    )
+
+
+@app.route("/admin/teams/<int:team_id>/analytics")
+@admin_login_required
+def admin_team_analytics(team_id):
+    team, team_error = get_owned_team_or_error(team_id, session["admin_id"])
+    if team_error == "not_found":
+        return redirect(url_for("admin_dashboard", error_message="対象チームが見つかりません。"))
+    if team_error == "forbidden":
+        return redirect(url_for("admin_dashboard", error_message="他チームは操作できません。"))
+
+    analytics = build_admin_member_analytics(team["id"])
+    return render_template(
+        "admin_team_analytics.html",
+        team=team,
+        analytics_rows=analytics["rows"],
+        member_count=analytics["member_count"],
+        event_count=analytics["event_count"],
     )
 
 
