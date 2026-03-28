@@ -95,7 +95,7 @@
 .team-meta {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(4, 92px);
+  grid-template-columns: repeat(4, minmax(0, 92px));
   justify-content: start;
 }
 .team-meta-item {
@@ -258,8 +258,10 @@
   align-items: center;
   justify-items: center;
   row-gap: 2px;
-  width: 92px;
-  height: 92px;
+  width: 100%;
+  max-width: 92px;
+  aspect-ratio: 1 / 1;
+  min-height: 0;
   min-width: 0;
   justify-self: center;
   padding: 6px 4px 12px;
@@ -491,8 +493,8 @@
     gap: 8px;
   }
   .team-manage-actions .fancy-admin-btn {
-    width: 92px;
-    height: 92px;
+    width: 100%;
+    max-width: 92px;
     padding: 6px 4px 12px;
     border-radius: 18px;
   }
