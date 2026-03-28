@@ -167,12 +167,18 @@
   gap: 8px;
   align-items: center;
 }
+.grid-3 > .field,
+.grid-2 > .field {
+  min-width: 0;
+}
 .time-split-sep {
   color: #bbb;
   font-weight: 700;
 }
 .js-date-picker {
   color-scheme: dark;
+  width: 100%;
+  min-width: 0;
 }
 .js-date-picker::-webkit-calendar-picker-indicator {
   filter: invert(1) brightness(1.2);
@@ -296,6 +302,26 @@
       rgba(0, 0, 0, 0.08) 3px 6px
     ),
     linear-gradient(180deg, #b12b4b 0%, #7b1e35 100%);
+}
+@media (max-width: 640px) {
+  .js-date-picker {
+    font-size: 14px;
+    padding: 8px 10px;
+  }
+  .month-tabs {
+    width: 100%;
+    max-width: 100%;
+    --month-tab-gap: 6px;
+    --month-tab-width: calc((100% - (var(--month-tab-gap) * 2)) / 3);
+  }
+  .month-tab {
+    width: var(--month-tab-width);
+    min-width: var(--month-tab-width);
+    max-width: var(--month-tab-width);
+    padding: 9px 8px;
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+  }
 }
 </style>
 {% endblock %}
