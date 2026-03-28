@@ -6,6 +6,7 @@
 <title>{% block title %}Mossan Store{% endblock %}</title>
 {% set is_attendance_brand = request.path.startswith('/admin') or request.path.startswith('/site-admin') or request.path.startswith('/team/') or request.path.startswith('/apps/attendance/app/') %}
 {% set is_marketing_page = request.endpoint in ['home', 'apps_list', 'blog_index'] %}
+{% set attendance_brand_home_endpoint = 'home' if request.endpoint == 'attendance_description' else 'admin_login_entry' %}
 {% set hide_footer = is_attendance_brand %}
 {% set favicon_filename = 'attendance-board-favicon.svg' if is_attendance_brand else 'favicon.ico' %}
 {% set favicon_type = 'image/svg+xml' if is_attendance_brand else 'image/x-icon' %}
@@ -499,7 +500,7 @@ th { background: #1b1b1b; color: #ffcbcb; }
 <header class="site-header{% if is_marketing_page %} home-header{% endif %}">
   <div class="header-inner">
     {% set logo_variant = request.args.get('logo_variant', 'v2') %}
-    <a class="logo-area" href="{{ url_for('attendance_description') if (request.path.startswith('/admin') or request.path.startswith('/site-admin') or request.path.startswith('/team/')) else url_for('home') }}">
+    <a class="logo-area" href="{{ url_for(attendance_brand_home_endpoint) if is_attendance_brand else url_for('home') }}">
       <span class="logo-text{% if is_attendance_brand %} attendance-brand brand-{{ logo_variant }}{% elif is_marketing_page %} home-logo{% endif %}">
         {% block header_logo_text %}
         {% if is_attendance_brand %}

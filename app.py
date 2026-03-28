@@ -7992,7 +7992,7 @@ def admin_login_entry():
                     )
                 error_message = "管理者アカウントを作成できませんでした。時間をおいて再度お試しください。"
 
-    info_message = "メールアドレスが未登録の場合、この画面から新規に管理者アカウントを作成できます。"
+    info_message = "メールアドレスが未登録の場合、自動的に新規アカウント登録になります。"
 
     return render_template(
         "admin_portal_login_v2.html",
