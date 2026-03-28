@@ -253,18 +253,14 @@
 }
 .team-manage-actions .fancy-admin-btn {
   position: relative;
-  display: grid;
-  grid-template-rows: 1fr auto;
-  align-items: center;
-  justify-items: center;
-  row-gap: 2px;
+  display: block;
   width: 100%;
   max-width: 92px;
   aspect-ratio: 1 / 1;
   min-height: 0;
   min-width: 0;
   justify-self: center;
-  padding: 6px 4px 12px;
+  padding: 0;
   border: 2.5px solid rgba(255, 255, 255, 0.98);
   border-radius: 18px;
   box-sizing: border-box;
@@ -279,10 +275,9 @@
 }
 .team-manage-actions .fancy-admin-btn::before,
 .team-manage-actions .fancy-admin-btn::after {
-  position: static;
-  transform: none;
-  width: auto;
-  height: auto;
+  position: absolute;
+  top: auto;
+  right: auto;
   border-radius: 0;
   background: none;
   box-shadow: none;
@@ -290,24 +285,30 @@
 .team-manage-actions .fancy-admin-btn::before {
   content: "";
   display: block;
-  width: 60px;
-  height: 60px;
+  top: 50%;
+  left: 50%;
+  width: 78%;
+  aspect-ratio: 1 / 1;
+  height: auto;
   background-position: center;
   background-repeat: no-repeat;
-  background-size: contain;
-  transform: translateY(1px);
+  background-size: 100% 100%;
+  transform: translate(-50%, -56%);
   filter: drop-shadow(0 0 0.35px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 0.7px rgba(255, 255, 255, 0.75));
 }
 .team-manage-actions .fancy-admin-btn::after {
   display: block;
+  left: 50%;
+  bottom: 10px;
+  width: calc(100% - 8px);
   color: #ffffff;
-  font-size: 14px;
+  font-size: clamp(8px, 1.35vw, 14px);
   font-weight: 900;
-  letter-spacing: 0.06em;
+  letter-spacing: clamp(0.02em, 0.08vw, 0.06em);
   line-height: 1;
   white-space: nowrap;
   text-align: center;
-  transform: translateY(-3px);
+  transform: translateX(-50%);
 }
 .team-manage-actions .fancy-admin-btn:hover {
   filter: brightness(1.12);
@@ -494,17 +495,20 @@
   }
   .team-manage-actions .fancy-admin-btn {
     width: 100%;
-    max-width: 92px;
-    padding: 6px 4px 12px;
-    border-radius: 18px;
+    max-width: 80px;
+    padding: 0;
+    border-radius: 16px;
   }
   .team-manage-actions .fancy-admin-btn::before {
-    width: 60px;
-    height: 60px;
+    width: 74%;
+    transform: translate(-50%, -58%);
   }
   .team-manage-actions .fancy-admin-btn::after {
-    font-size: 14px;
-    letter-spacing: 0.06em;
+    bottom: 4px;
+    width: calc(100% - 6px);
+    font-size: clamp(7px, 2.2vw, 10px);
+    letter-spacing: clamp(0.01em, 0.04vw, 0.03em);
+    transform: translateX(-50%);
   }
 }
 </style>
