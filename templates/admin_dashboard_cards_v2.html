@@ -125,15 +125,17 @@
 .member-url-wrap {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: flex-start;
+  gap: 6px;
   width: 100%;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  min-width: 0;
 }
 .member-page-btn {
   flex: 0 1 auto;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   min-height: 0;
   padding: 0;
   border: none;
@@ -166,6 +168,7 @@
   border: none;
   background: transparent;
   box-shadow: none;
+  transition: opacity 0.18s ease;
 }
 .copy-url-btn svg {
   width: 22px;
@@ -186,17 +189,47 @@
   background: transparent;
 }
 .member-url-wrap .copy-feedback {
-  display: inline-block;
-  font-size: 12px;
-  line-height: 1.2;
-  color: #9fe3b6;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: #69d88b;
   opacity: 0;
-  transform: translateY(1px);
+  transform: scale(0.85);
   transition: opacity 0.18s ease;
   pointer-events: none;
 }
 .member-url-wrap .copy-feedback.is-visible {
+  display: inline-flex;
   opacity: 1;
+  transform: scale(1);
+}
+.member-url-wrap.is-copy-complete .copy-url-btn {
+  opacity: 0;
+  pointer-events: none;
+}
+.member-url-wrap .copy-feedback::before {
+  content: "";
+  display: block;
+  width: 12px;
+  height: 7px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+}
+.dashboard-top .btn-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+.dashboard-top .btn-row > .btn,
+.dashboard-top .btn-row > .fancy-admin-btn,
+.dashboard-top .btn-row > span.btn {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+  text-align: center;
 }
 .team-delete-form {
   position: absolute;
@@ -487,8 +520,36 @@
 }
 @media (max-width: 640px) {
   .member-page-btn {
-    font-size: 21px;
+    font-size: 15px;
     padding: 0;
+  }
+  .member-url-wrap {
+    gap: 4px;
+  }
+  .copy-url-btn {
+    min-width: 28px;
+    min-height: 28px;
+  }
+  .copy-url-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+  .member-url-wrap .copy-feedback {
+    width: 28px;
+    height: 28px;
+  }
+  .dashboard-top .btn-row {
+    gap: 8px;
+  }
+  .dashboard-top .btn-row > .btn,
+  .dashboard-top .btn-row > .fancy-admin-btn,
+  .dashboard-top .btn-row > span.btn {
+    padding: 9px 10px;
+    font-size: 13px;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    justify-content: center;
+    text-align: center;
   }
   .team-manage-actions {
     gap: 8px;
@@ -665,7 +726,8 @@ document.querySelectorAll("[data-copy-url]").forEach((button) => {
   let resetTimerId = null;
 
   button.addEventListener("click", async () => {
-    const feedback = button.parentElement ? button.parentElement.querySelector(".copy-feedback") : null;
+    const wrap = button.parentElement;
+    const feedback = wrap ? wrap.querySelector(".copy-feedback") : null;
     const relativeUrl = button.getAttribute("data-copy-url");
     const absoluteUrl = new URL(relativeUrl, window.location.origin).toString();
 
@@ -677,12 +739,17 @@ document.querySelectorAll("[data-copy-url]").forEach((button) => {
     try {
       await copyMemberUrl(absoluteUrl);
       if (feedback) {
-        feedback.textContent = "\u30b3\u30d4\u30fc\u3057\u307e\u3057\u305f";
+        feedback.textContent = "";
+        feedback.setAttribute("aria-label", "コピーしました");
         feedback.classList.add("is-visible");
+      }
+      if (wrap) {
+        wrap.classList.add("is-copy-complete");
       }
     } catch (error) {
       if (feedback) {
-        feedback.textContent = "\u30b3\u30d4\u30fc\u5931\u6557";
+        feedback.textContent = "";
+        feedback.setAttribute("aria-label", "コピー失敗");
         feedback.classList.add("is-visible");
       }
     }
@@ -691,6 +758,10 @@ document.querySelectorAll("[data-copy-url]").forEach((button) => {
       if (feedback) {
         feedback.classList.remove("is-visible");
         feedback.textContent = "";
+        feedback.removeAttribute("aria-label");
+      }
+      if (wrap) {
+        wrap.classList.remove("is-copy-complete");
       }
       resetTimerId = null;
     }, 1400);
