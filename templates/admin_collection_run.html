@@ -12,6 +12,29 @@
   letter-spacing: 0.04em;
   color: #ead7b3;
 }
+.dashboard-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: -8px 0 18px;
+  font-size: 14px;
+  color: #b7c0cd;
+}
+.dashboard-breadcrumbs a {
+  color: #d7dde6;
+  text-decoration: none;
+}
+.dashboard-breadcrumbs a:hover {
+  color: #ffb0b0;
+  text-decoration: underline;
+}
+.dashboard-breadcrumbs .current {
+  color: #edf9f1;
+}
+.dashboard-breadcrumb-separator {
+  color: #8b95a5;
+}
 .attendance-table-wrap {
   overflow-x: hidden;
 }
@@ -116,6 +139,13 @@
 
 {% block content %}
 <h1 class="page-title dashboard-reggae-title">集金詳細</h1>
+<nav class="dashboard-breadcrumbs" aria-label="パンくず">
+  <a href="{{ url_for('admin_dashboard') }}">ダッシュボード</a>
+  <span class="dashboard-breadcrumb-separator" aria-hidden="true">＞</span>
+  <a href="{{ url_for('admin_team_collections', team_id=team['id'], page=page, scroll_y=scroll_y) }}">集金管理</a>
+  <span class="dashboard-breadcrumb-separator" aria-hidden="true">＞</span>
+  <span class="current" aria-current="page">集金詳細</span>
+</nav>
 
 <section class="panel">
   <div>{{ collection_event_view["collection_date_label"] }}</div>
@@ -161,7 +191,7 @@
 </section>
 
 <div class="btn-row" style="margin-top:12px;">
-  <a href="{{ url_for('admin_team_collections', team_id=team['id'], page=page, scroll_y=scroll_y) }}" class="btn secondary">集金一覧へ戻る</a>
+  <a href="{{ url_for('admin_team_collections', team_id=team['id'], page=page, scroll_y=scroll_y) }}" class="btn secondary">集金管理へ戻る</a>
 </div>
 {% endblock %}
 

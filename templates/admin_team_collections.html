@@ -17,6 +17,29 @@
   letter-spacing: 0.04em;
   color: #ead7b3;
 }
+.dashboard-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: -8px 0 18px;
+  font-size: 14px;
+  color: #b7c0cd;
+}
+.dashboard-breadcrumbs a {
+  color: #d7dde6;
+  text-decoration: none;
+}
+.dashboard-breadcrumbs a:hover {
+  color: #ffb0b0;
+  text-decoration: underline;
+}
+.dashboard-breadcrumbs .current {
+  color: #edf9f1;
+}
+.dashboard-breadcrumb-separator {
+  color: #8b95a5;
+}
 .month-tabs {
   --month-tab-width: 112px;
   --month-tab-gap: 10px;
@@ -200,6 +223,11 @@
 
 {% block content %}
 <h1 class="page-title dashboard-reggae-title">集金管理</h1>
+<nav class="dashboard-breadcrumbs" aria-label="パンくず">
+  <a href="{{ url_for('admin_dashboard') }}">ダッシュボード</a>
+  <span class="dashboard-breadcrumb-separator" aria-hidden="true">＞</span>
+  <span class="current" aria-current="page">集金管理</span>
+</nav>
 
 <section class="panel">
   {% if error_message %}

@@ -17,6 +17,29 @@
   letter-spacing: 0.02em;
   color: #ead7b3;
 }
+.dashboard-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: -8px 0 18px;
+  font-size: 14px;
+  color: #b7c0cd;
+}
+.dashboard-breadcrumbs a {
+  color: #d7dde6;
+  text-decoration: none;
+}
+.dashboard-breadcrumbs a:hover {
+  color: #ffb0b0;
+  text-decoration: underline;
+}
+.dashboard-breadcrumbs .current {
+  color: #edf9f1;
+}
+.dashboard-breadcrumb-separator {
+  color: #8b95a5;
+}
 .member-editor {
   border: 1px solid rgba(255, 43, 43, 0.24);
   border-radius: 14px;
@@ -420,9 +443,30 @@
     align-items: flex-start;
   }
   .member-period-form {
+    width: 100%;
+    flex-direction: column;
     align-items: flex-start;
+    gap: 10px;
+  }
+  .member-period-field {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .member-period-form label {
+    flex: 0 0 auto;
+    min-width: 64px;
+    margin-bottom: 0;
+  }
+  .member-period-form input[type="date"] {
+    flex: 1 1 auto;
+    width: auto;
+    max-width: none;
+    min-width: 0;
   }
   .period-separator {
+    display: none;
     margin-bottom: 0;
   }
   .csv-pill,
@@ -541,7 +585,7 @@
   }
   .member-period-form input[type="date"] {
     width: 100%;
-    max-width: 144px;
+    max-width: none;
   }
   .member-tabs {
     width: 100%;
@@ -559,6 +603,11 @@
 
 {% block content %}
 <h1 class="page-title dashboard-reggae-title">メンバー管理</h1>
+<nav class="dashboard-breadcrumbs" aria-label="パンくず">
+  <a href="{{ url_for('admin_dashboard') }}">ダッシュボード</a>
+  <span class="dashboard-breadcrumb-separator" aria-hidden="true">＞</span>
+  <span class="current" aria-current="page">メンバー管理</span>
+</nav>
 
 <section class="panel">
   {% if error_message %}
