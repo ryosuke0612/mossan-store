@@ -177,6 +177,7 @@
 .grid-3 > .field,
 .grid-2 > .field {
   min-width: 0;
+  overflow: hidden;
 }
 .time-split-sep {
   color: #bbb;
@@ -185,7 +186,9 @@
 .js-date-picker {
   color-scheme: dark;
   width: 100%;
+  max-width: 100%;
   min-width: 0;
+  display: block;
 }
 .js-date-picker::-webkit-calendar-picker-indicator {
   filter: invert(1) brightness(1.2);
