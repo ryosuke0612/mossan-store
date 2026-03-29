@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1220" viewBox="0 0 1800 1220" role="img" aria-labelledby="title desc">
+  <title id="title">メンバー管理画面 4タブ+シンプル期間設定モック v4</title>
+  <desc id="desc">添付画像のタブデザインに合わせて、基本情報、出欠情報、配車情報、集金情報の4タブをメンバーリスト表の上部に配置し、期間設定は開始と終了の2つだけに絞った修正案です。</desc>
+  <defs>
+    <style>
+      .bg { fill: #0b0f14; }
+      .panel { fill: #121821; stroke: #2f3946; stroke-width: 2; rx: 18; ry: 18; }
+      .card { fill: #151c25; stroke: #2a3441; stroke-width: 1.5; rx: 16; ry: 16; }
+      .soft { fill: #0f141c; stroke: #27313c; stroke-width: 1.2; rx: 12; ry: 12; }
+      .input { fill: #11151b; stroke: #3a4758; stroke-width: 1.4; rx: 10; ry: 10; }
+      .tab-active { fill: url(#tabActive); stroke: #4db072; stroke-width: 1.4; }
+      .tab-inactive { fill: url(#tabInactive); stroke: #3e4650; stroke-width: 1.2; }
+      .btn-primary { fill: #8f2940; stroke: #b64863; stroke-width: 1.5; rx: 10; ry: 10; }
+      .btn-secondary { fill: #1c2631; stroke: #425164; stroke-width: 1.5; rx: 10; ry: 10; }
+      .guide { fill: #141a22; stroke: #3c3133; stroke-width: 1.2; rx: 10; ry: 10; }
+      .table-head { fill: url(#headGrad); stroke: #2f6d44; stroke-width: 1.2; }
+      .table-cell { fill: #11151b; stroke: #2f3946; stroke-width: 1; }
+      .table-cell-alt { fill: #16202a; stroke: #2f3946; stroke-width: 1; }
+      .chip-good { fill: #183828; stroke: #2b6a48; stroke-width: 1; rx: 10; ry: 10; }
+      .chip-warn { fill: #3b2d15; stroke: #7f6025; stroke-width: 1; rx: 10; ry: 10; }
+      .chip-bad { fill: #3e1f24; stroke: #87505c; stroke-width: 1; rx: 10; ry: 10; }
+      .text { fill: #e5e7eb; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; }
+      .muted { fill: #9aa4b2; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; }
+      .strong { fill: #ffffff; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; font-weight: 700; }
+      .accent { fill: #ecfff3; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; font-weight: 700; }
+      .tabtext-active { fill: #eafff0; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; font-weight: 700; font-size: 16px; }
+      .tabtext { fill: #d8dde4; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; font-weight: 700; font-size: 16px; }
+      .title { font-size: 34px; font-weight: 700; }
+      .h1 { font-size: 28px; font-weight: 700; }
+      .h2 { font-size: 19px; font-weight: 700; }
+      .body { font-size: 15px; font-weight: 500; }
+      .small { font-size: 13px; font-weight: 500; }
+      .tiny { font-size: 12px; font-weight: 500; }
+    </style>
+    <linearGradient id="headGrad" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#3b8f5f"/>
+      <stop offset="100%" stop-color="#2a6d48"/>
+    </linearGradient>
+    <linearGradient id="tabActive" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#245e3f"/>
+      <stop offset="100%" stop-color="#1c4c32"/>
+    </linearGradient>
+    <linearGradient id="tabInactive" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#2a3038"/>
+      <stop offset="100%" stop-color="#1d232a"/>
+    </linearGradient>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1800" height="1220" />
+
+  <text x="48" y="58" class="text title">メンバー管理画面 4タブ+シンプル期間設定モック</text>
+  <text x="48" y="94" class="muted body">タブの見た目は添付画像に寄せ、期間は開始と終了の2つだけに簡略化</text>
+
+  <rect class="panel" x="34" y="124" width="1732" height="1058" />
+
+  <text x="64" y="174" class="strong h1">メンバー管理</text>
+
+  <rect class="card" x="64" y="216" width="1668" height="154" />
+  <text x="88" y="248" class="strong h2">メンバー一括登録</text>
+  <rect class="soft" x="88" y="266" width="1278" height="78" />
+  <text x="112" y="310" class="muted body">田中 太郎 / 佐藤 花子 / 鈴木 次郎 ...</text>
+  <rect class="btn-primary" x="1388" y="286" width="122" height="40" />
+  <text x="1424" y="312" class="strong body">一括登録</text>
+  <text x="88" y="356" class="muted tiny">一括登録エリアはそのまま維持</text>
+
+  <rect class="card" x="64" y="394" width="1668" height="730" />
+  <text x="88" y="430" class="strong h2">メンバーリスト表</text>
+
+  <rect class="btn-secondary" x="88" y="454" width="94" height="38" />
+  <text x="122" y="478" class="text body">▲ 上へ</text>
+  <rect class="btn-secondary" x="194" y="454" width="94" height="38" />
+  <text x="228" y="478" class="text body">▼ 下へ</text>
+  <rect class="btn-primary" x="300" y="454" width="94" height="38" />
+  <text x="334" y="478" class="strong body">削除</text>
+
+  <text x="420" y="478" class="muted small">削除ボタンの下に、画面切替タブと期間設定枠を追加</text>
+
+  <!-- tabs inspired by attached image -->
+  <path class="tab-active" d="M88 516 L88 556 L254 556 L254 516 Q254 504 242 504 L100 504 Q88 504 88 516 Z" />
+  <path class="tab-inactive" d="M270 516 L270 556 L436 556 L436 516 Q436 504 424 504 L282 504 Q270 504 270 516 Z" />
+  <path class="tab-inactive" d="M452 516 L452 556 L618 556 L618 516 Q618 504 606 504 L464 504 Q452 504 452 516 Z" />
+  <path class="tab-inactive" d="M634 516 L634 556 L800 556 L800 516 Q800 504 788 504 L646 504 Q634 504 634 516 Z" />
+  <line x1="88" y1="556" x2="800" y2="556" stroke="#4db072" stroke-width="2.5" />
+
+  <text x="136" y="532" class="tabtext-active">基本情報</text>
+  <text x="316" y="532" class="tabtext">出欠情報</text>
+  <text x="498" y="532" class="tabtext">配車情報</text>
+  <text x="680" y="532" class="tabtext">集金情報</text>
+
+  <rect class="guide" x="88" y="572" width="1620" height="68" />
+  <text x="112" y="599" class="strong body">表示期間</text>
+  <rect class="input" x="222" y="586" width="166" height="34" />
+  <text x="264" y="608" class="text body">2026-01</text>
+  <text x="406" y="608" class="muted body">～</text>
+  <rect class="input" x="438" y="586" width="166" height="34" />
+  <text x="480" y="608" class="text body">2026-03</text>
+  <text x="632" y="608" class="muted small">期間を選択すると自動保存して表へ反映</text>
+  <text x="112" y="627" class="muted tiny">開始と終了の2つだけのシンプルな枠にする</text>
+
+  <text x="88" y="674" class="muted small">表示例: 基本情報タブ</text>
+
+  <rect class="table-head" x="88" y="694" width="74" height="56" />
+  <rect class="table-head" x="162" y="694" width="270" height="56" />
+  <rect class="table-head" x="432" y="694" width="140" height="56" />
+  <rect class="table-head" x="572" y="694" width="180" height="56" />
+  <rect class="table-head" x="752" y="694" width="180" height="56" />
+  <rect class="table-head" x="932" y="694" width="420" height="56" />
+  <rect class="table-head" x="1352" y="694" width="356" height="56" />
+  <text x="112" y="728" class="accent small">選択</text>
+  <text x="264" y="728" class="accent small">メンバー名</text>
+  <text x="474" y="728" class="accent small">状態</text>
+  <text x="632" y="728" class="accent small">登録日</text>
+  <text x="812" y="728" class="accent small">表示順</text>
+  <text x="1100" y="728" class="accent small">メモ / 補足</text>
+  <text x="1498" y="728" class="accent small">タブ切替後に差し替わる列</text>
+
+  <rect class="table-cell-alt" x="88" y="750" width="74" height="82" />
+  <rect class="table-cell-alt" x="162" y="750" width="270" height="82" />
+  <rect class="table-cell-alt" x="432" y="750" width="140" height="82" />
+  <rect class="table-cell-alt" x="572" y="750" width="180" height="82" />
+  <rect class="table-cell-alt" x="752" y="750" width="180" height="82" />
+  <rect class="table-cell-alt" x="932" y="750" width="420" height="82" />
+  <rect class="table-cell-alt" x="1352" y="750" width="356" height="82" />
+  <rect class="table-cell" x="116" y="782" width="18" height="18" />
+  <text x="188" y="784" class="strong body">田中 太郎</text>
+  <rect class="chip-good" x="468" y="772" width="72" height="28" />
+  <text x="492" y="791" class="text small">有効</text>
+  <text x="618" y="790" class="text body">2025-09-12</text>
+  <text x="832" y="790" class="text body">1</text>
+  <text x="958" y="790" class="muted small">主力メンバー / 連絡先確認済み</text>
+  <text x="1376" y="782" class="muted tiny">出欠情報タブ</text>
+  <text x="1376" y="804" class="text tiny">参加回数 / 不参加回数 / 未回答回数 / 回答率</text>
+
+  <rect class="table-cell" x="88" y="832" width="74" height="82" />
+  <rect class="table-cell" x="162" y="832" width="270" height="82" />
+  <rect class="table-cell" x="432" y="832" width="140" height="82" />
+  <rect class="table-cell" x="572" y="832" width="180" height="82" />
+  <rect class="table-cell" x="752" y="832" width="180" height="82" />
+  <rect class="table-cell" x="932" y="832" width="420" height="82" />
+  <rect class="table-cell" x="1352" y="832" width="356" height="82" />
+  <rect class="table-cell" x="116" y="864" width="18" height="18" />
+  <text x="188" y="866" class="strong body">佐藤 花子</text>
+  <rect class="chip-warn" x="468" y="854" width="72" height="28" />
+  <text x="492" y="873" class="text small">無効</text>
+  <text x="618" y="872" class="text body">2026-02-10</text>
+  <text x="832" y="872" class="text body">2</text>
+  <text x="958" y="872" class="muted small">休会中。必要時のみ復帰</text>
+  <text x="1376" y="864" class="muted tiny">配車情報タブ</text>
+  <text x="1376" y="886" class="text tiny">登録回数 / 運転回数 / 同乗回数 / 現地集合回数</text>
+
+  <rect class="table-cell-alt" x="88" y="914" width="74" height="82" />
+  <rect class="table-cell-alt" x="162" y="914" width="270" height="82" />
+  <rect class="table-cell-alt" x="432" y="914" width="140" height="82" />
+  <rect class="table-cell-alt" x="572" y="914" width="180" height="82" />
+  <rect class="table-cell-alt" x="752" y="914" width="180" height="82" />
+  <rect class="table-cell-alt" x="932" y="914" width="420" height="82" />
+  <rect class="table-cell-alt" x="1352" y="914" width="356" height="82" />
+  <rect class="table-cell" x="116" y="946" width="18" height="18" />
+  <text x="188" y="948" class="strong body">中村 光</text>
+  <rect class="chip-good" x="468" y="936" width="72" height="28" />
+  <text x="492" y="955" class="text small">有効</text>
+  <text x="618" y="954" class="text body">2024-11-04</text>
+  <text x="832" y="954" class="text body">3</text>
+  <text x="958" y="954" class="muted small">送迎協力が多いメンバー</text>
+  <text x="1376" y="946" class="muted tiny">集金情報タブ</text>
+  <text x="1376" y="968" class="text tiny">対象回数 / 回収済回数 / 未回収回数 / 未回収額</text>
+
+  <rect class="soft" x="88" y="1030" width="1620" height="62" />
+  <text x="112" y="1062" class="text body">設計意図: タブは既存UIに近い見た目、期間は開始と終了だけ、自動保存で操作を増やさない</text>
+</svg>

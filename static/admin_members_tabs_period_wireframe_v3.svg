@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1260" viewBox="0 0 1800 1260" role="img" aria-labelledby="title desc">
+  <title id="title">メンバー管理画面 4タブ+期間設定モック v3</title>
+  <desc id="desc">既存のメンバー管理画面をベースに、メンバーリスト表の上部へ基本情報、出欠情報、配車情報、集金情報の4タブを配置し、その下に期間設定枠を設けた修正案です。</desc>
+  <defs>
+    <style>
+      .bg { fill: #0b0f14; }
+      .panel { fill: #121821; stroke: #2f3946; stroke-width: 2; rx: 18; ry: 18; }
+      .card { fill: #151c25; stroke: #2a3441; stroke-width: 1.5; rx: 16; ry: 16; }
+      .soft { fill: #0f141c; stroke: #27313c; stroke-width: 1.2; rx: 12; ry: 12; }
+      .input { fill: #11151b; stroke: #3a4758; stroke-width: 1.4; rx: 10; ry: 10; }
+      .tab-active { fill: #2f7a4f; stroke: #40a769; stroke-width: 1.5; rx: 999; ry: 999; }
+      .tab { fill: #1b2430; stroke: #334153; stroke-width: 1.5; rx: 999; ry: 999; }
+      .btn-primary { fill: #8f2940; stroke: #b64863; stroke-width: 1.5; rx: 10; ry: 10; }
+      .btn-secondary { fill: #1c2631; stroke: #425164; stroke-width: 1.5; rx: 10; ry: 10; }
+      .guide { fill: #141a22; stroke: #3c3133; stroke-width: 1.2; rx: 10; ry: 10; }
+      .table-head { fill: url(#headGrad); stroke: #2f6d44; stroke-width: 1.2; }
+      .table-cell { fill: #11151b; stroke: #2f3946; stroke-width: 1; }
+      .table-cell-alt { fill: #16202a; stroke: #2f3946; stroke-width: 1; }
+      .chip-good { fill: #183828; stroke: #2b6a48; stroke-width: 1; rx: 10; ry: 10; }
+      .chip-warn { fill: #3b2d15; stroke: #7f6025; stroke-width: 1; rx: 10; ry: 10; }
+      .chip-bad { fill: #3e1f24; stroke: #87505c; stroke-width: 1; rx: 10; ry: 10; }
+      .text { fill: #e5e7eb; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; }
+      .muted { fill: #9aa4b2; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; }
+      .strong { fill: #ffffff; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; font-weight: 700; }
+      .accent { fill: #ecfff3; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; font-weight: 700; }
+      .title { font-size: 34px; font-weight: 700; }
+      .h1 { font-size: 28px; font-weight: 700; }
+      .h2 { font-size: 19px; font-weight: 700; }
+      .body { font-size: 15px; font-weight: 500; }
+      .small { font-size: 13px; font-weight: 500; }
+      .tiny { font-size: 12px; font-weight: 500; }
+    </style>
+    <linearGradient id="headGrad" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#3b8f5f"/>
+      <stop offset="100%" stop-color="#2a6d48"/>
+    </linearGradient>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1800" height="1260" />
+
+  <text x="48" y="58" class="text title">メンバー管理画面 4タブ+期間設定モック</text>
+  <text x="48" y="94" class="muted body">既存のメンバー管理画面の構造を保ちつつ、表の上部だけを拡張するイメージ</text>
+
+  <rect class="panel" x="34" y="124" width="1732" height="1098" />
+
+  <text x="64" y="174" class="strong h1">メンバー管理</text>
+
+  <rect class="card" x="64" y="216" width="1668" height="154" />
+  <text x="88" y="248" class="strong h2">メンバー一括登録</text>
+  <rect class="soft" x="88" y="266" width="1278" height="78" />
+  <text x="112" y="310" class="muted body">田中 太郎 / 佐藤 花子 / 鈴木 次郎 ...</text>
+  <rect class="btn-primary" x="1388" y="286" width="122" height="40" />
+  <text x="1424" y="312" class="strong body">一括登録</text>
+  <text x="88" y="356" class="muted tiny">現行の一括登録エリアはそのまま維持</text>
+
+  <rect class="card" x="64" y="394" width="1668" height="762" />
+  <text x="88" y="430" class="strong h2">メンバーリスト表</text>
+
+  <rect class="btn-secondary" x="88" y="454" width="94" height="38" />
+  <text x="122" y="478" class="text body">▲ 上へ</text>
+  <rect class="btn-secondary" x="194" y="454" width="94" height="38" />
+  <text x="228" y="478" class="text body">▼ 下へ</text>
+  <rect class="btn-primary" x="300" y="454" width="94" height="38" />
+  <text x="334" y="478" class="strong body">削除</text>
+
+  <text x="420" y="478" class="muted small">ここまでは現行と同じ操作列</text>
+
+  <rect class="tab-active" x="88" y="510" width="134" height="40" />
+  <text x="128" y="535" class="accent body">基本情報</text>
+  <rect class="tab" x="234" y="510" width="134" height="40" />
+  <text x="274" y="535" class="text body">出欠情報</text>
+  <rect class="tab" x="380" y="510" width="134" height="40" />
+  <text x="420" y="535" class="text body">配車情報</text>
+  <rect class="tab" x="526" y="510" width="134" height="40" />
+  <text x="566" y="535" class="text body">集金情報</text>
+
+  <text x="686" y="535" class="muted small">メンバー出欠登録画面のタブに近い見た目で、表の表示内容だけを切り替える</text>
+
+  <rect class="guide" x="88" y="566" width="1620" height="72" />
+  <text x="112" y="594" class="strong body">期間設定</text>
+  <text x="112" y="618" class="muted tiny">削除ボタンの下の行に設置し、出欠・配車・集金タブで共通利用</text>
+
+  <text x="266" y="595" class="muted tiny">プリセット</text>
+  <rect class="input" x="266" y="604" width="154" height="28" />
+  <text x="312" y="623" class="text tiny">直近3か月</text>
+
+  <text x="440" y="595" class="muted tiny">開始日</text>
+  <rect class="input" x="440" y="604" width="132" height="28" />
+  <text x="470" y="623" class="text tiny">2026-01-01</text>
+
+  <text x="592" y="595" class="muted tiny">終了日</text>
+  <rect class="input" x="592" y="604" width="132" height="28" />
+  <text x="622" y="623" class="text tiny">2026-03-31</text>
+
+  <text x="744" y="595" class="muted tiny">対象</text>
+  <rect class="input" x="744" y="604" width="154" height="28" />
+  <text x="780" y="623" class="text tiny">有効メンバーのみ</text>
+
+  <text x="918" y="595" class="muted tiny">絞込</text>
+  <rect class="input" x="918" y="604" width="132" height="28" />
+  <text x="958" y="623" class="text tiny">要対応のみ</text>
+
+  <rect class="input" x="1070" y="604" width="356" height="28" />
+  <text x="1092" y="623" class="muted tiny">登録前イベントは分母に含めない</text>
+
+  <rect class="btn-secondary" x="1444" y="600" width="104" height="34" />
+  <text x="1478" y="622" class="text tiny">条件保存</text>
+  <rect class="btn-primary" x="1560" y="600" width="94" height="34" />
+  <text x="1593" y="622" class="strong tiny">更新</text>
+
+  <text x="88" y="672" class="muted small">表示例: 基本情報タブ</text>
+
+  <rect class="table-head" x="88" y="694" width="74" height="56" />
+  <rect class="table-head" x="162" y="694" width="268" height="56" />
+  <rect class="table-head" x="430" y="694" width="134" height="56" />
+  <rect class="table-head" x="564" y="694" width="170" height="56" />
+  <rect class="table-head" x="734" y="694" width="160" height="56" />
+  <rect class="table-head" x="894" y="694" width="458" height="56" />
+  <rect class="table-head" x="1352" y="694" width="356" height="56" />
+  <text x="112" y="728" class="accent small">選択</text>
+  <text x="262" y="728" class="accent small">メンバー名</text>
+  <text x="470" y="728" class="accent small">状態</text>
+  <text x="614" y="728" class="accent small">登録日</text>
+  <text x="784" y="728" class="accent small">表示順</text>
+  <text x="1104" y="728" class="accent small">メモ / 補足</text>
+  <text x="1498" y="728" class="accent small">タブ切替後に差し替わる領域</text>
+
+  <rect class="table-cell-alt" x="88" y="750" width="74" height="82" />
+  <rect class="table-cell-alt" x="162" y="750" width="268" height="82" />
+  <rect class="table-cell-alt" x="430" y="750" width="134" height="82" />
+  <rect class="table-cell-alt" x="564" y="750" width="170" height="82" />
+  <rect class="table-cell-alt" x="734" y="750" width="160" height="82" />
+  <rect class="table-cell-alt" x="894" y="750" width="458" height="82" />
+  <rect class="table-cell-alt" x="1352" y="750" width="356" height="82" />
+  <rect class="table-cell" x="116" y="782" width="18" height="18" />
+  <text x="188" y="784" class="strong body">田中 太郎</text>
+  <rect class="chip-good" x="464" y="772" width="72" height="28" />
+  <text x="488" y="791" class="text small">有効</text>
+  <text x="608" y="790" class="text body">2025-09-12</text>
+  <text x="806" y="790" class="text body">1</text>
+  <text x="922" y="790" class="muted small">主力メンバー / 連絡先確認済み</text>
+  <text x="1376" y="782" class="muted tiny">出欠情報タブなら</text>
+  <text x="1376" y="804" class="text tiny">参加回数 / 不参加回数 / 未回答 / 回答率</text>
+
+  <rect class="table-cell" x="88" y="832" width="74" height="82" />
+  <rect class="table-cell" x="162" y="832" width="268" height="82" />
+  <rect class="table-cell" x="430" y="832" width="134" height="82" />
+  <rect class="table-cell" x="564" y="832" width="170" height="82" />
+  <rect class="table-cell" x="734" y="832" width="160" height="82" />
+  <rect class="table-cell" x="894" y="832" width="458" height="82" />
+  <rect class="table-cell" x="1352" y="832" width="356" height="82" />
+  <rect class="table-cell" x="116" y="864" width="18" height="18" />
+  <text x="188" y="866" class="strong body">佐藤 花子</text>
+  <rect class="chip-warn" x="464" y="854" width="72" height="28" />
+  <text x="488" y="873" class="text small">無効</text>
+  <text x="608" y="872" class="text body">2026-02-10</text>
+  <text x="806" y="872" class="text body">2</text>
+  <text x="922" y="872" class="muted small">休会中。必要時のみ復帰</text>
+  <text x="1376" y="864" class="muted tiny">配車情報タブなら</text>
+  <text x="1376" y="886" class="text tiny">登録回数 / 運転 / 同乗 / 現地集合 / 最終登録日</text>
+
+  <rect class="table-cell-alt" x="88" y="914" width="74" height="82" />
+  <rect class="table-cell-alt" x="162" y="914" width="268" height="82" />
+  <rect class="table-cell-alt" x="430" y="914" width="134" height="82" />
+  <rect class="table-cell-alt" x="564" y="914" width="170" height="82" />
+  <rect class="table-cell-alt" x="734" y="914" width="160" height="82" />
+  <rect class="table-cell-alt" x="894" y="914" width="458" height="82" />
+  <rect class="table-cell-alt" x="1352" y="914" width="356" height="82" />
+  <rect class="table-cell" x="116" y="946" width="18" height="18" />
+  <text x="188" y="948" class="strong body">中村 光</text>
+  <rect class="chip-good" x="464" y="936" width="72" height="28" />
+  <text x="488" y="955" class="text small">有効</text>
+  <text x="608" y="954" class="text body">2024-11-04</text>
+  <text x="806" y="954" class="text body">3</text>
+  <text x="922" y="954" class="muted small">送迎協力が多いメンバー</text>
+  <text x="1376" y="946" class="muted tiny">集金情報タブなら</text>
+  <text x="1376" y="968" class="text tiny">対象回数 / 回収済 / 未回収 / 未回収額 / 最終集金日</text>
+
+  <rect class="soft" x="88" y="1026" width="1620" height="92" />
+  <text x="112" y="1058" class="strong body">タブ切替時の考え方</text>
+  <text x="112" y="1084" class="text body">基本情報: 現行のメンバー管理表に近い見せ方</text>
+  <text x="534" y="1084" class="text body">出欠情報: 回答率と回数を表示</text>
+  <text x="888" y="1084" class="text body">配車情報: 運転/同乗/現地集合の回数を表示</text>
+  <text x="1354" y="1084" class="text body">集金情報: 未回収額と回数を表示</text>
+
+  <text x="112" y="1106" class="muted small">レイアウトは変えず、ヘッダー名と列内容だけ入れ替わるため、操作学習コストを抑えられる</text>
+</svg>

@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1080" viewBox="0 0 1700 1080" role="img" aria-labelledby="title desc">
+  <title id="title">メンバー管理画面 現行デザイン踏襲モック v7</title>
+  <desc id="desc">現状のメンバー管理画面デザインを維持しつつ、表示期間を上に、表にくっついたタブを下に配置した最小変更のモックです。</desc>
+  <defs>
+    <style>
+      .bg { fill: #0d1117; }
+      .panel { fill: #121821; stroke: #2f3946; stroke-width: 2; rx: 16; ry: 16; }
+      .editor { fill: rgba(255,76,76,0.08); stroke: rgba(255,43,43,0.24); stroke-width: 1.4; rx: 14; ry: 14; }
+      .field { fill: rgba(24,24,24,0.56); stroke: rgba(255,255,255,0.20); stroke-width: 1.2; rx: 12; ry: 12; }
+      .btn-red { fill: #8f2940; stroke: #b64863; stroke-width: 1.2; rx: 4; ry: 4; }
+      .btn-gray { fill: #1d2630; stroke: #4a5563; stroke-width: 1.2; rx: 4; ry: 4; }
+      .tab-active { fill: #2f7a4f; stroke: #2f6d44; stroke-width: 1.2; rx: 4; ry: 4; }
+      .tab { fill: #1d2630; stroke: #2f3946; stroke-width: 1.2; rx: 4; ry: 4; }
+      .th { fill: url(#headGrad); stroke: #2f6d44; stroke-width: 1.1; }
+      .td { fill: #11151b; stroke: #2f3946; stroke-width: 1; }
+      .td-alt { fill: #1b222c; stroke: #2f3946; stroke-width: 1; }
+      .select { fill: #11151b; stroke: #4d5968; stroke-width: 1.2; rx: 6; ry: 6; }
+      .status-good { fill: #22c55e; }
+      .status-bad { fill: #ef4444; }
+      .text { fill: #e5e7eb; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; }
+      .muted { fill: #9aa4b2; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; }
+      .strong { fill: #ffffff; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; font-weight: 700; }
+      .accent { fill: #f2fff6; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; font-weight: 700; }
+      .title { font-size: 32px; font-weight: 700; }
+      .h1 { font-size: 26px; font-weight: 700; }
+      .h2 { font-size: 20px; font-weight: 700; }
+      .body { font-size: 14px; font-weight: 500; }
+      .small { font-size: 12px; font-weight: 500; }
+    </style>
+    <linearGradient id="headGrad" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#3b8f5f"/>
+      <stop offset="100%" stop-color="#2a6d48"/>
+    </linearGradient>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1700" height="1080" />
+
+  <text x="42" y="54" class="text title">現行デザイン踏襲モック</text>
+  <text x="42" y="88" class="muted body">表にくっついたタブ、上段の表示期間、不要な装飾を削除した最小変更版</text>
+
+  <text x="44" y="142" class="strong h1">メンバー管理</text>
+
+  <rect class="panel" x="34" y="168" width="1632" height="198" />
+  <text x="58" y="210" class="strong h2">メンバー一括登録</text>
+  <rect class="editor" x="58" y="228" width="1546" height="92" />
+  <text x="78" y="256" class="text body">メンバー名（1行に1名）</text>
+  <rect class="field" x="78" y="266" width="1480" height="34" />
+  <text x="96" y="288" class="muted body">田中 太郎 / 佐藤 花子 / 鈴木 次郎</text>
+  <rect class="btn-red" x="58" y="332" width="108" height="34" />
+  <text x="86" y="354" class="strong body">一括登録</text>
+
+  <rect class="panel" x="34" y="392" width="1632" height="642" />
+
+  <text x="58" y="436" class="text body">表示期間</text>
+  <rect class="select" x="132" y="423" width="116" height="24" />
+  <text x="164" y="440" class="text body">2026-01</text>
+  <text x="262" y="440" class="muted body">～</text>
+  <rect class="select" x="290" y="423" width="116" height="24" />
+  <text x="322" y="440" class="text body">2026-03</text>
+  <text x="430" y="440" class="muted body">選択すると自動保存</text>
+
+  <text x="58" y="478" class="text body">▲</text>
+  <text x="88" y="478" class="text body">▼</text>
+  <rect class="btn-red" x="118" y="456" width="74" height="34" />
+  <text x="141" y="478" class="strong body">削除</text>
+  <rect class="btn-gray" x="1528" y="456" width="96" height="34" />
+  <text x="1554" y="478" class="text body">CSV出力</text>
+
+  <rect class="tab" x="58" y="512" width="96" height="34" />
+  <text x="83" y="534" class="text body">基本情報</text>
+  <rect class="tab" x="154" y="512" width="96" height="34" />
+  <text x="179" y="534" class="text body">出欠情報</text>
+  <rect class="tab" x="250" y="512" width="96" height="34" />
+  <text x="275" y="534" class="text body">配車情報</text>
+  <rect class="tab" x="346" y="512" width="96" height="34" />
+  <text x="371" y="534" class="text body">集金情報</text>
+  <rect class="tab-active" x="442" y="512" width="72" height="34" />
+  <text x="467" y="534" class="accent body">すべて</text>
+
+  <!-- table directly attached to tabs -->
+  <rect class="th" x="58" y="546" width="74" height="54" />
+  <rect class="th" x="132" y="546" width="238" height="54" />
+  <rect class="th" x="370" y="546" width="134" height="54" />
+  <rect class="th" x="504" y="546" width="150" height="54" />
+  <rect class="th" x="654" y="546" width="150" height="54" />
+  <rect class="th" x="804" y="546" width="150" height="54" />
+  <rect class="th" x="954" y="546" width="150" height="54" />
+  <rect class="th" x="1104" y="546" width="150" height="54" />
+  <rect class="th" x="1254" y="546" width="170" height="54" />
+  <rect class="th" x="1424" y="546" width="200" height="54" />
+
+  <text x="81" y="578" class="accent body">選択</text>
+  <text x="214" y="578" class="accent body">メンバー</text>
+  <text x="414" y="578" class="accent body">ステータス</text>
+  <text x="544" y="569" class="accent small">参加</text>
+  <text x="536" y="587" class="accent small">割合</text>
+  <text x="695" y="569" class="accent small">未回答</text>
+  <text x="686" y="587" class="accent small">割合</text>
+  <text x="844" y="569" class="accent small">運転</text>
+  <text x="836" y="587" class="accent small">割合</text>
+  <text x="986" y="569" class="accent small">現地集合</text>
+  <text x="986" y="587" class="accent small">割合</text>
+  <text x="1148" y="569" class="accent small">未回収額</text>
+  <text x="1292" y="578" class="accent body">追加列</text>
+  <text x="1490" y="578" class="accent body">備考</text>
+
+  <rect class="td-alt" x="58" y="600" width="74" height="74" />
+  <rect class="td-alt" x="132" y="600" width="238" height="74" />
+  <rect class="td-alt" x="370" y="600" width="134" height="74" />
+  <rect class="td-alt" x="504" y="600" width="150" height="74" />
+  <rect class="td-alt" x="654" y="600" width="150" height="74" />
+  <rect class="td-alt" x="804" y="600" width="150" height="74" />
+  <rect class="td-alt" x="954" y="600" width="150" height="74" />
+  <rect class="td-alt" x="1104" y="600" width="150" height="74" />
+  <rect class="td-alt" x="1254" y="600" width="170" height="74" />
+  <rect class="td-alt" x="1424" y="600" width="200" height="74" />
+  <rect class="field" x="86" y="628" width="18" height="18" />
+  <text x="156" y="632" class="strong body">田中 太郎</text>
+  <circle class="status-good" cx="394" cy="637" r="6" />
+  <text x="410" y="642" class="text body">有効</text>
+  <text x="560" y="642" class="strong body">80%</text>
+  <text x="710" y="642" class="text body">10%</text>
+  <text x="860" y="642" class="text body">40%</text>
+  <text x="1016" y="642" class="text body">20%</text>
+  <text x="1158" y="642" class="strong body">0円</text>
+  <text x="1290" y="642" class="muted body">選択タブに応じて</text>
+  <text x="1450" y="642" class="muted body">左側固定</text>
+
+  <rect class="td" x="58" y="674" width="74" height="74" />
+  <rect class="td" x="132" y="674" width="238" height="74" />
+  <rect class="td" x="370" y="674" width="134" height="74" />
+  <rect class="td" x="504" y="674" width="150" height="74" />
+  <rect class="td" x="654" y="674" width="150" height="74" />
+  <rect class="td" x="804" y="674" width="150" height="74" />
+  <rect class="td" x="954" y="674" width="150" height="74" />
+  <rect class="td" x="1104" y="674" width="150" height="74" />
+  <rect class="td" x="1254" y="674" width="170" height="74" />
+  <rect class="td" x="1424" y="674" width="200" height="74" />
+  <rect class="field" x="86" y="702" width="18" height="18" />
+  <text x="156" y="706" class="strong body">佐藤 花子</text>
+  <circle class="status-bad" cx="394" cy="711" r="6" />
+  <text x="410" y="716" class="text body">無効</text>
+  <text x="560" y="716" class="strong body">40%</text>
+  <text x="710" y="716" class="text body">40%</text>
+  <text x="860" y="716" class="text body">0%</text>
+  <text x="1016" y="716" class="text body">60%</text>
+  <text x="1146" y="716" class="strong body">3,000円</text>
+  <text x="1290" y="716" class="muted body">右側のみ差替</text>
+  <text x="1450" y="716" class="muted body">要確認</text>
+
+  <rect class="td-alt" x="58" y="748" width="74" height="74" />
+  <rect class="td-alt" x="132" y="748" width="238" height="74" />
+  <rect class="td-alt" x="370" y="748" width="134" height="74" />
+  <rect class="td-alt" x="504" y="748" width="150" height="74" />
+  <rect class="td-alt" x="654" y="748" width="150" height="74" />
+  <rect class="td-alt" x="804" y="748" width="150" height="74" />
+  <rect class="td-alt" x="954" y="748" width="150" height="74" />
+  <rect class="td-alt" x="1104" y="748" width="150" height="74" />
+  <rect class="td-alt" x="1254" y="748" width="170" height="74" />
+  <rect class="td-alt" x="1424" y="748" width="200" height="74" />
+  <rect class="field" x="86" y="776" width="18" height="18" />
+  <text x="156" y="780" class="strong body">中村 光</text>
+  <circle class="status-good" cx="394" cy="785" r="6" />
+  <text x="410" y="790" class="text body">有効</text>
+  <text x="560" y="790" class="strong body">70%</text>
+  <text x="710" y="790" class="text body">20%</text>
+  <text x="860" y="790" class="text body">30%</text>
+  <text x="1016" y="790" class="text body">30%</text>
+  <text x="1158" y="790" class="strong body">0円</text>
+  <text x="1290" y="790" class="muted body">CSVは表示中内容</text>
+  <text x="1450" y="790" class="muted body">安定</text>
+</svg>

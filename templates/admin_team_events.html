@@ -39,6 +39,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
   width: var(--month-tab-width);
   min-width: var(--month-tab-width);
   max-width: var(--month-tab-width);
@@ -305,8 +306,18 @@
 }
 @media (max-width: 640px) {
   .js-date-picker {
-    font-size: 14px;
-    padding: 8px 10px;
+    font-size: 13px;
+    padding: 7px 8px;
+  }
+  .grid-3,
+  .grid-2 {
+    gap: 12px;
+  }
+  .grid-3 > .field input,
+  .grid-3 > .field select,
+  .grid-2 > .field input,
+  .grid-2 > .field select {
+    min-width: 0;
   }
   .month-tabs {
     width: 100%;

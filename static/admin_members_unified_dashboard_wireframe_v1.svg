@@ -1,0 +1,247 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1320" viewBox="0 0 1800 1320" role="img" aria-labelledby="title desc">
+  <title id="title">管理者ダッシュボード 統合UI修正案</title>
+  <desc id="desc">メンバー管理画面と情報分析画面を統合し、同じメンバー文脈の中で管理と分析を切り替えられる構成を示したワイヤーフレームです。</desc>
+  <defs>
+    <style>
+      .bg { fill: #0b0f14; }
+      .panel { fill: #121821; stroke: #2f3946; stroke-width: 2; rx: 18; ry: 18; }
+      .subpanel { fill: #0f141c; stroke: #27313c; stroke-width: 1.5; rx: 14; ry: 14; }
+      .tab-active { fill: #2f7a4f; stroke: #3fa364; stroke-width: 1.5; rx: 999; ry: 999; }
+      .tab { fill: #1b2430; stroke: #334153; stroke-width: 1.5; rx: 999; ry: 999; }
+      .card { fill: #151c25; stroke: #2a3441; stroke-width: 1.5; rx: 16; ry: 16; }
+      .btn-primary { fill: #8f2940; stroke: #b64863; stroke-width: 1.5; rx: 10; ry: 10; }
+      .btn-secondary { fill: #1c2631; stroke: #425164; stroke-width: 1.5; rx: 10; ry: 10; }
+      .table-head { fill: url(#headGrad); stroke: #2f6d44; stroke-width: 1.2; }
+      .table-cell { fill: #11151b; stroke: #2f3946; stroke-width: 1; }
+      .table-cell-alt { fill: #17202a; stroke: #2f3946; stroke-width: 1; }
+      .highlight { fill: #1f2c38; stroke: #3b5166; stroke-width: 1.2; rx: 10; ry: 10; }
+      .metric-good { fill: #173526; stroke: #245a3f; stroke-width: 1; rx: 10; ry: 10; }
+      .metric-warn { fill: #3a2c14; stroke: #70531f; stroke-width: 1; rx: 10; ry: 10; }
+      .metric-bad { fill: #3a1f24; stroke: #76404b; stroke-width: 1; rx: 10; ry: 10; }
+      .text { fill: #e5e7eb; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; }
+      .muted { fill: #9aa4b2; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; }
+      .strong { fill: #ffffff; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; font-weight: 700; }
+      .accent { fill: #d8f5e0; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; font-weight: 700; }
+      .title { font-size: 34px; font-weight: 700; }
+      .h1 { font-size: 27px; font-weight: 700; }
+      .h2 { font-size: 20px; font-weight: 700; }
+      .body { font-size: 15px; font-weight: 500; }
+      .small { font-size: 13px; font-weight: 500; }
+      .tiny { font-size: 12px; font-weight: 500; }
+      .num { font-size: 26px; font-weight: 700; }
+    </style>
+    <linearGradient id="headGrad" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#3b8f5f"/>
+      <stop offset="100%" stop-color="#2a6d48"/>
+    </linearGradient>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1800" height="1320" />
+
+  <text x="48" y="58" class="text title">管理者ダッシュボード 統合UI修正案</text>
+  <text x="48" y="94" class="muted body">方針: 「メンバー管理」を親画面にし、分析は同一画面のサブビューとして統合する</text>
+
+  <rect class="panel" x="34" y="124" width="1732" height="1158" />
+
+  <text x="64" y="172" class="strong h1">メンバー</text>
+  <text x="64" y="200" class="muted small">登録・並び替え・有効/無効の操作と、出欠/集金/送迎の傾向確認を同じ文脈で行う</text>
+
+  <rect class="tab-active" x="64" y="224" width="150" height="42" />
+  <text x="104" y="251" class="accent body">管理 + 概況</text>
+  <rect class="tab" x="226" y="224" width="130" height="42" />
+  <text x="270" y="251" class="text body">詳細分析</text>
+  <rect class="tab" x="368" y="224" width="140" height="42" />
+  <text x="414" y="251" class="text body">CSV / 出力</text>
+
+  <rect class="btn-primary" x="1498" y="222" width="124" height="44" />
+  <text x="1534" y="250" class="strong body">一括登録</text>
+  <rect class="btn-secondary" x="1634" y="222" width="98" height="44" />
+  <text x="1668" y="250" class="text body">戻る</text>
+
+  <rect class="card" x="64" y="292" width="392" height="108" />
+  <text x="88" y="326" class="muted small">総メンバー数</text>
+  <text x="88" y="370" class="strong num">28</text>
+  <text x="166" y="370" class="muted body">名</text>
+  <text x="88" y="388" class="muted small">有効 24 / 無効 4</text>
+
+  <rect class="card" x="478" y="292" width="392" height="108" />
+  <text x="502" y="326" class="muted small">直近3か月 出欠回答率</text>
+  <text x="502" y="370" class="strong num">84%</text>
+  <text x="600" y="370" class="muted body">平均</text>
+  <text x="502" y="388" class="muted small">未回答が多いメンバー 3名</text>
+
+  <rect class="card" x="892" y="292" width="392" height="108" />
+  <text x="916" y="326" class="muted small">集金状況</text>
+  <text x="916" y="370" class="strong num">12,000</text>
+  <text x="1038" y="370" class="muted body">円 未回収</text>
+  <text x="916" y="388" class="muted small">未回収対象 5名 / 2イベント</text>
+
+  <rect class="card" x="1306" y="292" width="426" height="108" />
+  <text x="1330" y="326" class="muted small">送迎対応の偏り</text>
+  <text x="1330" y="370" class="strong num">2</text>
+  <text x="1368" y="370" class="muted body">名に負荷集中</text>
+  <text x="1330" y="388" class="muted small">ドライバー比率が高い順に警告表示</text>
+
+  <rect class="subpanel" x="64" y="426" width="516" height="796" />
+  <text x="88" y="468" class="strong h2">左: メンバー操作</text>
+  <text x="88" y="496" class="muted small">今のメンバー管理画面の主機能を維持</text>
+
+  <rect class="highlight" x="88" y="522" width="468" height="134" />
+  <text x="110" y="552" class="text body">メンバー一括登録</text>
+  <rect class="table-cell" x="110" y="570" width="424" height="58" />
+  <text x="128" y="605" class="muted small">田中 太郎 / 佐藤 花子 / 鈴木 次郎 ...</text>
+  <rect class="btn-primary" x="414" y="586" width="96" height="30" />
+  <text x="446" y="606" class="strong tiny">登録</text>
+
+  <rect class="btn-secondary" x="88" y="680" width="98" height="38" />
+  <text x="123" y="704" class="text body">▲ 上へ</text>
+  <rect class="btn-secondary" x="198" y="680" width="98" height="38" />
+  <text x="232" y="704" class="text body">▼ 下へ</text>
+  <rect class="btn-primary" x="458" y="680" width="98" height="38" />
+  <text x="492" y="704" class="strong body">削除</text>
+
+  <rect class="table-head" x="88" y="742" width="72" height="54" />
+  <rect class="table-head" x="160" y="742" width="234" height="54" />
+  <rect class="table-head" x="394" y="742" width="162" height="54" />
+  <text x="112" y="775" class="accent small">選択</text>
+  <text x="244" y="775" class="accent small">メンバー名</text>
+  <text x="448" y="775" class="accent small">ステータス</text>
+
+  <rect class="table-cell-alt" x="88" y="796" width="72" height="68" />
+  <rect class="table-cell-alt" x="160" y="796" width="234" height="68" />
+  <rect class="table-cell-alt" x="394" y="796" width="162" height="68" />
+  <rect class="table-cell" x="116" y="821" width="18" height="18" />
+  <text x="184" y="836" class="strong body">田中 太郎</text>
+  <rect class="metric-good" x="420" y="814" width="106" height="30" />
+  <text x="457" y="834" class="text small">有効</text>
+
+  <rect class="table-cell" x="88" y="864" width="72" height="68" />
+  <rect class="table-cell" x="160" y="864" width="234" height="68" />
+  <rect class="table-cell" x="394" y="864" width="162" height="68" />
+  <rect class="table-cell" x="116" y="889" width="18" height="18" />
+  <text x="184" y="904" class="text body">佐藤 花子</text>
+  <rect class="metric-warn" x="420" y="882" width="106" height="30" />
+  <text x="452" y="902" class="text small">無効</text>
+
+  <rect class="table-cell-alt" x="88" y="932" width="72" height="68" />
+  <rect class="table-cell-alt" x="160" y="932" width="234" height="68" />
+  <rect class="table-cell-alt" x="394" y="932" width="162" height="68" />
+  <rect class="table-cell" x="116" y="957" width="18" height="18" />
+  <text x="184" y="972" class="text body">中村 光</text>
+  <rect class="metric-good" x="420" y="950" width="106" height="30" />
+  <text x="457" y="970" class="text small">有効</text>
+
+  <text x="88" y="1046" class="muted small">ここは従来の操作性を崩さず維持する</text>
+
+  <rect class="subpanel" x="604" y="426" width="1128" height="796" />
+  <text x="628" y="468" class="strong h2">右: メンバー別の概況と気付き</text>
+  <text x="628" y="496" class="muted small">分析画面の価値は残しつつ、一覧の中で異常や偏りを早く発見できる形に縮約</text>
+
+  <rect class="highlight" x="628" y="524" width="1080" height="64" />
+  <text x="652" y="563" class="text body">フィルター: 全員 / 有効のみ / 要対応のみ  ・ 並び替え: 出欠率が低い順 / 未回収額が多い順 / 送迎負荷が高い順</text>
+
+  <rect class="table-head" x="628" y="620" width="210" height="58" />
+  <rect class="table-head" x="838" y="620" width="128" height="58" />
+  <rect class="table-head" x="966" y="620" width="150" height="58" />
+  <rect class="table-head" x="1116" y="620" width="156" height="58" />
+  <rect class="table-head" x="1272" y="620" width="156" height="58" />
+  <rect class="table-head" x="1428" y="620" width="140" height="58" />
+  <rect class="table-head" x="1568" y="620" width="140" height="58" />
+  <text x="692" y="655" class="accent small">メンバー</text>
+  <text x="877" y="655" class="accent small">状態</text>
+  <text x="1006" y="655" class="accent small">出欠率</text>
+  <text x="1166" y="655" class="accent small">未回答</text>
+  <text x="1320" y="655" class="accent small">未回収額</text>
+  <text x="1464" y="655" class="accent small">送迎負荷</text>
+  <text x="1604" y="655" class="accent small">アクション</text>
+
+  <rect class="table-cell-alt" x="628" y="678" width="210" height="86" />
+  <rect class="table-cell-alt" x="838" y="678" width="128" height="86" />
+  <rect class="table-cell-alt" x="966" y="678" width="150" height="86" />
+  <rect class="table-cell-alt" x="1116" y="678" width="156" height="86" />
+  <rect class="table-cell-alt" x="1272" y="678" width="156" height="86" />
+  <rect class="table-cell-alt" x="1428" y="678" width="140" height="86" />
+  <rect class="table-cell-alt" x="1568" y="678" width="140" height="86" />
+  <text x="652" y="714" class="strong body">田中 太郎</text>
+  <text x="652" y="738" class="muted small">直近参加 9 / 10</text>
+  <rect class="metric-good" x="862" y="706" width="80" height="28" />
+  <text x="889" y="725" class="text small">安定</text>
+  <text x="1020" y="724" class="strong body">90%</text>
+  <text x="1168" y="724" class="text body">1回</text>
+  <text x="1320" y="724" class="text body">0円</text>
+  <rect class="metric-warn" x="1452" y="704" width="92" height="30" />
+  <text x="1478" y="724" class="text small">高め</text>
+  <rect class="btn-secondary" x="1600" y="704" width="76" height="30" />
+  <text x="1623" y="724" class="text tiny">詳細</text>
+
+  <rect class="table-cell" x="628" y="764" width="210" height="86" />
+  <rect class="table-cell" x="838" y="764" width="128" height="86" />
+  <rect class="table-cell" x="966" y="764" width="150" height="86" />
+  <rect class="table-cell" x="1116" y="764" width="156" height="86" />
+  <rect class="table-cell" x="1272" y="764" width="156" height="86" />
+  <rect class="table-cell" x="1428" y="764" width="140" height="86" />
+  <rect class="table-cell" x="1568" y="764" width="140" height="86" />
+  <text x="652" y="800" class="strong body">佐藤 花子</text>
+  <text x="652" y="824" class="muted small">最近未回答が増加</text>
+  <rect class="metric-bad" x="862" y="792" width="80" height="28" />
+  <text x="889" y="811" class="text small">要確認</text>
+  <text x="1020" y="810" class="strong body">42%</text>
+  <text x="1160" y="810" class="text body">5回</text>
+  <text x="1312" y="810" class="text body">3,000円</text>
+  <rect class="metric-bad" x="1452" y="790" width="92" height="30" />
+  <text x="1471" y="810" class="text small">低参加</text>
+  <rect class="btn-primary" x="1592" y="790" width="92" height="30" />
+  <text x="1616" y="810" class="strong tiny">連絡候補</text>
+
+  <rect class="table-cell-alt" x="628" y="850" width="210" height="86" />
+  <rect class="table-cell-alt" x="838" y="850" width="128" height="86" />
+  <rect class="table-cell-alt" x="966" y="850" width="150" height="86" />
+  <rect class="table-cell-alt" x="1116" y="850" width="156" height="86" />
+  <rect class="table-cell-alt" x="1272" y="850" width="156" height="86" />
+  <rect class="table-cell-alt" x="1428" y="850" width="140" height="86" />
+  <rect class="table-cell-alt" x="1568" y="850" width="140" height="86" />
+  <text x="652" y="886" class="strong body">中村 光</text>
+  <text x="652" y="910" class="muted small">回収は良好 / 送迎直接集合が多い</text>
+  <rect class="metric-good" x="862" y="878" width="80" height="28" />
+  <text x="889" y="897" class="text small">安定</text>
+  <text x="1020" y="896" class="strong body">78%</text>
+  <text x="1168" y="896" class="text body">2回</text>
+  <text x="1320" y="896" class="text body">0円</text>
+  <rect class="metric-good" x="1452" y="876" width="92" height="30" />
+  <text x="1480" y="896" class="text small">標準</text>
+  <rect class="btn-secondary" x="1600" y="876" width="76" height="30" />
+  <text x="1623" y="896" class="text tiny">詳細</text>
+
+  <rect class="card" x="628" y="970" width="520" height="214" />
+  <text x="652" y="1004" class="strong h2">詳細分析タブのイメージ</text>
+  <text x="652" y="1032" class="muted small">必要な時だけ、現行の横長分析表を別タブで表示する</text>
+  <rect class="table-head" x="652" y="1054" width="120" height="36" />
+  <rect class="table-head" x="772" y="1054" width="90" height="36" />
+  <rect class="table-head" x="862" y="1054" width="90" height="36" />
+  <rect class="table-head" x="952" y="1054" width="90" height="36" />
+  <rect class="table-head" x="1042" y="1054" width="82" height="36" />
+  <text x="684" y="1077" class="accent tiny">メンバー</text>
+  <text x="798" y="1077" class="accent tiny">参加</text>
+  <text x="889" y="1077" class="accent tiny">不参加</text>
+  <text x="974" y="1077" class="accent tiny">未回答</text>
+  <text x="1066" y="1077" class="accent tiny">送迎</text>
+  <rect class="table-cell-alt" x="652" y="1090" width="120" height="30" />
+  <rect class="table-cell-alt" x="772" y="1090" width="90" height="30" />
+  <rect class="table-cell-alt" x="862" y="1090" width="90" height="30" />
+  <rect class="table-cell-alt" x="952" y="1090" width="90" height="30" />
+  <rect class="table-cell-alt" x="1042" y="1090" width="82" height="30" />
+  <rect class="table-cell" x="652" y="1120" width="120" height="30" />
+  <rect class="table-cell" x="772" y="1120" width="90" height="30" />
+  <rect class="table-cell" x="862" y="1120" width="90" height="30" />
+  <rect class="table-cell" x="952" y="1120" width="90" height="30" />
+  <rect class="table-cell" x="1042" y="1120" width="82" height="30" />
+  <text x="652" y="1170" class="muted small">普段は右上の概況だけ見せ、深掘り時にだけ詳細分析へ遷移</text>
+
+  <rect class="card" x="1170" y="970" width="538" height="214" />
+  <text x="1194" y="1004" class="strong h2">統合の狙い</text>
+  <text x="1194" y="1040" class="text body">1. メンバー起点の導線を一本化</text>
+  <text x="1194" y="1072" class="text body">2. まずは要対応メンバーが一目で分かる</text>
+  <text x="1194" y="1104" class="text body">3. 詳細分析は必要時のみ表示して重さを抑える</text>
+  <text x="1194" y="1136" class="text body">4. 既存の管理機能を崩さず、分析の価値も残す</text>
+  <text x="1194" y="1170" class="muted small">おすすめ: 段階的導入として、先に右側の概況列をメンバー画面へ追加する</text>
+</svg>

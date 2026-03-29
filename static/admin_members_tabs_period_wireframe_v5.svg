@@ -1,0 +1,201 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1260" viewBox="0 0 1800 1260" role="img" aria-labelledby="title desc">
+  <title id="title">メンバー管理画面 5タブ+CSVモック v5</title>
+  <desc id="desc">メンバー名とステータスを左側に固定し、右側へ各タブの必要項目を追加表示するメンバー管理画面の修正版モックです。基本情報、出欠情報、配車情報、集金情報、すべての5タブとCSV出力を含みます。</desc>
+  <defs>
+    <style>
+      .bg { fill: #0b0f14; }
+      .panel { fill: #121821; stroke: #2f3946; stroke-width: 2; rx: 18; ry: 18; }
+      .card { fill: #151c25; stroke: #2a3441; stroke-width: 1.5; rx: 16; ry: 16; }
+      .soft { fill: #0f141c; stroke: #27313c; stroke-width: 1.2; rx: 12; ry: 12; }
+      .input { fill: #11151b; stroke: #3a4758; stroke-width: 1.4; rx: 10; ry: 10; }
+      .tab-active { fill: url(#tabActive); stroke: #4db072; stroke-width: 1.4; }
+      .tab-inactive { fill: url(#tabInactive); stroke: #3e4650; stroke-width: 1.2; }
+      .btn-primary { fill: #8f2940; stroke: #b64863; stroke-width: 1.5; rx: 10; ry: 10; }
+      .btn-secondary { fill: #1c2631; stroke: #425164; stroke-width: 1.5; rx: 10; ry: 10; }
+      .guide { fill: #141a22; stroke: #3c3133; stroke-width: 1.2; rx: 10; ry: 10; }
+      .table-head { fill: url(#headGrad); stroke: #2f6d44; stroke-width: 1.2; }
+      .table-cell { fill: #11151b; stroke: #2f3946; stroke-width: 1; }
+      .table-cell-alt { fill: #16202a; stroke: #2f3946; stroke-width: 1; }
+      .chip-good { fill: #183828; stroke: #2b6a48; stroke-width: 1; rx: 10; ry: 10; }
+      .chip-warn { fill: #3b2d15; stroke: #7f6025; stroke-width: 1; rx: 10; ry: 10; }
+      .chip-bad { fill: #3e1f24; stroke: #87505c; stroke-width: 1; rx: 10; ry: 10; }
+      .text { fill: #e5e7eb; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; }
+      .muted { fill: #9aa4b2; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; }
+      .strong { fill: #ffffff; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; font-weight: 700; }
+      .accent { fill: #ecfff3; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; font-weight: 700; }
+      .tabtext-active { fill: #eafff0; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; font-weight: 700; font-size: 16px; }
+      .tabtext { fill: #d8dde4; font-family: 'Noto Sans JP', 'Yu Gothic', sans-serif; font-weight: 700; font-size: 16px; }
+      .title { font-size: 34px; font-weight: 700; }
+      .h1 { font-size: 28px; font-weight: 700; }
+      .h2 { font-size: 19px; font-weight: 700; }
+      .body { font-size: 15px; font-weight: 500; }
+      .small { font-size: 13px; font-weight: 500; }
+      .tiny { font-size: 12px; font-weight: 500; }
+    </style>
+    <linearGradient id="headGrad" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#3b8f5f"/>
+      <stop offset="100%" stop-color="#2a6d48"/>
+    </linearGradient>
+    <linearGradient id="tabActive" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#245e3f"/>
+      <stop offset="100%" stop-color="#1c4c32"/>
+    </linearGradient>
+    <linearGradient id="tabInactive" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#2a3038"/>
+      <stop offset="100%" stop-color="#1d232a"/>
+    </linearGradient>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1800" height="1260" />
+
+  <text x="48" y="58" class="text title">メンバー管理画面 5タブ+CSVモック</text>
+  <text x="48" y="94" class="muted body">左側の基本情報を残したまま、右側にタブごとの必要項目を追加表示する構成</text>
+
+  <rect class="panel" x="34" y="124" width="1732" height="1098" />
+
+  <text x="64" y="174" class="strong h1">メンバー管理</text>
+
+  <rect class="card" x="64" y="216" width="1668" height="154" />
+  <text x="88" y="248" class="strong h2">メンバー一括登録</text>
+  <rect class="soft" x="88" y="266" width="1278" height="78" />
+  <text x="112" y="310" class="muted body">田中 太郎 / 佐藤 花子 / 鈴木 次郎 ...</text>
+  <rect class="btn-primary" x="1388" y="286" width="122" height="40" />
+  <text x="1424" y="312" class="strong body">一括登録</text>
+  <text x="88" y="356" class="muted tiny">一括登録エリアはそのまま維持</text>
+
+  <rect class="card" x="64" y="394" width="1668" height="790" />
+  <text x="88" y="430" class="strong h2">メンバーリスト表</text>
+
+  <rect class="btn-secondary" x="88" y="454" width="94" height="38" />
+  <text x="122" y="478" class="text body">▲ 上へ</text>
+  <rect class="btn-secondary" x="194" y="454" width="94" height="38" />
+  <text x="228" y="478" class="text body">▼ 下へ</text>
+  <rect class="btn-primary" x="300" y="454" width="94" height="38" />
+  <text x="334" y="478" class="strong body">削除</text>
+  <rect class="btn-secondary" x="1568" y="454" width="116" height="38" />
+  <text x="1604" y="478" class="text body">CSV出力</text>
+
+  <text x="420" y="478" class="muted small">選択中のタブ内容をそのままCSV出力</text>
+
+  <!-- tabs -->
+  <path class="tab-active" d="M88 516 L88 556 L214 556 L214 516 Q214 504 202 504 L100 504 Q88 504 88 516 Z" />
+  <path class="tab-inactive" d="M230 516 L230 556 L356 556 L356 516 Q356 504 344 504 L242 504 Q230 504 230 516 Z" />
+  <path class="tab-inactive" d="M372 516 L372 556 L498 556 L498 516 Q498 504 486 504 L384 504 Q372 504 372 516 Z" />
+  <path class="tab-inactive" d="M514 516 L514 556 L640 556 L640 516 Q640 504 628 504 L526 504 Q514 504 514 516 Z" />
+  <path class="tab-inactive" d="M656 516 L656 556 L760 556 L760 516 Q760 504 748 504 L668 504 Q656 504 656 516 Z" />
+  <line x1="88" y1="556" x2="760" y2="556" stroke="#4db072" stroke-width="2.5" />
+
+  <text x="122" y="532" class="tabtext-active">基本情報</text>
+  <text x="264" y="532" class="tabtext">出欠情報</text>
+  <text x="406" y="532" class="tabtext">配車情報</text>
+  <text x="548" y="532" class="tabtext">集金情報</text>
+  <text x="690" y="532" class="tabtext">すべて</text>
+
+  <rect class="guide" x="88" y="572" width="1620" height="68" />
+  <text x="112" y="599" class="strong body">表示期間</text>
+  <rect class="input" x="222" y="586" width="166" height="34" />
+  <text x="264" y="608" class="text body">2026-01</text>
+  <text x="406" y="608" class="muted body">～</text>
+  <rect class="input" x="438" y="586" width="166" height="34" />
+  <text x="480" y="608" class="text body">2026-03</text>
+  <text x="632" y="608" class="muted small">期間を選択すると自動保存して、現在のタブ内容に反映</text>
+
+  <text x="88" y="674" class="muted small">表示例: すべてタブ</text>
+
+  <!-- all tab example table -->
+  <rect class="table-head" x="88" y="694" width="74" height="56" />
+  <rect class="table-head" x="162" y="694" width="268" height="56" />
+  <rect class="table-head" x="430" y="694" width="134" height="56" />
+  <rect class="table-head" x="564" y="694" width="150" height="56" />
+  <rect class="table-head" x="714" y="694" width="150" height="56" />
+  <rect class="table-head" x="864" y="694" width="150" height="56" />
+  <rect class="table-head" x="1014" y="694" width="150" height="56" />
+  <rect class="table-head" x="1164" y="694" width="150" height="56" />
+  <rect class="table-head" x="1314" y="694" width="194" height="56" />
+  <rect class="table-head" x="1508" y="694" width="200" height="56" />
+  <text x="112" y="728" class="accent small">選択</text>
+  <text x="250" y="728" class="accent small">メンバー名</text>
+  <text x="470" y="728" class="accent small">ステータス</text>
+  <text x="606" y="728" class="accent small">参加割合</text>
+  <text x="756" y="728" class="accent small">未回答割合</text>
+  <text x="906" y="728" class="accent small">運転割合</text>
+  <text x="1050" y="728" class="accent small">現地集合割合</text>
+  <text x="1202" y="728" class="accent small">未回収額</text>
+  <text x="1374" y="728" class="accent small">CSV対象列</text>
+  <text x="1570" y="728" class="accent small">補足</text>
+
+  <rect class="table-cell-alt" x="88" y="750" width="74" height="82" />
+  <rect class="table-cell-alt" x="162" y="750" width="268" height="82" />
+  <rect class="table-cell-alt" x="430" y="750" width="134" height="82" />
+  <rect class="table-cell-alt" x="564" y="750" width="150" height="82" />
+  <rect class="table-cell-alt" x="714" y="750" width="150" height="82" />
+  <rect class="table-cell-alt" x="864" y="750" width="150" height="82" />
+  <rect class="table-cell-alt" x="1014" y="750" width="150" height="82" />
+  <rect class="table-cell-alt" x="1164" y="750" width="150" height="82" />
+  <rect class="table-cell-alt" x="1314" y="750" width="194" height="82" />
+  <rect class="table-cell-alt" x="1508" y="750" width="200" height="82" />
+  <rect class="table-cell" x="116" y="782" width="18" height="18" />
+  <text x="188" y="784" class="strong body">田中 太郎</text>
+  <rect class="chip-good" x="464" y="772" width="72" height="28" />
+  <text x="488" y="791" class="text small">有効</text>
+  <text x="616" y="790" class="text body">80%</text>
+  <text x="766" y="790" class="text body">10%</text>
+  <text x="916" y="790" class="text body">40%</text>
+  <text x="1052" y="790" class="text body">20%</text>
+  <text x="1210" y="790" class="strong body">0円</text>
+  <text x="1340" y="790" class="muted small">現在表示中の列を出力</text>
+  <text x="1532" y="790" class="muted small">要点だけ横断確認</text>
+
+  <rect class="table-cell" x="88" y="832" width="74" height="82" />
+  <rect class="table-cell" x="162" y="832" width="268" height="82" />
+  <rect class="table-cell" x="430" y="832" width="134" height="82" />
+  <rect class="table-cell" x="564" y="832" width="150" height="82" />
+  <rect class="table-cell" x="714" y="832" width="150" height="82" />
+  <rect class="table-cell" x="864" y="832" width="150" height="82" />
+  <rect class="table-cell" x="1014" y="832" width="150" height="82" />
+  <rect class="table-cell" x="1164" y="832" width="150" height="82" />
+  <rect class="table-cell" x="1314" y="832" width="194" height="82" />
+  <rect class="table-cell" x="1508" y="832" width="200" height="82" />
+  <rect class="table-cell" x="116" y="864" width="18" height="18" />
+  <text x="188" y="866" class="strong body">佐藤 花子</text>
+  <rect class="chip-warn" x="464" y="854" width="72" height="28" />
+  <text x="488" y="873" class="text small">無効</text>
+  <text x="616" y="872" class="text body">40%</text>
+  <text x="766" y="872" class="text body">40%</text>
+  <text x="916" y="872" class="text body">0%</text>
+  <text x="1052" y="872" class="text body">60%</text>
+  <text x="1202" y="872" class="strong body">3,000円</text>
+  <text x="1340" y="872" class="muted small">期間条件を反映して出力</text>
+  <text x="1532" y="872" class="muted small">未対応を把握しやすい</text>
+
+  <rect class="table-cell-alt" x="88" y="914" width="74" height="82" />
+  <rect class="table-cell-alt" x="162" y="914" width="268" height="82" />
+  <rect class="table-cell-alt" x="430" y="914" width="134" height="82" />
+  <rect class="table-cell-alt" x="564" y="914" width="150" height="82" />
+  <rect class="table-cell-alt" x="714" y="914" width="150" height="82" />
+  <rect class="table-cell-alt" x="864" y="914" width="150" height="82" />
+  <rect class="table-cell-alt" x="1014" y="914" width="150" height="82" />
+  <rect class="table-cell-alt" x="1164" y="914" width="150" height="82" />
+  <rect class="table-cell-alt" x="1314" y="914" width="194" height="82" />
+  <rect class="table-cell-alt" x="1508" y="914" width="200" height="82" />
+  <rect class="table-cell" x="116" y="946" width="18" height="18" />
+  <text x="188" y="948" class="strong body">中村 光</text>
+  <rect class="chip-good" x="464" y="936" width="72" height="28" />
+  <text x="488" y="955" class="text small">有効</text>
+  <text x="616" y="954" class="text body">70%</text>
+  <text x="766" y="954" class="text body">20%</text>
+  <text x="916" y="954" class="text body">30%</text>
+  <text x="1052" y="954" class="text body">30%</text>
+  <text x="1210" y="954" class="strong body">0円</text>
+  <text x="1340" y="954" class="muted small">タブごとに列構成を変更</text>
+  <text x="1532" y="954" class="muted small">左3列は常に固定</text>
+
+  <rect class="soft" x="88" y="1030" width="1620" height="126" />
+  <text x="112" y="1060" class="strong body">各タブの表示項目</text>
+  <text x="112" y="1088" class="text body">基本情報: メンバー名 / ステータス</text>
+  <text x="112" y="1114" class="text body">出欠情報: 参加回数 / 参加割合 / 不参加回数 / 不参加割合 / 未回答回数 / 未回答割合</text>
+  <text x="112" y="1140" class="text body">配車情報: 運転回数 / 運転割合 / 乗車回数 / 乗車割合 / 現地集合回数 / 現地集合割合</text>
+  <text x="980" y="1088" class="text body">集金情報: 集金額合計 / 回収回数 / 未回収回数 / 未回収額</text>
+  <text x="980" y="1114" class="text body">すべて: 参加割合 / 未回答割合 / 運転割合 / 現地集合割合 / 未回収額</text>
+  <text x="980" y="1140" class="text body">CSV出力: 選択中のタブ内容をそのまま出力</text>
+</svg>
