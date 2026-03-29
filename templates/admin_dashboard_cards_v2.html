@@ -1,6 +1,6 @@
 {% extends "admin_base_clean.html" %}
 
-{% block title %}ダッシュボード | Mossan Store{% endblock %}
+{% block title %}管理者トップ | Mossan Store{% endblock %}
 
 {% block head_extra %}
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -633,7 +633,7 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="page-title dashboard-reggae-title">ダッシュボード</h1>
+<h1 class="page-title dashboard-reggae-title">管理者トップ</h1>
 
 <div class="dashboard-stack">
   {% if error_message %}
@@ -741,9 +741,6 @@
               <a class="fancy-admin-btn maroon" href="{{ url_for('admin_team_collections', team_id=team['id']) }}">
                 集金管理
               </a>
-              <a class="fancy-admin-btn analytics" href="{{ url_for('admin_team_analytics', team_id=team['id']) }}">
-                情報分析
-              </a>
             </div>
           </div>
         </div>
@@ -806,7 +803,7 @@ document.querySelectorAll("[data-copy-url]").forEach((button) => {
     } catch (error) {
       if (feedback) {
         feedback.textContent = "";
-        feedback.setAttribute("aria-label", "コピー失敗");
+        feedback.setAttribute("aria-label", "コピーに失敗しました");
         feedback.classList.add("is-visible");
       }
     }
@@ -826,4 +823,3 @@ document.querySelectorAll("[data-copy-url]").forEach((button) => {
 });
 </script>
 {% endblock %}
-

@@ -42,11 +42,19 @@
   box-shadow: 0 0 0 3px rgba(255, 76, 76, 0.2);
   transform: translateY(-1px);
 }
+.member-toolbar-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
 .member-actions {
   display: flex;
   gap: 10px;
   align-items: center;
-  margin-bottom: 12px;
+  flex-wrap: wrap;
+  margin: 0;
 }
 .member-actions .btn:disabled {
   background: transparent !important;
@@ -54,30 +62,153 @@
   color: #666 !important;
   cursor: not-allowed;
 }
-  .member-actions .arrow-btn {
-    min-width: auto;
-    padding: 0 6px;
-    font-size: 26px;
-    font-weight: 700;
-    line-height: 1;
-    border: none;
-    border-radius: 0;
-    background: transparent;
-  }
-  .member-actions .delete-btn {
-    margin-left: 4px;
-  }
-.member-guidance {
-  margin-bottom: 12px;
-  padding: 10px 12px;
-  border: 1px solid rgba(255, 43, 43, 0.22);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  font-size: 13px;
+.member-actions .arrow-btn {
+  min-width: auto;
+  padding: 0 6px;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+.member-actions .delete-btn {
+  margin-left: 4px;
+}
+.csv-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 41px;
+  padding: 10px 14px;
+  line-height: 1;
+  border-radius: 4px;
+  border: 1px solid #2f5b3f;
+  color: #e9ffef;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.32);
+  background:
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.06) 0 3px, rgba(0,0,0,0.08) 3px 6px),
+    linear-gradient(180deg, #2f7a4f 0%, #205838 100%);
+}
+.member-period-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.member-period-field {
+  display: grid;
+  gap: 4px;
+}
+.member-period-form label {
+  color: #e5e7eb;
+  font-size: 14px;
+}
+.member-period-form input[type="date"] {
+  width: 128px;
+  min-height: 34px;
+  padding: 6px 10px;
+}
+.period-separator {
+  color: #9aa4b2;
+  font-size: 14px;
+  align-self: flex-end;
+  margin-bottom: 8px;
+}
+.member-tabs {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
+  max-width: none;
+  align-items: flex-end;
+  margin-top: 12px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.member-tab {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 96px;
+  padding: 11px 14px;
+  font-size: 1.12rem;
+  line-height: 1.1;
+  border-radius: 6px 6px 0 0;
+  border: 1px solid #2f3640;
+  background:
+    repeating-linear-gradient(
+      -12deg,
+      rgba(255, 255, 255, 0.04) 0 2px,
+      rgba(0, 0, 0, 0.18) 2px 4px
+    ),
+    linear-gradient(180deg, #2d333b 0%, #1b2026 100%);
+  color: #d7dde6;
+  text-decoration: none;
+  text-align: center;
+  white-space: nowrap;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
+  margin-right: 10px;
+}
+.member-tab:last-child {
+  margin-right: 0;
+}
+.member-tab.active {
+  border-color: #2f6d44;
+  background:
+    repeating-linear-gradient(
+      -12deg,
+      rgba(255, 255, 255, 0.05) 0 2px,
+      rgba(0, 0, 0, 0.18) 2px 4px
+    ),
+    linear-gradient(180deg, #2f7a4f 0%, #1f5a3a 100%);
+  color: #edf9f1;
+  box-shadow: 0 10px 16px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+.member-tab:hover {
+  filter: brightness(1.06) contrast(1.04);
+}
+.member-tab:active {
+  transform: translateY(1px);
+}
+.member-tab::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: transparent;
+}
+.member-tab.active::before {
+  background: linear-gradient(90deg, rgba(173, 255, 207, 0), rgba(173, 255, 207, 0.9), rgba(173, 255, 207, 0));
+}
+.member-tab:focus-visible {
+  outline: 2px solid rgba(173, 255, 207, 0.6);
+  outline-offset: 2px;
+}
+.member-tab.active,
+.member-tab.active:hover {
+  border-color: #2f6d44;
+}
+.member-tab-link {
+  display: inline-flex;
 }
 .member-table {
-  width: 100%;
-  min-width: 0;
+  width: max-content;
+  min-width: 100%;
   table-layout: fixed;
   font-size: clamp(12px, 2.8vw, 14px);
   border-collapse: collapse;
@@ -101,9 +232,20 @@
 .member-table tbody td {
   background: #11151b;
   color: #e5e7eb;
+  height: 46px;
+  box-sizing: border-box;
 }
 .member-table tbody tr:hover td {
   background: #1b222c;
+}
+.member-table.is-sticky .col-select {
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+  text-align: center;
+  position: sticky;
+  left: 0;
+  z-index: 2;
 }
 .member-table .col-select {
   width: 56px;
@@ -111,22 +253,55 @@
   max-width: 56px;
   text-align: center;
 }
-.member-table th.col-select,
-.member-table td.col-select {
-  width: 56px;
-  min-width: 56px;
-  max-width: 56px;
-}
-.member-table .col-member,
-.member-table .col-status {
-  white-space: nowrap;
-  text-align: left;
+.member-table.is-sticky .col-member {
+  min-width: 200px;
+  max-width: 200px;
+  position: sticky;
+  left: 56px;
+  z-index: 2;
 }
 .member-table .col-member {
-  width: calc(100% - 200px);
+  min-width: 200px;
+  max-width: 200px;
+}
+.member-table.compact-member {
+  min-width: 0;
+  table-layout: auto;
+}
+.member-table.compact-member .col-member {
+  width: 1%;
+  min-width: 92px;
+  max-width: none;
+}
+.member-table.is-sticky .col-status {
+  min-width: 144px;
+  max-width: 144px;
+  position: sticky;
+  left: 256px;
+  z-index: 2;
 }
 .member-table .col-status {
-  width: 144px;
+  min-width: 144px;
+  max-width: 144px;
+}
+.member-table.is-sticky thead .col-select,
+.member-table.is-sticky thead .col-member,
+.member-table.is-sticky thead .col-status {
+  z-index: 3;
+}
+.member-table.is-sticky tbody .col-select,
+.member-table.is-sticky tbody .col-member,
+.member-table.is-sticky tbody .col-status {
+  background: #11151b;
+}
+.member-table.is-sticky tbody tr:hover .col-select,
+.member-table.is-sticky tbody tr:hover .col-member,
+.member-table.is-sticky tbody tr:hover .col-status {
+  background: #1b222c;
+}
+.member-table .col-metric {
+  min-width: 132px;
+  text-align: center;
 }
 .member-checkbox {
   width: auto;
@@ -164,6 +339,9 @@
   font-size: 12px;
   padding: 4px 16px 4px 6px;
 }
+.metric-value {
+  text-align: center;
+}
 .table-wrap.member-table-wrap {
   overflow-x: auto;
 }
@@ -191,6 +369,8 @@
     linear-gradient(180deg, #b12b4b 0%, #7b1e35 100%);
   transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
 }
+.csv-pill::before,
+.csv-pill::after,
 .crimson-action-btn::before,
 .crimson-action-btn::after {
   content: "";
@@ -203,12 +383,15 @@
   background: rgba(22, 24, 27, 0.8);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
+.csv-pill::before,
 .crimson-action-btn::before {
   left: 8px;
 }
+.csv-pill::after,
 .crimson-action-btn::after {
   right: 8px;
 }
+.csv-pill:hover,
 .crimson-action-btn:hover {
   filter: brightness(1.06) contrast(1.04);
 }
@@ -232,10 +415,109 @@
     padding: 8px 6px;
     font-size: clamp(11px, 3.4vw, 13px);
   }
+  .member-toolbar-row {
+    align-items: flex-start;
+  }
+  .member-period-form {
+    align-items: flex-start;
+  }
+  .period-separator {
+    margin-bottom: 0;
+  }
+  .csv-pill,
+  .crimson-action-btn {
+    min-height: 36px;
+    padding: 8px 10px;
+    letter-spacing: 0;
+  }
+  .csv-pill::before,
+  .csv-pill::after,
+  .crimson-action-btn::before,
+  .crimson-action-btn::after {
+    display: none;
+  }
 }
 @media (max-width: 520px) {
   .member-table {
     font-size: 12px;
+  }
+  .table-wrap.member-table-wrap.basic-mobile-fit {
+    overflow-x: hidden;
+  }
+  .member-table.basic-mobile-fit {
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    table-layout: fixed;
+  }
+  .member-table.basic-mobile-fit .col-select {
+    width: 56px;
+    min-width: 56px;
+    max-width: 56px;
+  }
+  .member-table.basic-mobile-fit .col-member {
+    left: 56px;
+    width: calc(100% - 132px);
+    min-width: 0;
+    max-width: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .member-table.basic-mobile-fit .col-status {
+    left: calc(100% - 76px);
+    width: 76px;
+    min-width: 76px;
+    max-width: 76px;
+  }
+  .member-table.basic-mobile-fit .member-status-wrap {
+    display: block;
+    width: 100%;
+  }
+  .member-table.basic-mobile-fit .status-label {
+    display: none;
+  }
+  .member-table.basic-mobile-fit .status-select {
+    width: 100%;
+    max-width: 100%;
+    font-size: 11px;
+    padding: 3px 12px 3px 4px;
+  }
+  .member-table.is-sticky {
+    width: 100%;
+    min-width: 100%;
+    table-layout: fixed;
+  }
+  .member-table.is-sticky .col-select {
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+  }
+  .member-table.is-sticky.basic-mobile-fit .col-select {
+    width: 56px;
+    min-width: 56px;
+    max-width: 56px;
+  }
+  .member-table.is-sticky .col-member {
+    left: 40px;
+    width: calc(100% - 112px);
+    min-width: 0;
+    max-width: none;
+  }
+  .member-table.is-sticky.basic-mobile-fit .col-member {
+    left: 56px;
+    width: calc(100% - 132px);
+  }
+  .member-table.is-sticky .col-status {
+    left: calc(100% - 72px);
+    width: 72px;
+    min-width: 72px;
+    max-width: 72px;
+  }
+  .member-table.is-sticky.basic-mobile-fit .col-status {
+    left: calc(100% - 76px);
+    width: 76px;
+    min-width: 76px;
+    max-width: 76px;
   }
   .member-table th,
   .member-table td {
@@ -255,6 +537,20 @@
     font-size: 12px;
     padding: 3px 14px 3px 4px;
   }
+  .member-period-form input[type="date"] {
+    width: 100%;
+    max-width: 144px;
+  }
+  .member-tabs {
+    width: 100%;
+    max-width: 100%;
+  }
+  .member-tab {
+    padding: 9px 10px;
+    font-size: 0.98rem;
+    min-width: 88px;
+    margin-right: 8px;
+  }
 }
 </style>
 {% endblock %}
@@ -273,6 +569,9 @@
   <h2 class="dashboard-reggae-heading" style="margin-top: 0;">メンバー一括登録</h2>
   <form method="POST">
     <input type="hidden" name="action" value="add_members">
+    <input type="hidden" name="active_tab" value="{{ active_tab }}">
+    <input type="hidden" name="start_date" value="{{ analytics_period.start_date_value }}">
+    <input type="hidden" name="end_date" value="{{ analytics_period.end_date_value }}">
     <div class="member-editor">
       <label>メンバー名（1行に1名）</label>
       <textarea name="member_names" placeholder="田中 太郎&#10;佐藤 花子&#10;鈴木 次郎"></textarea>
@@ -284,57 +583,116 @@
 </section>
 
 <section class="panel">
-  {% if members %}
-  <form id="moveForm" method="POST" class="member-actions">
-    <input type="hidden" name="action" id="moveAction" value="">
-    <input type="hidden" name="selected_member_id" id="moveSelectedMemberId" value="{{ selected_member_id or '' }}">
-    <input type="hidden" name="scroll_y" id="moveScrollY" value="{{ scroll_y or '' }}">
-    <button type="button" class="btn secondary arrow-btn" data-move="up" aria-label="上へ移動" disabled>▲</button>
-    <button type="button" class="btn secondary arrow-btn" data-move="down" aria-label="下へ移動" disabled>▼</button>
-    <button type="button" class="btn crimson-action-btn crimson-danger delete-btn" id="deleteSelectedMemberBtn" disabled>削除</button>
+  {% if analytics_rows %}
+  {% set show_status_column = active_tab in ['basic', 'all'] %}
+  {% set use_sticky_columns = active_tab == 'basic' %}
+  {% set compact_member_column = active_tab != 'basic' %}
+  <div class="member-toolbar-row">
+    <form id="moveForm" method="POST" class="member-actions">
+      <input type="hidden" name="action" id="moveAction" value="">
+      <input type="hidden" name="selected_member_id" id="moveSelectedMemberId" value="{{ selected_member_id or '' }}">
+      <input type="hidden" name="scroll_y" id="moveScrollY" value="{{ scroll_y or '' }}">
+      <input type="hidden" name="active_tab" value="{{ active_tab }}">
+      <input type="hidden" name="start_date" value="{{ analytics_period.start_date_value }}">
+      <input type="hidden" name="end_date" value="{{ analytics_period.end_date_value }}">
+      <button type="button" class="btn secondary arrow-btn" data-move="up" aria-label="上へ移動" disabled>▲</button>
+      <button type="button" class="btn secondary arrow-btn" data-move="down" aria-label="下へ移動" disabled>▼</button>
+      <button type="button" class="btn crimson-action-btn crimson-danger delete-btn" id="deleteSelectedMemberBtn" disabled>削除</button>
+      <a
+        class="csv-pill"
+        href="{{ url_for('admin_export_member_analytics_csv', team_id=team['id'], tab=active_tab, start_date=analytics_period.start_date_value, end_date=analytics_period.end_date_value) }}"
+      >CSV出力</a>
+    </form>
+  </div>
+
+  <form id="memberPeriodForm" method="GET" class="member-period-form">
+    <input type="hidden" name="tab" value="{{ active_tab }}">
+    <div class="member-period-field">
+      <label for="memberPeriodStart">開始期間</label>
+      <input
+        id="memberPeriodStart"
+        type="date"
+        name="start_date"
+        value="{{ analytics_period.start_date_value }}"
+        min="{{ analytics_period.available_start_date_value }}"
+        max="{{ analytics_period.available_end_date_value }}"
+      >
+    </div>
+    <span class="period-separator">～</span>
+    <div class="member-period-field">
+      <label for="memberPeriodEnd">終了期間</label>
+      <input
+        id="memberPeriodEnd"
+        type="date"
+        name="end_date"
+        value="{{ analytics_period.end_date_value }}"
+        min="{{ analytics_period.available_start_date_value }}"
+        max="{{ analytics_period.available_end_date_value }}"
+      >
+    </div>
   </form>
 
-  <div class="member-guidance">
-    表示順のまま出欠登録のプルダウンに表示されます。無効メンバーはプルダウンに表示されません。
+  <div class="member-tabs" role="tablist" aria-label="メンバー表示切替">
+    {% for tab_key, tab_data in analytics_tabs.items() %}
+    <a
+      class="member-tab member-tab-link {% if tab_key == active_tab %}active{% endif %}"
+      href="{{ url_for('admin_team_members', team_id=team['id'], tab=tab_key, start_date=analytics_period.start_date_value, end_date=analytics_period.end_date_value) }}"
+      role="tab"
+      aria-selected="{% if tab_key == active_tab %}true{% else %}false{% endif %}"
+    >{{ tab_data.label }}</a>
+    {% endfor %}
   </div>
 
   <form id="statusForm" method="POST" onsubmit="return false;">
     <input type="hidden" name="selected_member_id" id="statusSelectedMemberId" value="{{ selected_member_id or '' }}">
     <input type="hidden" name="scroll_y" id="statusScrollY" value="{{ scroll_y or '' }}">
+    <input type="hidden" name="active_tab" value="{{ active_tab }}">
+    <input type="hidden" name="start_date" value="{{ analytics_period.start_date_value }}">
+    <input type="hidden" name="end_date" value="{{ analytics_period.end_date_value }}">
 
-    <div class="table-wrap member-table-wrap">
-      <table class="member-table">
+    <div class="table-wrap member-table-wrap {% if active_tab == 'basic' %}basic-mobile-fit{% endif %}">
+      <table class="member-table {% if use_sticky_columns %}is-sticky{% endif %} {% if compact_member_column %}compact-member{% endif %} {% if active_tab == 'basic' %}basic-mobile-fit{% endif %}">
         <thead>
           <tr>
             <th class="col-select">選択</th>
-            <th class="col-member">メンバー</th>
+            <th class="col-member">メンバー名</th>
+            {% if show_status_column %}
             <th class="col-status">ステータス</th>
+            {% endif %}
+            {% for column_key, column_label in analytics_tabs[active_tab].columns %}
+            <th class="col-metric">{{ column_label }}</th>
+            {% endfor %}
           </tr>
         </thead>
         <tbody>
-          {% for member in members %}
-          <tr data-member-id="{{ member['id'] }}">
+          {% for row in analytics_rows %}
+          <tr data-member-id="{{ row.member_id }}">
             <td class="col-select">
               <input
                 class="member-checkbox"
                 type="checkbox"
                 name="selected_member_checkbox"
-                value="{{ member['id'] }}"
-                {% if selected_member_id == member['id'] %}checked{% endif %}
+                value="{{ row.member_id }}"
+                {% if selected_member_id == row.member_id %}checked{% endif %}
               >
             </td>
-            <td class="col-member">{{ member["name"] }}</td>
+            <td class="col-member">{{ row.member_name }}</td>
+            {% if show_status_column %}
             <td class="col-status">
               <div class="member-status-wrap">
-                <span class="status-label {% if member['is_active'] %}active{% else %}inactive{% endif %}" id="statusLabel{{ member['id'] }}">
+                <span class="status-label {% if row.is_active %}active{% else %}inactive{% endif %}" id="statusLabel{{ row.member_id }}">
                   <span class="status-dot"></span>
                 </span>
-                <select class="status-select" name="is_active_{{ member['id'] }}" data-member-id="{{ member['id'] }}">
-                  <option value="1" {% if member["is_active"] %}selected{% endif %}>有効</option>
-                  <option value="0" {% if not member["is_active"] %}selected{% endif %}>無効</option>
+                <select class="status-select" name="is_active_{{ row.member_id }}" data-member-id="{{ row.member_id }}">
+                  <option value="1" {% if row.is_active %}selected{% endif %}>有効</option>
+                  <option value="0" {% if not row.is_active %}selected{% endif %}>無効</option>
                 </select>
               </div>
             </td>
+            {% endif %}
+            {% for column_key, column_label in analytics_tabs[active_tab].columns %}
+            <td class="col-metric metric-value">{{ row[column_key] }}</td>
+            {% endfor %}
           </tr>
           {% endfor %}
         </tbody>
@@ -367,6 +725,12 @@
   const activeCountEl = document.getElementById('activeMembersCount');
   const inactiveCountEl = document.getElementById('inactiveMembersCount');
   const deleteSelectedMemberBtn = document.getElementById('deleteSelectedMemberBtn');
+  const memberPeriodForm = document.getElementById('memberPeriodForm');
+  const memberPeriodInputs = memberPeriodForm ? Array.from(memberPeriodForm.querySelectorAll('input[type="date"]')) : [];
+  const memberTabLinks = Array.from(document.querySelectorAll('.member-tab-link'));
+  const memberTabs = document.querySelector('.member-tabs');
+  const tabScrollStorageKey = `admin-team-members-tab-scroll:${window.location.pathname}`;
+  const tabHorizontalScrollStorageKey = `admin-team-members-tab-scroll-left:${window.location.pathname}`;
 
   function getSelectedMemberId() {
     const checked = checkboxes.find((checkbox) => checkbox.checked);
@@ -493,15 +857,50 @@
     select.dataset.prevValue = select.value;
   });
 
+  memberPeriodInputs.forEach((input) => {
+    input.addEventListener('change', () => {
+      if (!memberPeriodForm) {
+        return;
+      }
+      memberPeriodForm.submit();
+    });
+  });
+
+  memberTabLinks.forEach((link) => {
+    link.addEventListener('click', () => {
+      window.sessionStorage.setItem(tabScrollStorageKey, String(window.scrollY || window.pageYOffset || 0));
+      if (memberTabs) {
+        window.sessionStorage.setItem(tabHorizontalScrollStorageKey, String(memberTabs.scrollLeft || 0));
+      }
+    });
+  });
+
   const restoredScrollY = Number('{{ scroll_y or 0 }}');
   if (!Number.isNaN(restoredScrollY) && restoredScrollY > 0) {
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: restoredScrollY, left: 0, behavior: 'auto' });
+      window.sessionStorage.removeItem(tabScrollStorageKey);
     });
+  } else {
+    const savedTabScrollY = Number(window.sessionStorage.getItem(tabScrollStorageKey));
+    if (!Number.isNaN(savedTabScrollY) && savedTabScrollY > 0) {
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ top: savedTabScrollY, left: 0, behavior: 'auto' });
+        window.sessionStorage.removeItem(tabScrollStorageKey);
+      });
+    }
   }
 
   if (statusScrollY) {
     statusScrollY.value = String(window.scrollY || window.pageYOffset || 0);
+  }
+  if (memberTabs) {
+    const savedTabScrollLeft = Number(window.sessionStorage.getItem(tabHorizontalScrollStorageKey));
+    if (!Number.isNaN(savedTabScrollLeft) && savedTabScrollLeft > 0) {
+      window.requestAnimationFrame(() => {
+        memberTabs.scrollLeft = savedTabScrollLeft;
+      });
+    }
   }
   syncSelectedMember();
   updateActionButtons();

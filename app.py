@@ -3306,17 +3306,139 @@ def format_member_analytics_rate(numerator, denominator):
     return f"{(numerator / denominator) * 100:.1f}%"
 
 
-def build_admin_member_analytics(team_id):
-    members = portal_get_members_for_team(team_id, include_inactive=False)
+ADMIN_MEMBER_ANALYTICS_TABS = {
+    "basic": {
+        "label": "基本情報",
+        "columns": [],
+    },
+    "attendance": {
+        "label": "出欠情報",
+        "columns": [
+            ("attendance_count", "参加回数"),
+            ("attendance_rate", "参加割合"),
+            ("absence_count", "不参加回数"),
+            ("absence_rate", "不参加割合"),
+            ("unanswered_count", "未回答回数"),
+            ("unanswered_rate", "未回答割合"),
+        ],
+    },
+    "transport": {
+        "label": "配車情報",
+        "columns": [
+            ("driver_count", "運転回数"),
+            ("driver_rate", "運転割合"),
+            ("passenger_count", "乗車回数"),
+            ("passenger_rate", "乗車割合"),
+            ("direct_count", "現地集合回数"),
+            ("direct_rate", "現地集合割合"),
+        ],
+    },
+    "collection": {
+        "label": "集金情報",
+        "columns": [
+            ("collection_amount_label", "集金額合計"),
+            ("collection_count", "回収回数"),
+            ("pending_collection_count", "未回収回数"),
+            ("pending_collection_amount_label", "未回収額"),
+        ],
+    },
+    "all": {
+        "label": "すべて",
+        "columns": [
+            ("attendance_count", "参加回数"),
+            ("attendance_rate", "参加割合"),
+            ("absence_count", "不参加回数"),
+            ("absence_rate", "不参加割合"),
+            ("unanswered_count", "未回答回数"),
+            ("unanswered_rate", "未回答割合"),
+            ("driver_count", "運転回数"),
+            ("driver_rate", "運転割合"),
+            ("passenger_count", "乗車回数"),
+            ("passenger_rate", "乗車割合"),
+            ("direct_count", "現地集合回数"),
+            ("direct_rate", "現地集合割合"),
+            ("collection_amount_label", "集金額合計"),
+            ("collection_count", "回収回数"),
+            ("pending_collection_count", "未回収回数"),
+            ("pending_collection_amount_label", "未回収額"),
+        ],
+    },
+}
+
+
+def normalize_admin_member_analytics_tab(value):
+    normalized = (value or "").strip().lower()
+    return normalized if normalized in ADMIN_MEMBER_ANALYTICS_TABS else "basic"
+
+
+def parse_iso_date_or_none(value):
+    raw = (value or "").strip()
+    if not raw:
+        return None
+    try:
+        return date.fromisoformat(raw)
+    except ValueError:
+        return None
+
+
+def resolve_member_analytics_period(team_id, start_date=None, end_date=None):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        """
+        SELECT MIN(period_date) AS min_date, MAX(period_date) AS max_date
+        FROM (
+            SELECT date AS period_date
+            FROM portal_events
+            WHERE team_id=? AND date IS NOT NULL AND date <> ''
+            UNION ALL
+            SELECT collection_date AS period_date
+            FROM portal_collection_events
+            WHERE team_id=? AND collection_date IS NOT NULL AND collection_date <> ''
+        ) period_source
+        """,
+        (team_id, team_id),
+    )
+    period_row = row_to_dict(c.fetchone()) or {}
+    conn.close()
+
+    available_start = parse_iso_date_or_none(period_row.get("min_date")) or date.today()
+    available_end = parse_iso_date_or_none(period_row.get("max_date")) or available_start
+
+    resolved_start = parse_iso_date_or_none(start_date) or available_start
+    resolved_end = parse_iso_date_or_none(end_date) or available_end
+    if resolved_start > resolved_end:
+        resolved_start, resolved_end = resolved_end, resolved_start
+
+    return {
+        "start_date": resolved_start,
+        "end_date": resolved_end,
+        "start_date_value": resolved_start.isoformat(),
+        "end_date_value": resolved_end.isoformat(),
+        "available_start_date": available_start,
+        "available_end_date": available_end,
+        "available_start_date_value": available_start.isoformat(),
+        "available_end_date_value": available_end.isoformat(),
+    }
+
+
+def build_admin_member_analytics(team_id, period_start=None, period_end=None, include_inactive=False):
+    members = portal_get_members_for_team(team_id, include_inactive=include_inactive)
     member_order = []
     member_stats = {}
     for member in members:
         member_name = (member.get("name") or "").strip()
         if not member_name:
             continue
+        member_created_at = parse_portal_datetime(member.get("created_at"))
+        member_start_date = member_created_at.date() if member_created_at else None
         member_order.append(member_name)
         member_stats[member_name] = {
+            "member_id": member.get("id"),
             "member_name": member_name,
+            "status_label": "有効" if member.get("is_active") else "無効",
+            "is_active": bool(member.get("is_active")),
+            "member_start_date": member_start_date,
             "attendance_count": 0,
             "attendance_rate": "-",
             "absence_count": 0,
@@ -3326,12 +3448,17 @@ def build_admin_member_analytics(team_id):
             "collection_count": 0,
             "collection_amount": 0,
             "collection_amount_label": format_currency_yen(0),
+            "pending_collection_count": 0,
+            "pending_collection_amount": 0,
+            "pending_collection_amount_label": format_currency_yen(0),
             "driver_count": 0,
             "passenger_count": 0,
             "direct_count": 0,
             "driver_rate": "-",
             "passenger_rate": "-",
             "direct_rate": "-",
+            "_attendance_denominator": 0,
+            "_transport_denominator": 0,
         }
 
     conn = get_db_connection()
@@ -3339,14 +3466,19 @@ def build_admin_member_analytics(team_id):
 
     c.execute(
         """
-        SELECT id
+        SELECT id, date
         FROM portal_events
         WHERE team_id=?
         ORDER BY date, start_time, id
         """,
         (team_id,),
     )
-    event_ids = {row["id"] for row in c.fetchall()}
+    event_rows = rows_to_dict(c.fetchall())
+    event_dates = {
+        row["id"]: parse_iso_date_or_none(row.get("date"))
+        for row in event_rows
+        if row.get("id") is not None
+    }
 
     c.execute(
         """
@@ -3360,7 +3492,7 @@ def build_admin_member_analytics(team_id):
 
     c.execute(
         """
-        SELECT cem.member_name, cem.status, ce.amount
+        SELECT cem.member_name, cem.status, ce.amount, ce.collection_date
         FROM portal_collection_event_members cem
         INNER JOIN portal_collection_events ce
             ON ce.id = cem.collection_event_id
@@ -3381,13 +3513,37 @@ def build_admin_member_analytics(team_id):
     transport_rows = rows_to_dict(c.fetchall())
     conn.close()
 
-    total_event_count = len(event_ids)
+    eligible_events_by_member = {
+        member_name: 0
+        for member_name in member_stats
+    }
+    for event_date in event_dates.values():
+        if event_date is None:
+            continue
+        if period_start and event_date < period_start:
+            continue
+        if period_end and event_date > period_end:
+            continue
+        for member_name, stats in member_stats.items():
+            member_start_date = stats["member_start_date"]
+            if member_start_date and event_date < member_start_date:
+                continue
+            eligible_events_by_member[member_name] += 1
+
     for row in attendance_rows:
         member_name = (row.get("member_name") or "").strip()
         if member_name not in member_stats:
             continue
         event_id = row.get("event_id")
-        if event_id not in event_ids:
+        event_date = event_dates.get(event_id)
+        if event_date is None:
+            continue
+        if period_start and event_date < period_start:
+            continue
+        if period_end and event_date > period_end:
+            continue
+        member_start_date = member_stats[member_name]["member_start_date"]
+        if member_start_date and event_date < member_start_date:
             continue
         status = normalize_status(row.get("status"))
         if status == "参加":
@@ -3399,48 +3555,111 @@ def build_admin_member_analytics(team_id):
         member_name = (row.get("member_name") or "").strip()
         if member_name not in member_stats:
             continue
+        collection_date = parse_iso_date_or_none(row.get("collection_date"))
+        if collection_date is None:
+            continue
+        if period_start and collection_date < period_start:
+            continue
+        if period_end and collection_date > period_end:
+            continue
+        member_start_date = member_stats[member_name]["member_start_date"]
+        if member_start_date and collection_date < member_start_date:
+            continue
         normalized_status = normalize_collection_status(row.get("status"))
         if normalized_status == COLLECTION_STATUS_COLLECTED:
             member_stats[member_name]["collection_count"] += 1
             member_stats[member_name]["collection_amount"] += int(row.get("amount") or 0)
+        elif normalized_status == COLLECTION_STATUS_PENDING:
+            member_stats[member_name]["pending_collection_count"] += 1
+            member_stats[member_name]["pending_collection_amount"] += int(row.get("amount") or 0)
 
     for row in transport_rows:
         member_name = (row.get("member_name") or "").strip()
         if member_name not in member_stats:
             continue
         event_id = row.get("event_id")
-        if event_id not in event_ids:
+        event_date = event_dates.get(event_id)
+        if event_date is None:
+            continue
+        if period_start and event_date < period_start:
+            continue
+        if period_end and event_date > period_end:
+            continue
+        member_start_date = member_stats[member_name]["member_start_date"]
+        if member_start_date and event_date < member_start_date:
             continue
         transport_role = normalize_transport_role(row.get("transport_role")) or TRANSPORT_ROLE_NONE
         if transport_role == TRANSPORT_ROLE_DRIVER:
             member_stats[member_name]["driver_count"] += 1
+            member_stats[member_name]["_transport_denominator"] += 1
         elif transport_role == TRANSPORT_ROLE_PASSENGER:
             member_stats[member_name]["passenger_count"] += 1
+            member_stats[member_name]["_transport_denominator"] += 1
         elif transport_role == TRANSPORT_ROLE_DIRECT:
             member_stats[member_name]["direct_count"] += 1
+            member_stats[member_name]["_transport_denominator"] += 1
 
     analytics_rows = []
     for member_name in member_order:
         stats = member_stats[member_name]
+        eligible_event_count = eligible_events_by_member.get(member_name, 0)
         stats["unanswered_count"] = max(
             0,
-            total_event_count - stats["attendance_count"] - stats["absence_count"],
+            eligible_event_count - stats["attendance_count"] - stats["absence_count"],
         )
-        stats["attendance_rate"] = format_member_analytics_rate(stats["attendance_count"], total_event_count)
-        stats["absence_rate"] = format_member_analytics_rate(stats["absence_count"], total_event_count)
-        stats["unanswered_rate"] = format_member_analytics_rate(stats["unanswered_count"], total_event_count)
+        stats["attendance_rate"] = format_member_analytics_rate(stats["attendance_count"], eligible_event_count)
+        stats["absence_rate"] = format_member_analytics_rate(stats["absence_count"], eligible_event_count)
+        stats["unanswered_rate"] = format_member_analytics_rate(stats["unanswered_count"], eligible_event_count)
         stats["collection_amount_label"] = format_currency_yen(stats["collection_amount"])
-        attendance_denominator = stats["attendance_count"]
-        stats["driver_rate"] = format_member_analytics_rate(stats["driver_count"], attendance_denominator)
-        stats["passenger_rate"] = format_member_analytics_rate(stats["passenger_count"], attendance_denominator)
-        stats["direct_rate"] = format_member_analytics_rate(stats["direct_count"], attendance_denominator)
+        stats["pending_collection_amount_label"] = format_currency_yen(stats["pending_collection_amount"])
+        transport_denominator = stats["_transport_denominator"]
+        stats["driver_rate"] = format_member_analytics_rate(stats["driver_count"], transport_denominator)
+        stats["passenger_rate"] = format_member_analytics_rate(stats["passenger_count"], transport_denominator)
+        stats["direct_rate"] = format_member_analytics_rate(stats["direct_count"], transport_denominator)
         analytics_rows.append(stats)
 
     return {
         "rows": analytics_rows,
         "member_count": len(analytics_rows),
-        "event_count": total_event_count,
+        "event_count": sum(1 for event_date in event_dates.values() if event_date and (not period_start or event_date >= period_start) and (not period_end or event_date <= period_end)),
     }
+
+
+def build_admin_member_analytics_csv_response(team_id, active_tab, period_start=None, period_end=None):
+    tab_key = normalize_admin_member_analytics_tab(active_tab)
+    analytics = build_admin_member_analytics(
+        team_id,
+        period_start=period_start,
+        period_end=period_end,
+        include_inactive=True,
+    )
+    tab_definition = ADMIN_MEMBER_ANALYTICS_TABS[tab_key]
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["表示タブ", tab_definition["label"]])
+    writer.writerow(["開始期間", period_start.isoformat() if period_start else ""])
+    writer.writerow(["終了期間", period_end.isoformat() if period_end else ""])
+    writer.writerow([])
+
+    header = ["メンバー名", "ステータス", *[label for _, label in tab_definition["columns"]]]
+    writer.writerow(header)
+    for row in analytics["rows"]:
+        writer.writerow(
+            [
+                row.get("member_name") or "",
+                row.get("status_label") or "",
+                *[row.get(column_key, "") for column_key, _ in tab_definition["columns"]],
+            ]
+        )
+
+    csv_text = "\ufeff" + output.getvalue()
+    filename = f"member_analytics_{tab_key}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        csv_text,
+        mimetype="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 def build_portal_transport_overview(team_id, event_id, allowed_member_names=None):
@@ -8741,11 +8960,17 @@ def admin_team_members(team_id):
     success_message = request.args.get("success_message", "").strip()
     selected_member_id = _coerce_positive_int(request.args.get("selected_member_id"))
     scroll_y = request.args.get("scroll_y", "").strip()
+    active_tab = normalize_admin_member_analytics_tab(request.args.get("tab"))
+    period_start_raw = request.args.get("start_date", "").strip()
+    period_end_raw = request.args.get("end_date", "").strip()
 
     if request.method == "POST":
         action = request.form.get("action", "").strip()
         selected_member_id = _coerce_positive_int(request.form.get("selected_member_id")) or selected_member_id
         scroll_y = request.form.get("scroll_y", "").strip()
+        active_tab = normalize_admin_member_analytics_tab(request.form.get("active_tab") or active_tab)
+        period_start_raw = (request.form.get("start_date") or period_start_raw).strip()
+        period_end_raw = (request.form.get("end_date") or period_end_raw).strip()
         if action == "add_members":
             raw_names = request.form.get("member_names", "")
             lines = raw_names.replace("\r\n", "\n").split("\n")
@@ -8833,10 +9058,25 @@ def admin_team_members(team_id):
     active_members = len([member for member in all_members if member.get("is_active")])
     inactive_members = total_members - active_members
     members = all_members
+    analytics_period = resolve_member_analytics_period(
+        team["id"],
+        start_date=period_start_raw,
+        end_date=period_end_raw,
+    )
+    analytics = build_admin_member_analytics(
+        team["id"],
+        period_start=analytics_period["start_date"],
+        period_end=analytics_period["end_date"],
+        include_inactive=True,
+    )
     return render_template(
         "admin_team_members.html",
         team=team,
         members=members,
+        analytics_rows=analytics["rows"],
+        analytics_period=analytics_period,
+        analytics_tabs=ADMIN_MEMBER_ANALYTICS_TABS,
+        active_tab=active_tab,
         total_members=total_members,
         active_members=active_members,
         inactive_members=inactive_members,
@@ -8845,6 +9085,28 @@ def admin_team_members(team_id):
         success_message=success_message,
         selected_member_id=selected_member_id,
         scroll_y=scroll_y,
+    )
+
+
+@app.route("/admin/teams/<int:team_id>/members/csv")
+@admin_login_required
+def admin_export_member_analytics_csv(team_id):
+    team, team_error = get_owned_team_or_error(team_id, session["admin_id"])
+    if team_error == "not_found":
+        return redirect(url_for("admin_dashboard", error_message="対象チームが見つかりません。"))
+    if team_error == "forbidden":
+        return redirect(url_for("admin_dashboard", error_message="他チームは操作できません。"))
+
+    analytics_period = resolve_member_analytics_period(
+        team["id"],
+        start_date=request.args.get("start_date", "").strip(),
+        end_date=request.args.get("end_date", "").strip(),
+    )
+    return build_admin_member_analytics_csv_response(
+        team["id"],
+        request.args.get("tab"),
+        period_start=analytics_period["start_date"],
+        period_end=analytics_period["end_date"],
     )
 
 
@@ -9235,25 +9497,6 @@ def admin_team_collections(team_id):
         editing_member_ids=editing_member_ids,
         error_message=error_message,
         success_message=success_message,
-    )
-
-
-@app.route("/admin/teams/<int:team_id>/analytics")
-@admin_login_required
-def admin_team_analytics(team_id):
-    team, team_error = get_owned_team_or_error(team_id, session["admin_id"])
-    if team_error == "not_found":
-        return redirect(url_for("admin_dashboard", error_message="対象チームが見つかりません。"))
-    if team_error == "forbidden":
-        return redirect(url_for("admin_dashboard", error_message="他チームは操作できません。"))
-
-    analytics = build_admin_member_analytics(team["id"])
-    return render_template(
-        "admin_team_analytics.html",
-        team=team,
-        analytics_rows=analytics["rows"],
-        member_count=analytics["member_count"],
-        event_count=analytics["event_count"],
     )
 
 
