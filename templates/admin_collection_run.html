@@ -7,61 +7,110 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
 <style>
-.dashboard-reggae-title { font-family: 'Reggae One', 'Noto Sans JP', sans-serif; letter-spacing: 0.04em; color: #ead7b3; }
-.save-indicator { min-height: 22px; font-size: 13px; color: #cfd8e3; margin-top: 10px; }
-.check-table { width: 100%; min-width: 0; table-layout: fixed; }
-.check-table th, .check-table td { width: 33.3333%; text-align: left; vertical-align: top; }
-.member-list { margin: 0; padding: 0; list-style: none; }
-.member-list li { margin: 0 0 8px; word-break: break-word; }
-.member-status-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 2px 0;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  color: #eef2f6;
-  text-align: left;
-}
-.member-name { font-weight: 700; }
-.member-time { font-size: 12px; color: #c8c8c8; }
-.small-note { color: #c8c8c8; font-size: 13px; }
-.fancy-maroon-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 41px;
-  padding: 10px 14px;
-  border-radius: 4px;
-  border: 1px solid #78172d;
-  color: #ffe9ee;
-  font-weight: 800;
+.dashboard-reggae-title {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
   letter-spacing: 0.04em;
-  text-decoration: none;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.32);
-  background:
-    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0 3px, rgba(0, 0, 0, 0.1) 3px 6px),
-    linear-gradient(180deg, #9d1f3c 0%, #681328 100%);
+  color: #ead7b3;
 }
-.fancy-maroon-btn::before,
-.fancy-maroon-btn::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 6px;
-  height: 6px;
+.attendance-table-wrap {
+  overflow-x: hidden;
+}
+.events-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+  background: #11151b;
+  border-collapse: collapse;
+}
+.events-table thead th {
+  border: 1px solid #2f6d44;
+  background: linear-gradient(180deg, #3b8f5f 0%, #2a6d48 100%);
+  color: #f2fff6;
+  padding: 8px 6px;
+  text-align: center;
+  vertical-align: middle;
+}
+.events-table tbody td {
+  border: 1px solid #2f3946;
+  background: #11151b;
+  color: #e5e7eb;
+  text-align: center;
+  vertical-align: middle;
+  padding: 10px 8px;
+}
+.events-table tbody tr:hover td {
+  background: #1b222c;
+}
+.events-table .col-member {
+  width: 40%;
+}
+.events-table .col-status {
+  width: 30%;
+}
+.events-table .col-date {
+  width: 30%;
+}
+.member-lines,
+.status-lines,
+.date-lines {
+  line-height: 1.4;
+}
+.member-lines > div:first-child {
+  font-weight: 700;
+}
+.status-select {
+  width: 100%;
+  max-width: 120px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid #3b4756;
   border-radius: 999px;
-  background: rgba(22, 24, 27, 0.8);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  background: #11151b;
+  color: #e5e7eb;
+  box-sizing: border-box;
+  text-align: center;
 }
-.fancy-maroon-btn::before { left: 8px; }
-.fancy-maroon-btn::after { right: 8px; }
+.status-select.collected {
+  border-color: #2f7a4f;
+  color: #d5ffe3;
+}
+.status-select.pending {
+  border-color: #a22626;
+  color: #ffd6d6;
+}
+.status-select.exempt {
+  border-color: #8a6a10;
+  color: #ffe8a3;
+}
+@media (max-width: 760px) {
+  .events-table {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+  }
+  .events-table thead th,
+  .events-table tbody td {
+    padding: 8px 4px;
+    font-size: 11px;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  .events-table .col-member {
+    width: 46%;
+  }
+  .events-table .col-status {
+    width: 26%;
+  }
+  .events-table .col-date {
+    width: 28%;
+  }
+  .status-select {
+    max-width: 100%;
+    padding: 4px 6px;
+    font-size: 10px;
+  }
+}
 </style>
 {% endblock %}
 
@@ -75,67 +124,96 @@
 </section>
 
 <section class="panel">
-  <div class="table-wrap">
-    <table class="check-table">
+  <div class="table-wrap attendance-table-wrap">
+    <table class="events-table">
       <thead>
-        <tr><th>集金済</th><th>未集金</th><th>対象外</th></tr>
+        <tr>
+          <th class="col-member">メンバー</th>
+          <th class="col-status">集金状況</th>
+          <th class="col-date">記録日付</th>
+        </tr>
       </thead>
       <tbody>
-        <tr>
-          <td><ul class="member-list" id="collectedList"></ul></td>
-          <td><ul class="member-list" id="pendingList"></ul></td>
-          <td><ul class="member-list" id="exemptList"></ul></td>
+        {% for row in member_rows %}
+        <tr data-member-id="{{ row['member_id'] }}">
+          <td class="col-member">
+            <div class="member-lines">
+              <div>{{ row["member_name"] }}</div>
+            </div>
+          </td>
+          <td class="col-status">
+            <div class="status-lines">
+              <select class="status-select {{ row['status'] }}" data-member-id="{{ row['member_id'] }}" data-current-status="{{ row['status'] }}">
+                <option value="collected" {% if row["status"] == "collected" %}selected{% endif %}>集金済</option>
+                <option value="pending" {% if row["status"] == "pending" %}selected{% endif %}>未集金</option>
+                <option value="exempt" {% if row["status"] == "exempt" %}selected{% endif %}>対象外</option>
+              </select>
+            </div>
+          </td>
+          <td class="col-date" data-collected-at>
+            <div class="date-lines">{{ row["collected_at_label"] or "-" }}</div>
+          </td>
         </tr>
+        {% endfor %}
       </tbody>
     </table>
   </div>
-  <div class="btn-row" style="margin-top:10px;"><a href="{{ url_for('admin_team_collections', team_id=team['id']) }}" class="btn fancy-maroon-btn">集金一覧へ戻る</a></div>
 </section>
+
+<div class="btn-row" style="margin-top:12px;">
+  <a href="{{ url_for('admin_team_collections', team_id=team['id'], page=page, scroll_y=scroll_y) }}" class="btn secondary">集金一覧へ戻る</a>
+</div>
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 <script>
 (() => {
-  const members = {{ member_rows|tojson }};
-  const collectedList = document.getElementById('collectedList');
-  const pendingList = document.getElementById('pendingList');
-  const exemptList = document.getElementById('exemptList');
-  const stateById = new Map();
-  members.forEach((member) => stateById.set(String(member.member_id), { ...member }));
-
-  const escapeHtml = (value) => String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-
-  const buildListItem = (member) => `
-    <li>
-      <div class="member-status-btn is-${member.status}">
-        <span class="member-name">${escapeHtml(member.member_name)}</span>
-        <span class="member-time">${escapeHtml(member.collected_at_label || '-')}</span>
-      </div>
-    </li>
-  `;
-
-  const renderColumns = () => {
-    const grouped = { collected: [], pending: [], exempt: [] };
-    stateById.forEach((member) => {
-      const key = grouped[member.status] ? member.status : 'pending';
-      grouped[key].push(member);
-    });
-    const sortByName = (a, b) => String(a.member_name).localeCompare(String(b.member_name), 'ja');
-    grouped.collected.sort(sortByName);
-    grouped.pending.sort(sortByName);
-    grouped.exempt.sort(sortByName);
-    collectedList.innerHTML = grouped.collected.length ? grouped.collected.map(buildListItem).join('') : '<li>-</li>';
-    pendingList.innerHTML = grouped.pending.length ? grouped.pending.map(buildListItem).join('') : '<li>-</li>';
-    exemptList.innerHTML = grouped.exempt.length ? grouped.exempt.map(buildListItem).join('') : '<li>-</li>';
+  const statusSelects = Array.from(document.querySelectorAll('.status-select'));
+  const statusClassMap = {
+    collected: 'collected',
+    pending: 'pending',
+    exempt: 'exempt',
   };
 
-  renderColumns();
+  const updateSelectClass = (select) => {
+    select.classList.remove('collected', 'pending', 'exempt');
+    select.classList.add(statusClassMap[select.value] || 'pending');
+  };
+
+  statusSelects.forEach((select) => {
+    updateSelectClass(select);
+    select.addEventListener('change', async () => {
+      const memberId = (select.dataset.memberId || '').trim();
+      const previousStatus = (select.dataset.currentStatus || 'pending').trim();
+      const nextStatus = select.value;
+      const row = select.closest('tr');
+      const collectedAtCell = row ? row.querySelector('[data-collected-at] .date-lines') : null;
+
+      updateSelectClass(select);
+
+      try {
+        const response = await fetch(`/admin/api/teams/{{ team['id'] }}/collections/{{ collection_event['id'] }}/members/${memberId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: nextStatus }),
+        });
+        if (!response.ok) throw new Error('save_failed');
+        const payload = await response.json();
+        const savedStatus = payload?.member?.status || nextStatus;
+        select.value = savedStatus;
+        select.dataset.currentStatus = savedStatus;
+        updateSelectClass(select);
+        if (collectedAtCell) {
+          collectedAtCell.textContent = payload?.member?.collected_at_label || '-';
+        }
+      } catch (error) {
+        select.value = previousStatus;
+        updateSelectClass(select);
+      }
+    });
+  });
 })();
 </script>
 {% endblock %}
+

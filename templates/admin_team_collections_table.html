@@ -1,4 +1,4 @@
-{% extends "admin_base_clean.html" %}
+﻿{% extends "admin_base_clean.html" %}
 
 {% block title %}集金管理 | Mossan Store{% endblock %}
 
@@ -36,14 +36,7 @@
   align-items: flex-end;
   flex-wrap: wrap;
 }
-.action-row.top-controls {
-  align-items: end;
-}
-.action-row.top-controls .btn {
-  margin-bottom: 0;
-}
-.action-pill,
-.csv-pill {
+.action-pill {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -61,9 +54,7 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.32);
 }
 .action-pill::before,
-.action-pill::after,
-.csv-pill::before,
-.csv-pill::after {
+.action-pill::after {
   content: "";
   position: absolute;
   top: 50%;
@@ -74,12 +65,10 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
   transform: translateY(-50%);
 }
-.action-pill::before,
-.csv-pill::before {
+.action-pill::before {
   left: 8px;
 }
-.action-pill::after,
-.csv-pill::after {
+.action-pill::after {
   right: 8px;
 }
 .action-pill.bulk-detail {
@@ -115,45 +104,21 @@
   border-color: #3a3a3a !important;
   color: #666 !important;
 }
-.csv-pill {
-  text-decoration: none;
-  background:
-    repeating-linear-gradient(135deg, rgba(255,255,255,0.06) 0 3px, rgba(0,0,0,0.08) 3px 6px),
-    linear-gradient(180deg, #2f7a4f 0%, #205838 100%);
-  border-color: #2f5b3f;
-  color: #e9ffef;
-}
-.member-filter-form {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: end;
-}
-.member-filter-form .field {
-  margin: 0;
-  min-width: 148px;
-  max-width: 148px;
-}
-.member-filter-form select {
-  height: 41px;
-  min-height: 41px;
-}
 .attendance-table-wrap {
   overflow-x: auto;
 }
 .events-table {
-  width: max-content;
+  width: 100%;
   min-width: 0;
-  max-width: none;
   table-layout: fixed;
   background: #11151b;
+  border-collapse: collapse;
 }
 .events-table thead th {
   border: 1px solid #2f6d44;
   background: linear-gradient(180deg, #3b8f5f 0%, #2a6d48 100%);
   color: #f2fff6;
-  padding-top: 6px;
-  padding-bottom: 6px;
+  padding: 8px 6px;
   text-align: center;
   vertical-align: middle;
 }
@@ -163,6 +128,7 @@
   color: #e5e7eb;
   text-align: center;
   vertical-align: middle;
+  padding: 10px 8px;
 }
 .events-table tbody tr:hover td {
   background: #1b222c;
@@ -173,37 +139,37 @@
   max-width: 56px;
   text-align: center;
 }
+.events-table td.col-select {
+  padding-left: 0;
+  padding-right: 0;
+}
+.inline-check {
+  display: block;
+  margin: 0 auto;
+}
 .events-table .col-event {
-  width: 220px;
+  width: auto;
   min-width: 220px;
-  max-width: 220px;
-  text-align: center;
+  text-align: left;
 }
 .events-table .col-summary {
-  width: 120px;
-  min-width: 120px;
-  max-width: 120px;
+  width: 132px;
+  min-width: 132px;
+  max-width: 132px;
 }
-.events-table .event-lines,
-.events-table .summary-lines {
-  line-height: 1.3;
-  white-space: normal;
-  text-align: center;
+.event-lines,
+.summary-lines {
+  line-height: 1.4;
 }
-.member-head {
-  width: 110px;
-  min-width: 110px;
-  max-width: 110px;
-  text-align: center;
+.event-lines {
+  text-align: left;
 }
-.member-head .member-name {
+.event-lines > div:first-child {
   font-weight: 700;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  word-break: break-word;
-  text-align: center;
+}
+.event-lines > div:last-child {
+  color: #c8d0db;
+  font-size: 13px;
 }
 .summary-head-marks,
 .summary-values {
@@ -212,84 +178,24 @@
   gap: 4px;
   text-align: center;
 }
-.events-table td.member-cell {
-  width: 110px;
-  min-width: 110px;
-  max-width: 110px;
-  text-align: center;
-}
-.event-lines {
-  overflow: hidden;
-}
-.event-lines > div {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-}
-.status-symbol {
-  display: inline-block;
-  font-size: 16px;
-  font-weight: 800;
-}
-.status-symbol.collected {
-  color: #86efac;
-}
-.status-symbol.pending {
-  color: #fca5a5;
-}
-.status-symbol.exempt {
-  color: #fde68a;
-}
-.inline-status-select {
-  width: 100%;
-  min-width: 0;
-  padding: 6px 8px;
-  font-size: 12px;
-}
-.inline-status-select.collected {
-  border-color: #2f7a4f;
-  color: #d5ffe3;
-}
-.inline-status-select.pending {
-  border-color: #a22626;
-  color: #ffd6d6;
-}
-.inline-status-select.exempt {
-  border-color: #8a6a10;
-  color: #ffe8a3;
-}
-.member-pick-actions {
+.collection-pagination {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 10px;
-}
-.member-pick-list {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
   margin-top: 12px;
 }
-.member-pick {
-  position: relative;
+.plain-page-link {
+  color: #e5e7eb;
+  text-decoration: none;
+  font-size: 22px;
+  line-height: 1;
 }
-.member-pick input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
+.plain-page-link:hover {
+  color: #ffffff;
 }
-.member-pick-label {
-  display: block;
-  padding: 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.03);
-  cursor: pointer;
-}
-.member-pick input:checked + .member-pick-label {
-  border-color: #34d399;
-  background: rgba(16, 185, 129, 0.16);
+.page-indicator {
+  color: #d1d5db;
 }
 .crimson-action-btn {
   position: relative;
@@ -307,11 +213,7 @@
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.32);
   background:
-    repeating-linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.06) 0 3px,
-      rgba(0, 0, 0, 0.08) 3px 6px
-    ),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0 3px, rgba(0, 0, 0, 0.08) 3px 6px),
     linear-gradient(180deg, #b12b4b 0%, #7b1e35 100%);
   transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
 }
@@ -339,28 +241,11 @@
 .crimson-action-btn:active {
   transform: translateY(0);
 }
-@media (max-width: 900px) {
+@media (max-width: 760px) {
   .toolbar-row {
     align-items: stretch;
   }
-}
-@media (max-width: 760px) {
-  .member-pick-list {
-    grid-template-columns: 1fr;
-  }
-  .member-filter-form .field {
-    min-width: 0;
-    max-width: none;
-    width: 100%;
-  }
-  .member-filter-form select {
-    height: 36px;
-    min-height: 36px;
-    padding: 4px 8px;
-    font-size: 14px;
-  }
-  .action-pill,
-  .csv-pill {
+  .action-pill {
     height: 36px;
     min-height: 36px;
     padding: 8px 10px;
@@ -370,13 +255,14 @@
   }
   .action-pill::before,
   .action-pill::after,
-  .csv-pill::before,
-  .csv-pill::after {
-    display: none;
-  }
   .crimson-action-btn::before,
   .crimson-action-btn::after {
     display: none;
+  }
+  .events-table .col-summary {
+    width: 108px;
+    min-width: 108px;
+    max-width: 108px;
   }
 }
 </style>
@@ -396,14 +282,15 @@
   <h2 class="dashboard-reggae-heading" style="margin-top:0;">集金イベント登録</h2>
   <form method="POST" id="collection-editor-form">
     <input type="hidden" name="action" value="{% if editing_collection %}update_collection{% else %}create_collection{% endif %}">
-    <input type="hidden" name="page" id="editor-page" value="{{ page }}">
+    <input type="hidden" name="page" value="{{ page }}">
+    <input type="hidden" name="scroll_y" class="js-scroll-y" value="{{ scroll_y }}">
     <input type="hidden" name="editing_collection_id" value="{{ editing_collection_id or '' }}">
     <input type="hidden" name="target_mode" id="target-mode-input" value="all_active">
     <input type="hidden" name="collection_date" value="{{ editing_collection['collection_date'] if editing_collection else '' }}">
     <div class="grid-2">
       <div class="field">
         <label>集金イベント名</label>
-        <input type="text" name="title" value="{{ editing_collection['title'] if editing_collection else '' }}" placeholder="例: 4月部費" required>
+        <input type="text" name="title" value="{{ editing_collection['title'] if editing_collection else '' }}" placeholder="例: 4月会費" required>
       </div>
       <div class="field">
         <label>金額</label>
@@ -419,7 +306,7 @@
     <div class="btn-row">
       <button class="btn crimson-action-btn" type="submit">{% if editing_collection %}更新する{% else %}登録する{% endif %}</button>
       {% if editing_collection %}
-      <a class="btn secondary" href="{{ url_for('admin_team_collections', team_id=team['id'], page=page, name=name) }}">編集を解除</a>
+      <a class="btn secondary" href="{{ url_for('admin_team_collections', team_id=team['id'], page=page, scroll_y=scroll_y) }}">編集を解除</a>
       {% endif %}
     </div>
   </form>
@@ -429,23 +316,8 @@
   <h2 class="dashboard-reggae-heading" style="margin-top:0;">登録済み集金イベント</h2>
 
   <div class="toolbar-stack">
-    <div class="toolbar-row action-row top-controls">
+    <div class="toolbar-row">
       <button form="collection-list-form" type="submit" name="action" value="open_detail" id="detail-button" class="btn action-pill bulk-detail" disabled>詳細確認</button>
-      <a id="csv-export-link" class="csv-pill" href="{{ url_for('admin_export_collection_csv', team_id=team['id']) }}{% if name %}?name={{ name|urlencode }}{% endif %}">CSV出力</a>
-      <form method="GET" id="member-filter-form" class="member-filter-form">
-        <input type="hidden" name="page" value="1">
-        <div class="field">
-          <label for="member-filter-select">メンバー 表示</label>
-          <select name="name" id="member-filter-select">
-            <option value="">全員表示</option>
-            {% for member in member_options %}
-            <option value="{{ member['name'] }}" {% if name == member['name'] %}selected{% endif %}>{{ member['name'] }}</option>
-            {% endfor %}
-          </select>
-        </div>
-      </form>
-    </div>
-    <div class="toolbar-row action-row">
       <button form="collection-list-form" type="submit" name="action" value="start_edit" id="edit-button" class="btn action-pill bulk-edit" disabled>編集</button>
       <button form="collection-list-form" type="submit" name="action" value="duplicate_collection" id="duplicate-button" class="btn action-pill bulk-duplicate" disabled>複製</button>
       <button form="collection-list-form" type="submit" name="action" value="delete_collection" id="delete-button" class="btn action-pill danger" disabled onclick="return confirm('選択した集金イベントを削除しますか？');">削除</button>
@@ -453,17 +325,18 @@
   </div>
 
   <form method="POST" id="collection-list-form">
-    <input type="hidden" name="page" id="list-page" value="{{ page }}">
+    <input type="hidden" name="page" value="{{ page }}">
+    <input type="hidden" name="scroll_y" class="js-scroll-y" value="{{ scroll_y }}">
     <input type="hidden" name="selected_collection_ids" id="selected-collection-ids" value="">
   </form>
 
-  {% if collection_table_rows %}
+  {% if collection_rows %}
   <div class="table-wrap attendance-table-wrap">
     <table class="events-table">
       <thead>
         <tr>
           <th class="col-select">選択</th>
-          <th class="col-event">イベント内容・金額</th>
+          <th class="col-event">イベント名・金額</th>
           <th class="col-summary">
             <div class="summary-head-marks">
               <span>○</span>
@@ -471,48 +344,29 @@
               <span>ー</span>
             </div>
           </th>
-          {% for member_name in display_member_names %}
-          <th class="member-head">
-            <div class="member-name">{{ member_name }}</div>
-          </th>
-          {% endfor %}
         </tr>
       </thead>
       <tbody>
-        {% for row in collection_table_rows %}
+        {% for row in collection_rows %}
         <tr>
           <td class="col-select">
             <input form="collection-list-form" class="inline-check collection-select" type="checkbox" data-collection-id="{{ row['id'] }}">
           </td>
-          <td class="col-event event-lines">
+          <td class="col-event">
             <div class="event-lines">
-              <div>{{ row["event_summary_text"] }}</div>
-              <div>{{ row["event_sub_text"] }}</div>
+              <div>{{ row["title"] }}</div>
+              <div>{{ row["collection_date_label"] }} / {{ row["amount_label"] }} / {{ row["note"] or "備考なし" }}</div>
             </div>
           </td>
-          <td class="col-summary summary-lines">
-            <div class="summary-values">
-              <span data-summary-collected>{{ row["summary"]["collected_count"] }}</span>
-              <span data-summary-pending>{{ row["summary"]["pending_count"] }}</span>
-              <span data-summary-exempt>{{ row["summary"]["exempt_count"] }}</span>
+          <td class="col-summary">
+            <div class="summary-lines">
+              <div class="summary-values">
+                <span>{{ row["summary"]["collected_count"] }}</span>
+                <span>{{ row["summary"]["pending_count"] }}</span>
+                <span>{{ row["summary"]["exempt_count"] }}</span>
+              </div>
             </div>
           </td>
-          {% for member_name in display_member_names %}
-          {% set member_cell = row["member_cells"].get(member_name, {}) %}
-          {% set current_status = member_cell.get("status", "exempt") %}
-          <td class="member-cell">
-            <select
-              class="inline-status-select collection-inline-select {{ current_status }}"
-              data-collection-id="{{ row['id'] }}"
-              data-member-id="{{ member_cell.get('member_id', '') }}"
-              data-current-status="{{ current_status }}"
-            >
-              <option value="collected" {% if current_status == "collected" %}selected{% endif %}>集金済</option>
-              <option value="pending" {% if current_status == "pending" %}selected{% endif %}>未集金</option>
-              <option value="exempt" {% if current_status == "exempt" %}selected{% endif %}>対象外</option>
-            </select>
-          </td>
-          {% endfor %}
         </tr>
         {% endfor %}
       </tbody>
@@ -523,13 +377,13 @@
   {% endif %}
 
   {% if total_pages > 1 %}
-  <div class="btn-row" style="margin-top:12px; justify-content:center;">
+  <div class="collection-pagination">
     {% if page > 1 %}
-    <a class="btn secondary collection-page-link" href="{{ url_for('admin_team_collections', team_id=team['id'], page=page-1, name=name) }}">前へ</a>
+    <a class="collection-page-link plain-page-link" href="{{ url_for('admin_team_collections', team_id=team['id'], page=page-1, scroll_y=scroll_y) }}">&#9664;</a>
     {% endif %}
-    <span class="btn secondary" style="pointer-events:none;">{{ page }} / {{ total_pages }}</span>
+    <span class="page-indicator">{{ page }} / {{ total_pages }}</span>
     {% if page < total_pages %}
-    <a class="btn secondary collection-page-link" href="{{ url_for('admin_team_collections', team_id=team['id'], page=page+1, name=name) }}">次へ</a>
+    <a class="collection-page-link plain-page-link" href="{{ url_for('admin_team_collections', team_id=team['id'], page=page+1, scroll_y=scroll_y) }}">&#9654;</a>
     {% endif %}
   </div>
   {% endif %}
@@ -544,49 +398,33 @@
 {{ super() }}
 <script>
 (() => {
-  const scrollStorageKey = `admin-team-collections-scroll:${window.location.pathname}`;
-  const editorForm = document.getElementById('collection-editor-form');
-  const targetModeInput = document.getElementById('target-mode-input');
-  const memberCheckboxes = Array.from(document.querySelectorAll('.target-member-checkbox'));
-  const selectAllMembersButton = document.getElementById('select-all-members');
-  const clearAllMembersButton = document.getElementById('clear-all-members');
+  const scrollParam = {{ scroll_y|tojson }};
   const selectedCollectionIdsInput = document.getElementById('selected-collection-ids');
-  const memberFilterForm = document.getElementById('member-filter-form');
-  const memberFilterSelect = document.getElementById('member-filter-select');
+  const scrollInputs = Array.from(document.querySelectorAll('.js-scroll-y'));
   const paginationLinks = document.querySelectorAll('.collection-page-link');
   const collectionChecks = document.querySelectorAll('.collection-select');
   const editButton = document.getElementById('edit-button');
   const detailButton = document.getElementById('detail-button');
   const duplicateButton = document.getElementById('duplicate-button');
   const deleteButton = document.getElementById('delete-button');
-  const collectionInlineSelects = document.querySelectorAll('.collection-inline-select');
-  const dateInputs = document.querySelectorAll('.js-date-picker');
-  const currentName = {{ name|tojson }};
-  const statusClassMap = {
-    collected: 'collected',
-    pending: 'pending',
-    exempt: 'exempt',
-  };
+  const listForm = document.getElementById('collection-list-form');
+  const editorForm = document.getElementById('collection-editor-form');
 
-  const saveScrollPosition = () => {
-    window.sessionStorage.setItem(scrollStorageKey, String(window.scrollY));
+  const syncScrollValue = () => {
+    const currentValue = String(window.scrollY || 0);
+    scrollInputs.forEach((input) => {
+      input.value = currentValue;
+    });
   };
 
   const restoreScrollPosition = () => {
-    const savedPosition = window.sessionStorage.getItem(scrollStorageKey);
-    if (savedPosition === null) return;
-    window.scrollTo(0, Number(savedPosition) || 0);
-    window.sessionStorage.removeItem(scrollStorageKey);
-  };
-
-  const syncTargetMode = () => {
-    if (!targetModeInput) return;
-    if (memberCheckboxes.length === 0) {
-      targetModeInput.value = 'all_active';
-      return;
-    }
-    const checkedCount = memberCheckboxes.filter((checkbox) => checkbox.checked).length;
-    targetModeInput.value = (memberCheckboxes.length > 0 && checkedCount === memberCheckboxes.length) ? 'all_active' : 'manual';
+    if (!scrollParam) return;
+    window.requestAnimationFrame(() => {
+      window.scrollTo(0, Number(scrollParam) || 0);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('scroll_y');
+      window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+    });
   };
 
   const updateSelectedIds = () => {
@@ -594,7 +432,9 @@
       .filter((check) => check.checked)
       .map((check) => (check.dataset.collectionId || '').trim())
       .filter((id) => id !== '');
-    if (selectedCollectionIdsInput) selectedCollectionIdsInput.value = checkedIds.join(',');
+    if (selectedCollectionIdsInput) {
+      selectedCollectionIdsInput.value = checkedIds.join(',');
+    }
     return checkedIds.length;
   };
 
@@ -606,131 +446,23 @@
     if (deleteButton) deleteButton.disabled = selectedCount < 1;
   };
 
-  const clearSelection = () => {
-    collectionChecks.forEach((check) => { check.checked = false; });
-    if (selectedCollectionIdsInput) selectedCollectionIdsInput.value = '';
-    updateBulkButtons();
-  };
-
-  const updateInlineSelectClass = (select) => {
-    if (!select) return;
-    select.classList.remove('collected', 'pending', 'exempt');
-    const nextClass = statusClassMap[select.value] || '';
-    if (nextClass) select.classList.add(nextClass);
-  };
-
-  const updateRowSummary = (select, summary = null) => {
-    const row = select.closest('tr');
-    if (!row) return;
-    const collectedCell = row.querySelector('[data-summary-collected]');
-    const pendingCell = row.querySelector('[data-summary-pending]');
-    const exemptCell = row.querySelector('[data-summary-exempt]');
-    if (!collectedCell || !pendingCell || !exemptCell) return;
-    if (summary) {
-      collectedCell.textContent = String(summary.collected_count ?? 0);
-      pendingCell.textContent = String(summary.pending_count ?? 0);
-      exemptCell.textContent = String(summary.exempt_count ?? 0);
-      return;
-    }
-    const counts = { collected: 0, pending: 0, exempt: 0 };
-    row.querySelectorAll('.collection-inline-select').forEach((cellSelect) => {
-      const key = statusClassMap[cellSelect.value] || 'exempt';
-      counts[key] += 1;
-    });
-    collectedCell.textContent = String(counts.collected);
-    pendingCell.textContent = String(counts.pending);
-    exemptCell.textContent = String(counts.exempt);
-  };
-
-  if (selectAllMembersButton) {
-    selectAllMembersButton.addEventListener('click', () => {
-      memberCheckboxes.forEach((checkbox) => { checkbox.checked = true; });
-      syncTargetMode();
-    });
-  }
-
-  if (clearAllMembersButton) {
-    clearAllMembersButton.addEventListener('click', () => {
-      memberCheckboxes.forEach((checkbox) => { checkbox.checked = false; });
-      syncTargetMode();
-    });
-  }
-
-  memberCheckboxes.forEach((checkbox) => {
-    checkbox.addEventListener('change', syncTargetMode);
+  collectionChecks.forEach((check) => {
+    check.addEventListener('change', updateBulkButtons);
   });
-
-  if (editorForm) {
-    editorForm.addEventListener('submit', () => {
-      syncTargetMode();
-    });
-  }
-
-  if (memberFilterSelect && memberFilterForm) {
-    memberFilterSelect.addEventListener('change', () => {
-      saveScrollPosition();
-      memberFilterForm.submit();
-    });
-  }
 
   paginationLinks.forEach((link) => {
-    link.addEventListener('click', () => {
-      saveScrollPosition();
-    });
+    link.addEventListener('click', syncScrollValue);
   });
 
-  collectionChecks.forEach((check) => {
-    check.addEventListener('change', () => updateBulkButtons());
-  });
-
-  collectionInlineSelects.forEach((select) => {
-    updateInlineSelectClass(select);
-    select.addEventListener('change', async () => {
-      const currentScrollY = window.scrollY;
-      const memberId = (select.dataset.memberId || '').trim();
-      const collectionId = (select.dataset.collectionId || '').trim();
-      const previousStatus = (select.dataset.currentStatus || 'exempt').trim();
-      const nextStatus = select.value;
-      updateInlineSelectClass(select);
-      if (!memberId || !collectionId) {
-        select.dataset.currentStatus = nextStatus;
-        updateRowSummary(select);
-        return;
-      }
-      try {
-        const response = await fetch(`/admin/api/teams/{{ team['id'] }}/collections/${collectionId}/members/${memberId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: nextStatus }),
-        });
-        if (!response.ok) throw new Error('save_failed');
-        const payload = await response.json();
-        const savedStatus = payload?.member?.status || nextStatus;
-        select.value = savedStatus;
-        select.dataset.currentStatus = savedStatus;
-        updateInlineSelectClass(select);
-        updateRowSummary(select, payload?.summary || null);
-        window.scrollTo(0, currentScrollY);
-      } catch (error) {
-        select.value = previousStatus;
-        updateInlineSelectClass(select);
-        window.scrollTo(0, currentScrollY);
-        window.alert('集金状態を更新できませんでした。');
-      }
-    });
-  });
-
-  dateInputs.forEach((input) => {
-    const openPicker = () => {
-      if (typeof input.showPicker === 'function') input.showPicker();
-    };
-    input.addEventListener('click', openPicker);
-    input.addEventListener('focus', openPicker);
+  [listForm, editorForm].forEach((form) => {
+    if (!form) return;
+    form.addEventListener('submit', syncScrollValue);
   });
 
   updateBulkButtons();
   restoreScrollPosition();
-  syncTargetMode();
 })();
 </script>
 {% endblock %}
+
+

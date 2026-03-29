@@ -653,11 +653,6 @@
         </div>
         <div class="btn-row">
           <a class="btn secondary" href="{{ url_for('admin_account_settings') }}">アカウント設定</a>
-          {% if admin_plan_requests_enabled %}
-          <a class="btn fancy-admin-btn gold" href="{{ url_for('admin_create_plan_request') }}">有料プラン申請</a>
-          {% else %}
-          <span class="btn fancy-admin-btn gold is-disabled" aria-disabled="true" title="現在準備中です">有料プラン申請</span>
-          {% endif %}
         </div>
       </div>
     </section>

@@ -228,6 +228,7 @@
   background: linear-gradient(180deg, #3b8f5f 0%, #2a6d48 100%);
   color: #f2fff6;
   font-weight: 700;
+  text-align: center;
 }
 .member-table tbody td {
   background: #11151b;
@@ -457,28 +458,29 @@
   }
   .member-table.basic-mobile-fit .col-member {
     left: 56px;
-    width: calc(100% - 132px);
+    width: calc(100% - 152px);
     min-width: 0;
     max-width: none;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .member-table.basic-mobile-fit .col-status {
-    left: calc(100% - 76px);
-    width: 76px;
-    min-width: 76px;
-    max-width: 76px;
+    left: calc(100% - 96px);
+    width: 96px;
+    min-width: 96px;
+    max-width: 96px;
   }
   .member-table.basic-mobile-fit .member-status-wrap {
-    display: block;
+    display: inline-flex;
     width: 100%;
+    align-items: center;
   }
   .member-table.basic-mobile-fit .status-label {
-    display: none;
+    display: inline-flex;
   }
   .member-table.basic-mobile-fit .status-select {
-    width: 100%;
-    max-width: 100%;
+    width: calc(100% - 18px);
+    max-width: calc(100% - 18px);
     font-size: 11px;
     padding: 3px 12px 3px 4px;
   }
@@ -505,7 +507,7 @@
   }
   .member-table.is-sticky.basic-mobile-fit .col-member {
     left: 56px;
-    width: calc(100% - 132px);
+    width: calc(100% - 152px);
   }
   .member-table.is-sticky .col-status {
     left: calc(100% - 72px);
@@ -514,10 +516,10 @@
     max-width: 72px;
   }
   .member-table.is-sticky.basic-mobile-fit .col-status {
-    left: calc(100% - 76px);
-    width: 76px;
-    min-width: 76px;
-    max-width: 76px;
+    left: calc(100% - 96px);
+    width: 96px;
+    min-width: 96px;
+    max-width: 96px;
   }
   .member-table th,
   .member-table td {
@@ -618,7 +620,6 @@
         max="{{ analytics_period.available_end_date_value }}"
       >
     </div>
-    <span class="period-separator">～</span>
     <div class="member-period-field">
       <label for="memberPeriodEnd">終了期間</label>
       <input

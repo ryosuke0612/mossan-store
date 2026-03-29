@@ -9276,32 +9276,29 @@ def admin_team_collections(team_id):
     error_message = request.args.get("error_message", "").strip()
     success_message = request.args.get("success_message", "").strip()
     page = _coerce_positive_int(request.args.get("page")) or 1
-    name = (request.args.get("name") or "").strip()
+    scroll_y = request.args.get("scroll_y", "").strip()
     editing_collection_id = _coerce_positive_int(request.args.get("editing_collection_id"))
 
-    def _redirect_collections(page_value=None, success="", error="", editing_id=None):
+    def _redirect_collections(page_value=None, success="", error="", editing_id=None, scroll_value=""):
         params = {"team_id": team_id}
         if page_value and page_value > 1:
             params["page"] = page_value
-        if name:
-            params["name"] = name
         if success:
             params["success_message"] = success
         if error:
             params["error_message"] = error
         if editing_id:
             params["editing_collection_id"] = editing_id
+        if scroll_value:
+            params["scroll_y"] = scroll_value
         return redirect(url_for("admin_team_collections", **params))
 
     active_members = portal_get_members_for_team(team["id"], include_inactive=False)
-    member_options = [{"name": member.get("name")} for member in active_members if member.get("name")]
-    member_names = [member["name"] for member in member_options]
-    if name and name not in member_names:
-        name = ""
 
     if request.method == "POST":
         action = request.form.get("action", "").strip()
         page = _coerce_positive_int(request.form.get("page")) or page
+        scroll_y = request.form.get("scroll_y", "").strip() or scroll_y
         editing_collection_id = _coerce_positive_int(request.form.get("editing_collection_id")) or editing_collection_id
         selected_collection_ids_raw = request.form.get("selected_collection_ids", "").strip()
         selected_collection_ids = []
@@ -9348,7 +9345,7 @@ def admin_team_collections(team_id):
                         target_mode=target_mode,
                     )
                     if created_event:
-                        return _redirect_collections(page_value=1, success="集金イベントを作成しました。")
+                        return _redirect_collections(page_value=1, success="集金イベントを作成しました。", scroll_value=scroll_y)
                     if status == "members_required":
                         error_message = "対象メンバーを1名以上選択してください。"
                     else:
@@ -9365,7 +9362,7 @@ def admin_team_collections(team_id):
                         target_mode=target_mode,
                     )
                     if updated_event:
-                        return _redirect_collections(page_value=page, success="集金イベントを更新しました。")
+                        return _redirect_collections(page_value=page, success="集金イベントを更新しました。", scroll_value=scroll_y)
                     if status == "not_found":
                         error_message = "編集対象の集金イベントが見つかりません。"
                     elif status == "members_required":
@@ -9374,22 +9371,22 @@ def admin_team_collections(team_id):
                         error_message = "集金イベントを更新できませんでした。"
         elif action == "start_edit":
             if len(selected_collection_ids) != 1:
-                return _redirect_collections(page_value=page, error="編集する集金イベントを1件選択してください。")
+                return _redirect_collections(page_value=page, error="編集する集金イベントを1件選択してください。", scroll_value=scroll_y)
             target_id = selected_collection_ids[0]
             target_event = portal_get_collection_event(team["id"], target_id)
             if not target_event:
-                return _redirect_collections(page_value=page, error="対象の集金イベントが見つかりません。")
-            return _redirect_collections(page_value=page, editing_id=target_id)
+                return _redirect_collections(page_value=page, error="対象の集金イベントが見つかりません。", scroll_value=scroll_y)
+            return _redirect_collections(page_value=page, editing_id=target_id, scroll_value=scroll_y)
         elif action == "open_detail":
             if len(selected_collection_ids) != 1:
-                return _redirect_collections(page_value=page, error="詳細確認する集金イベントを1件選択してください。")
+                return _redirect_collections(page_value=page, error="詳細確認する集金イベントを1件選択してください。", scroll_value=scroll_y)
             target_id = selected_collection_ids[0]
             if not portal_get_collection_event(team["id"], target_id):
-                return _redirect_collections(page_value=page, error="対象の集金イベントが見つかりません。")
-            return redirect(url_for("admin_team_collection_run", team_id=team["id"], collection_event_id=target_id))
+                return _redirect_collections(page_value=page, error="対象の集金イベントが見つかりません。", scroll_value=scroll_y)
+            return redirect(url_for("admin_team_collection_run", team_id=team["id"], collection_event_id=target_id, page=page, scroll_y=scroll_y))
         elif action == "duplicate_collection":
             if not selected_collection_ids:
-                return _redirect_collections(page_value=page, error="複製する集金イベントを選択してください。")
+                return _redirect_collections(page_value=page, error="複製する集金イベントを選択してください。", scroll_value=scroll_y)
             copied_count = 0
             for target_id in selected_collection_ids:
                 target_event = portal_get_collection_event(team["id"], target_id)
@@ -9400,11 +9397,11 @@ def admin_team_collections(team_id):
                     continue
                 copied_count += 1
             if copied_count == 0:
-                return _redirect_collections(page_value=page, error="対象の集金イベントが見つかりません。")
-            return _redirect_collections(page_value=1, success=f"集金イベントを複製しました（{copied_count}件）。")
+                return _redirect_collections(page_value=page, error="対象の集金イベントが見つかりません。", scroll_value=scroll_y)
+            return _redirect_collections(page_value=page, success=f"集金イベントを複製しました（{copied_count}件）。", scroll_value=scroll_y)
         elif action == "delete_collection":
             if not selected_collection_ids:
-                return _redirect_collections(page_value=page, error="削除する集金イベントを選択してください。")
+                return _redirect_collections(page_value=page, error="削除する集金イベントを選択してください。", scroll_value=scroll_y)
             deleted_count = 0
             for target_id in selected_collection_ids:
                 target_event = portal_get_collection_event(team["id"], target_id)
@@ -9413,8 +9410,8 @@ def admin_team_collections(team_id):
                 if portal_delete_collection_event(team["id"], target_id):
                     deleted_count += 1
             if deleted_count == 0:
-                return _redirect_collections(page_value=page, error="対象の集金イベントが見つかりません。")
-            return _redirect_collections(page_value=1, success=f"集金イベントを削除しました（{deleted_count}件）。")
+                return _redirect_collections(page_value=page, error="対象の集金イベントが見つかりません。", scroll_value=scroll_y)
+            return _redirect_collections(page_value=page, success=f"集金イベントを削除しました（{deleted_count}件）。", scroll_value=scroll_y)
         else:
             error_message = "不正な操作です。"
 
@@ -9436,7 +9433,6 @@ def admin_team_collections(team_id):
     for collection_event in collection_events:
         member_rows = portal_get_collection_event_members(team["id"], collection_event["id"])
         collection_rows.append(serialize_collection_event_for_list(collection_event, member_rows))
-    display_member_names = [name] if name else member_names
     per_page = 10
     total_count = len(collection_rows)
     total_pages = max(1, (total_count + per_page - 1) // per_page)
@@ -9445,49 +9441,12 @@ def admin_team_collections(team_id):
     start_index = (page - 1) * per_page
     end_index = start_index + per_page
     visible_rows = collection_rows[start_index:end_index]
-    collection_table_rows = []
-    for row in visible_rows:
-        member_rows = portal_get_collection_event_members(team["id"], row["id"])
-        member_status_map = {}
-        member_cell_map = {}
-        for member_row in member_rows:
-            member_name = (member_row.get("current_member_name") or member_row.get("member_name") or "")
-            normalized_status = normalize_collection_status(member_row.get("status"))
-            member_status_map[member_name] = normalized_status
-            member_cell_map[member_name] = {
-                "member_id": member_row.get("member_id"),
-                "status": normalized_status,
-                "symbol": collection_status_to_symbol(normalized_status),
-            }
-        table_row = dict(row)
-        table_row["event_summary_text"] = f"{row['title']}"
-        table_row["event_sub_text"] = f"{row['amount_label']} / {row['note'] or '備考なし'}"
-        table_row["member_symbols"] = {
-            member_name: collection_status_to_symbol(member_status_map.get(member_name, ""))
-            for member_name in display_member_names
-        }
-        table_row["member_cells"] = {
-            member_name: member_cell_map.get(
-                member_name,
-                {
-                    "member_id": None,
-                    "status": COLLECTION_STATUS_EXEMPT,
-                    "symbol": collection_status_to_symbol(COLLECTION_STATUS_EXEMPT),
-                },
-            )
-            for member_name in display_member_names
-        }
-        collection_table_rows.append(table_row)
 
     return render_template(
         "admin_team_collections_table.html",
         team=team,
         active_members=active_members,
-        member_options=member_options,
-        name=name,
-        display_member_names=display_member_names,
-        collection_rows=collection_rows,
-        collection_table_rows=collection_table_rows,
+        collection_rows=visible_rows,
         page=page,
         per_page=per_page,
         total_count=total_count,
@@ -9497,6 +9456,7 @@ def admin_team_collections(team_id):
         editing_member_ids=editing_member_ids,
         error_message=error_message,
         success_message=success_message,
+        scroll_y=scroll_y,
     )
 
 
@@ -9516,9 +9476,8 @@ def admin_team_collection_run(team_id, collection_event_id):
     member_rows = portal_get_collection_event_members(team["id"], collection_event_id)
     summary = build_collection_event_summary(collection_event, member_rows)
     serialized_members = [serialize_collection_member_for_api(member_row) for member_row in member_rows]
-    filter_mode = (request.args.get("filter") or "all").strip().lower()
-    if filter_mode not in {"all", "pending", "collected"}:
-        filter_mode = "all"
+    page = _coerce_positive_int(request.args.get("page")) or 1
+    scroll_y = request.args.get("scroll_y", "").strip()
 
     return render_template(
         "admin_collection_run.html",
@@ -9535,7 +9494,8 @@ def admin_team_collection_run(team_id, collection_event_id):
             "collected_total": format_currency_yen(summary["collected_total"]),
             "pending_total": format_currency_yen(summary["pending_total"]),
         },
-        filter_mode=filter_mode,
+        page=page,
+        scroll_y=scroll_y,
     )
 
 
