@@ -167,6 +167,12 @@
   grid-template-columns: 1fr auto 1fr;
   gap: 8px;
   align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+.time-split > select {
+  width: 100%;
+  min-width: 0;
 }
 .grid-3 > .field,
 .grid-2 > .field {
@@ -309,6 +315,13 @@
     font-size: 13px;
     padding: 7px 8px;
   }
+  .time-split {
+    gap: 6px;
+  }
+  .time-split > select {
+    padding: 7px 6px;
+    font-size: 13px;
+  }
   .grid-3,
   .grid-2 {
     gap: 12px;
@@ -329,9 +342,9 @@
     width: var(--month-tab-width);
     min-width: var(--month-tab-width);
     max-width: var(--month-tab-width);
-    padding: 9px 8px;
-    font-size: 0.95rem;
-    letter-spacing: 0.01em;
+    padding: 9px 6px;
+    font-size: 1rem;
+    letter-spacing: 0.02em;
   }
 }
 </style>
