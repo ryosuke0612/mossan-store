@@ -1,6 +1,16 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}Mossan Store | シンプルに整える。{% endblock %}
+
+{% block meta_description %}出欠管理、シフト管理、掲示板など、日々の運営をシンプルに整えるアプリを届ける Mossan Store のトップページです。{% endblock %}
+
+{% block meta_title %}Mossan Store | シンプルに整える。{% endblock %}
+
+{% block og_description %}出欠管理をはじめ、日々の運営をシンプルに整えるアプリや読みものを紹介しています。{% endblock %}
+
+{% block twitter_title %}Mossan Store | シンプルに整える。{% endblock %}
+
+{% block twitter_description %}出欠管理をはじめ、日々の運営をシンプルに整えるアプリや読みものを紹介しています。{% endblock %}
 
 {% block head_extra %}
 <style>
@@ -279,7 +289,7 @@ body {
 {% endblock %}
 
 {% block header_nav_items %}
-<a href="#concept">サイト紹介</a>
+<a href="#concept">Concept</a>
 <a href="#products">Product</a>
 <a href="#blog">Blog</a>
 <a href="{{ url_for('apps_list') }}">アプリ一覧</a>
@@ -293,8 +303,8 @@ body {
         <p class="eyebrow">Mossan Store</p>
         <h1>日々の困りごとを、<br>アプリで解決する。</h1>
         <p>
-          日々の困りごとを、
-          シンプルなアプリで解決していくためのサイトです。
+          日々の運営や連絡で生まれる小さな負担を、
+          シンプルなアプリで整えていくためのサイトです。
         </p>
         <div class="hero-actions">
           <a href="{{ url_for('apps_list') }}" class="hero-btn primary">Productを見る</a>
@@ -308,36 +318,36 @@ body {
     <div class="section-head">
       <div>
         <p class="section-kicker">Product</p>
-        <h2 class="section-title">必要なものを、静かに並べる。</h2>
-        <p class="section-copy">カードを横に流しながら、プロダクトを軽く見渡せる構成です。</p>
+        <h2 class="section-title">使いながら、静かに整える。</h2>
+        <p class="section-copy">カードを横に眺めながら、今の運営に合うプロダクトを見つけられる構成です。</p>
       </div>
       <a href="{{ url_for('apps_list') }}" class="section-link">すべて見る</a>
     </div>
     <div class="carousel">
       <article class="card product-card">
         <div class="product-visual">
-          <img src="{{ url_for('static', filename='images/gorilla-full.png') }}" alt="出欠ボード＋紹介画像">
+          <img src="{{ url_for('static', filename='images/gorilla-full.png') }}" alt="出欠ボードのイメージ">
         </div>
-        <h3>出欠ボード＋</h3>
-        <p>チーム運営をすっきり整えるためのプロダクト。</p>
+        <h3>出欠ボード+</h3>
+        <p>チームやイベントの出欠確認を、すっきり整えるためのプロダクトです。</p>
         <a href="{{ url_for('attendance_description') }}" class="card-link">詳しく見る</a>
       </article>
       <article class="card product-card product-tone-2">
         <div class="product-visual"></div>
         <h3>Shift</h3>
-        <p>予定や担当を、見やすく扱うための小さな道具。</p>
+        <p>担当や割り振りを見やすく整理して、共有しやすくするためのアプリです。</p>
         <a href="{{ url_for('shift_app') }}" class="card-link">詳しく見る</a>
       </article>
       <article class="card product-card product-tone-3">
         <div class="product-visual"></div>
         <h3>Noticeboard</h3>
-        <p>伝えることを、余計な装飾なくまとめるための入口。</p>
+        <p>伝えることを、必要な人にわかりやすく届けるための掲示板アプリです。</p>
         <a href="{{ url_for('noticeboard_app') }}" class="card-link">詳しく見る</a>
       </article>
       <article class="card product-card">
         <div class="product-visual"></div>
         <h3>QR Code</h3>
-        <p>使いたい場面ですぐ扱える、シンプルなユーティリティ。</p>
+        <p>使いたい場面ですぐ使える、シンプルなユーティリティです。</p>
         <a href="{{ url_for('qrcode_app') }}" class="card-link">詳しく見る</a>
       </article>
     </div>
@@ -347,8 +357,8 @@ body {
     <div class="section-head">
       <div>
         <p class="section-kicker">Blog</p>
-        <h2 class="section-title">考え方や背景も、同じ温度で。</h2>
-        <p class="section-copy">記事も横スクロールのカードで、軽く読み始められる形にしています。</p>
+        <h2 class="section-title">困りごとの背景も、言葉で整える。</h2>
+        <p class="section-copy">課題の見え方や考え方を、読みものとしてまとめています。</p>
       </div>
       <a href="{{ url_for('blog_index') }}" class="section-link">記事一覧へ</a>
     </div>
@@ -361,14 +371,14 @@ body {
       </article>
       <article class="card blog-card">
         <p class="blog-meta">PTA Attendance</p>
-        <h3>PTAや保護者会の出欠確認をシンプルに。</h3>
-        <p>人数の多い場面でも、連絡や確認を進めやすくするための内容を紹介しています。</p>
+        <h3>PTAイベントの出欠管理をシンプルに。</h3>
+        <p>人手の多いイベントで混線しやすい連絡や確認を、整理していくための内容です。</p>
         <a href="{{ url_for('blog_pta_attendance') }}" class="card-link">記事を読む</a>
       </article>
       <article class="card blog-card">
         <p class="blog-meta">Journal</p>
-        <h3>このサイトで大切にしていること。</h3>
-        <p>日々の困りごとを、シンプルなアプリで解決していく考え方をまとめています。</p>
+        <h3>このサイトで大事にしていること。</h3>
+        <p>日々の困りごとを、シンプルなアプリで整えていくための考え方をまとめています。</p>
         <a href="{{ url_for('blog_index') }}" class="card-link">一覧を見る</a>
       </article>
     </div>

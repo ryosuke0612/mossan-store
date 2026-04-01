@@ -10580,6 +10580,11 @@ def blog_pta_attendance():
     return render_template("blog_pta_attendance.html")
 
 
+@app.route("/blog/attendance-management-app")
+def blog_attendance_management_app():
+    return render_template("blog_attendance_management_app.html")
+
+
 @app.route("/apps/attendance/app/register", methods=["GET", "POST"])
 def register():
     return redirect(url_for("admin_login_entry"))

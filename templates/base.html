@@ -4,6 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}Mossan Store{% endblock %}</title>
+{% set default_meta_title %}Mossan Store{% endset %}
+{% set default_meta_description %}運営の手間を整えるアプリを届ける Mossan Store のサイトです。{% endset %}
+<meta name="description" content="{% block meta_description %}運営の手間を整えるアプリを届ける Mossan Store のサイトです。{% endblock %}">
+<link rel="canonical" href="{% block canonical_url %}{{ request.base_url }}{% endblock %}">
+<meta property="og:site_name" content="Mossan Store">
+<meta property="og:type" content="{% block og_type %}website{% endblock %}">
+<meta property="og:title" content="{% block meta_title %}{{ default_meta_title }}{% endblock %}">
+<meta property="og:description" content="{% block og_description %}{{ default_meta_description }}{% endblock %}">
+<meta property="og:url" content="{% block og_url %}{{ request.base_url }}{% endblock %}">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{% block twitter_title %}{{ default_meta_title }}{% endblock %}">
+<meta name="twitter:description" content="{% block twitter_description %}{{ default_meta_description }}{% endblock %}">
 {% set is_attendance_brand = request.path.startswith('/admin') or request.path.startswith('/site-admin') or request.path.startswith('/team/') or request.path.startswith('/apps/attendance/app/') %}
 {% set is_marketing_page = request.endpoint in ['home', 'apps_list', 'blog_index'] %}
 {% set attendance_brand_home_endpoint = 'home' if request.endpoint == 'attendance_description' else 'admin_login_entry' %}

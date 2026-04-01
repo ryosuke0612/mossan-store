@@ -1,0 +1,1634 @@
+{% extends "base.html" %}
+
+{% block title %}出欠管理を効率化する方法｜LINE管理の限界と解決策 | Mossan Store{% endblock %}
+{% block meta_title %}出欠管理を効率化する方法｜LINE管理の限界と解決策{% endblock %}
+{% block meta_description %}出欠管理に悩むチーム運営者向けに、LINEやエクセルとの違いを比較しながら、出欠管理 アプリの選び方と効率化のコツを分かりやすく紹介します。{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block head_extra %}
+<style>
+body {
+  background:
+    linear-gradient(180deg, #f5fbff 0%, #eef7ff 42%, #f8fbff 100%);
+  color: #17324d;
+}
+.site-header.home-header {
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid rgba(39, 130, 210, 0.12);
+  box-shadow: 0 8px 24px rgba(69, 123, 173, 0.08);
+}
+.home-header .logo-text.home-logo,
+.home-header .top-nav a {
+  color: #20496f;
+}
+.home-header .top-nav a:hover {
+  color: #1cae62;
+  border-bottom-color: rgba(28, 174, 98, 0.65);
+}
+.site-footer {
+  display: none;
+}
+.page-wrap {
+  width: min(980px, 92%);
+  margin: 46px auto 88px;
+}
+.lp-shell {
+  display: grid;
+  gap: 32px;
+}
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 54px 52px 42px;
+  border-radius: 28px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 250, 255, 0.96) 48%, rgba(230, 243, 255, 0.98) 100%);
+  border: 1px solid rgba(106, 177, 234, 0.22);
+  box-shadow: 0 24px 48px rgba(57, 106, 159, 0.14);
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  right: -120px;
+  top: -70px;
+  width: 520px;
+  height: 520px;
+  background: linear-gradient(135deg, rgba(116, 194, 255, 0.14), rgba(55, 153, 223, 0.04));
+  transform: rotate(24deg);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  left: -180px;
+  bottom: -230px;
+  width: 680px;
+  height: 340px;
+  background: linear-gradient(180deg, rgba(81, 171, 235, 0.1), rgba(81, 171, 235, 0.02));
+  transform: rotate(-9deg);
+}
+.hero-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 26px;
+  align-items: center;
+}
+.hero-copy h1 {
+  margin: 0 0 18px;
+  color: #1f4364;
+  font-size: clamp(34px, 5vw, 56px);
+  line-height: 1.18;
+  letter-spacing: -0.04em;
+}
+.hero-copy h1 .accent {
+  color: #1db05f;
+}
+.hero-copy p {
+  max-width: 420px;
+  margin: 0;
+  color: #486883;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.9;
+}
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+}
+.primary-cta,
+.secondary-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 78px;
+  padding: 0 44px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 24px;
+  font-weight: 900;
+}
+.primary-cta {
+  position: relative;
+  background: linear-gradient(180deg, #ff9d1f 0%, #ff7f00 100%);
+  color: #fff;
+  box-shadow: 0 18px 34px rgba(255, 127, 0, 0.38);
+  animation: ctaPulse 1.45s ease-in-out infinite, ctaBlink 1.8s ease-in-out infinite;
+  transform-origin: center;
+}
+.primary-cta::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 16px;
+  border: 3px solid rgba(255, 170, 48, 0.42);
+  animation: ctaRing 1.45s ease-out infinite;
+  pointer-events: none;
+}
+.primary-cta:hover {
+  animation-play-state: paused;
+  transform: scale(1.06);
+}
+.primary-cta:hover::after {
+  animation-play-state: paused;
+}
+@keyframes ctaPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+@keyframes ctaBlink {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.18);
+  }
+}
+@keyframes ctaRing {
+  0% {
+    opacity: 0.85;
+    transform: scale(0.96);
+  }
+  70% {
+    opacity: 0.15;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.14);
+  }
+}
+.secondary-cta {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(46, 122, 191, 0.18);
+  color: #24557f;
+}
+.phone-wrap {
+  display: flex;
+  justify-content: center;
+}
+.phone {
+  position: relative;
+  width: 238px;
+  height: 460px;
+  border-radius: 34px;
+  background:
+    linear-gradient(145deg, #3a4048 0%, #171a1f 22%, #090a0d 52%, #2b3139 100%);
+  box-shadow:
+    0 34px 70px rgba(30, 55, 87, 0.3),
+    18px 14px 30px rgba(16, 25, 37, 0.18),
+    inset 2px 2px 3px rgba(255, 255, 255, 0.14),
+    inset -3px -4px 6px rgba(0, 0, 0, 0.5);
+  transform: rotate(8deg) perspective(1200px) rotateY(-10deg);
+}
+.phone-depth {
+  position: absolute;
+  inset: 0;
+  border-radius: 34px;
+  background: linear-gradient(180deg, rgba(11, 14, 18, 0.92) 0%, rgba(45, 51, 59, 0.86) 100%);
+  transform: translate(10px, 8px);
+  z-index: -1;
+  box-shadow:
+    20px 20px 32px rgba(18, 31, 46, 0.18),
+    10px 10px 0 rgba(255, 255, 255, 0.04);
+}
+.phone-depth::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 18px;
+  width: 12px;
+  height: calc(100% - 36px);
+  border-radius: 0 30px 30px 0;
+  background: linear-gradient(180deg, #525a64 0%, #252a31 100%);
+}
+.phone-depth::after {
+  content: "";
+  position: absolute;
+  left: 20px;
+  bottom: -8px;
+  width: calc(100% - 28px);
+  height: 14px;
+  border-radius: 0 0 26px 26px;
+  background: linear-gradient(180deg, rgba(70, 77, 87, 0.9) 0%, rgba(24, 28, 33, 0.96) 100%);
+}
+.phone::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+.phone::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  width: 92px;
+  height: 18px;
+  border-radius: 0 0 14px 14px;
+  background: #090a0d;
+  transform: translateX(-50%);
+}
+.phone-side {
+  position: absolute;
+  right: -6px;
+  top: 98px;
+  width: 6px;
+  height: 66px;
+  border-radius: 0 6px 6px 0;
+  background: linear-gradient(180deg, #7a838e 0%, #313740 100%);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+.phone-side.left-top,
+.phone-side.left-bottom {
+  right: auto;
+  left: -6px;
+  border-radius: 6px 0 0 6px;
+  background: linear-gradient(180deg, #727a85 0%, #2b3139 100%);
+}
+.phone-side.left-top {
+  top: 112px;
+  height: 34px;
+}
+.phone-side.left-bottom {
+  top: 158px;
+  height: 54px;
+}
+.screen {
+  position: absolute;
+  inset: 14px;
+  border-radius: 26px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 0 0 1px rgba(11, 22, 35, 0.14);
+}
+.screen::after {
+  content: "";
+  position: absolute;
+  top: -40px;
+  left: -24px;
+  width: 120px;
+  height: 240px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.06) 58%, rgba(255, 255, 255, 0) 100%);
+  transform: rotate(18deg);
+  pointer-events: none;
+}
+.screen-head {
+  padding: 16px 18px 10px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 900;
+  color: #213f5f;
+  background: linear-gradient(180deg, #f3f9ff 0%, #eef6ff 100%);
+  border-bottom: 1px solid #e1edf7;
+}
+.screen-subhead {
+  padding: 10px 18px 8px;
+  color: #62819d;
+  font-size: 11px;
+  font-weight: 800;
+}
+.event-card {
+  margin: 0 14px;
+  padding: 12px 12px 14px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #dceaf4;
+  box-shadow: 0 8px 18px rgba(77, 122, 166, 0.08);
+}
+.event-title {
+  margin: 0;
+  color: #223f5d;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.45;
+}
+.event-meta {
+  margin-top: 6px;
+  color: #66839d;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+.status-pills {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+}
+.pill.green {
+  background: rgba(39, 180, 94, 0.12);
+  color: #23a258;
+}
+.pill.orange {
+  background: rgba(255, 170, 48, 0.14);
+  color: #cf7c07;
+}
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px 10px;
+  color: #486780;
+  font-size: 13px;
+  font-weight: 700;
+}
+.avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f1d7bc 0%, #d7b08e 100%);
+}
+.status-card {
+  margin: 4px 16px 0;
+  border-radius: 16px;
+  border: 1px solid #e1edf6;
+  background: #fff;
+  box-shadow: 0 12px 20px rgba(77, 122, 166, 0.08);
+}
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #2c4d6b;
+}
+.status-row + .status-row {
+  border-top: 1px solid #edf4f9;
+}
+.status-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.status-count {
+  color: #7090aa;
+  font-size: 11px;
+  font-weight: 900;
+}
+.mark {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 3px solid currentColor;
+}
+.mark.absent {
+  position: relative;
+  border: 0;
+}
+.mark.absent::before,
+.mark.absent::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: -1px;
+  width: 20px;
+  height: 3px;
+  border-radius: 999px;
+  background: currentColor;
+}
+.mark.absent::before {
+  transform: rotate(45deg);
+}
+.mark.absent::after {
+  transform: rotate(-45deg);
+}
+.mark.pending {
+  border-radius: 4px;
+  border-width: 3px;
+  transform: rotate(45deg);
+}
+.mark.green { color: #27b45e; }
+.mark.red { color: #ff6b64; }
+.mark.blue { color: #6f9dff; }
+.mini-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px 16px 0;
+}
+.mini-panel {
+  padding: 10px 10px 9px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f6fbff 0%, #eef6ff 100%);
+  border: 1px solid #dbe9f5;
+}
+.mini-label {
+  color: #7691a8;
+  font-size: 10px;
+  font-weight: 900;
+}
+.mini-value {
+  margin-top: 5px;
+  color: #23425f;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.5;
+}
+.screen-footer {
+  margin: 10px 16px 0;
+  padding: 9px 12px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #26bb63 0%, #1ca554 100%);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  text-align: center;
+}
+.panel {
+  padding: 34px 36px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(89, 149, 203, 0.14);
+  box-shadow: 0 14px 28px rgba(81, 128, 170, 0.08);
+}
+.section-title {
+  margin: 0 0 18px;
+  color: #234c72;
+  font-size: 30px;
+  text-align: center;
+  line-height: 1.4;
+}
+.section-title .accent {
+  color: #1faf60;
+}
+.intro-copy {
+  max-width: 820px;
+  margin: 0 auto;
+  color: #4c6a84;
+  font-size: 16px;
+  line-height: 1.95;
+  text-align: left;
+}
+.problem-title {
+  margin: 0 0 14px;
+  color: #ffffff;
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+.problem-panel {
+  position: relative;
+  overflow: hidden;
+  padding: 38px 40px;
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(54, 63, 75, 0.96) 0%, rgba(42, 49, 59, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 18px 30px rgba(27, 42, 58, 0.18);
+}
+.problem-panel::before {
+  content: "";
+  position: absolute;
+  right: 24px;
+  bottom: -12px;
+  width: 240px;
+  height: 280px;
+  background: rgba(22, 28, 35, 0.56);
+  clip-path: polygon(40% 0%, 62% 6%, 74% 18%, 72% 28%, 85% 46%, 87% 64%, 76% 100%, 34% 100%, 24% 66%, 26% 48%, 18% 24%);
+}
+.problem-panel::after {
+  content: "";
+  position: absolute;
+  right: 110px;
+  top: 42px;
+  width: 120px;
+  height: 120px;
+  border-radius: 999px;
+  background: rgba(22, 28, 35, 0.56);
+}
+.problem-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px 26px;
+  margin-top: 18px;
+}
+.problem-group {
+  display: grid;
+  gap: 10px;
+}
+.problem-group-title {
+  margin: 0 0 4px;
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 900;
+}
+.check-item {
+  position: relative;
+  padding-left: 34px;
+  color: #eef4fa;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.8;
+}
+.check-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 2px solid rgba(255, 228, 88, 0.65);
+  background: rgba(255, 228, 88, 0.08);
+}
+.check-item::after {
+  content: "✓";
+  position: absolute;
+  left: 3px;
+  top: 0;
+  color: #ffe14b;
+  font-size: 18px;
+  font-weight: 900;
+}
+.result-bar {
+  position: relative;
+  padding: 12px 12px 4px;
+  background: transparent;
+  color: #111111;
+  text-align: center;
+  text-shadow: 0 10px 18px rgba(86, 121, 155, 0.1);
+}
+.result-bar::before,
+.result-bar::after {
+  content: "";
+}
+.result-top {
+  display: inline-block;
+  color: #101010;
+  font-size: clamp(32px, 5vw, 64px);
+  font-weight: 900;
+  line-height: 1;
+  transform: rotate(-4deg);
+}
+.result-top .brush {
+  display: inline-block;
+  font-family: "Yomogi", "Noto Sans JP", sans-serif;
+  letter-spacing: 0.02em;
+}
+.result-main {
+  display: block;
+  margin-top: 6px;
+  color: #ff1b10;
+  font-family: "Yomogi", "Noto Sans JP", sans-serif;
+  font-size: clamp(58px, 10vw, 136px);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+  transform: rotate(-3deg);
+  text-shadow: 0 3px 0 rgba(255, 255, 255, 0.35);
+}
+.result-main .bang {
+  display: inline-block;
+  margin-left: 6px;
+  transform: rotate(8deg);
+}
+.result-main .mini {
+  font-size: 0.78em;
+}
+.compare-wrap {
+  overflow-x: auto;
+  margin-top: 24px;
+}
+.compare {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  background: #ffffff;
+  box-shadow: 0 12px 24px rgba(87, 130, 165, 0.12);
+}
+.compare th,
+.compare td {
+  padding: 18px 14px;
+  text-align: center;
+  font-size: 15px;
+  border: 1px solid #dce3eb;
+  vertical-align: middle;
+}
+.compare thead th {
+  color: #27384b;
+  font-size: 18px;
+  font-weight: 900;
+  background: #e4ddd0;
+}
+.compare thead th:first-child {
+  width: 24%;
+  background: #f2efe8;
+}
+.compare thead th:nth-child(2) {
+  width: 25%;
+  background: #d6cfbf;
+}
+.compare thead th:nth-child(3) {
+  width: 25%;
+  background: #d6cfbf;
+}
+.compare thead th:nth-child(4) {
+  width: 25%;
+  background: #a33837;
+  color: #ffffff;
+  border-left: 5px solid #b6302e;
+  border-right: 5px solid #b6302e;
+  border-top: 5px solid #b6302e;
+}
+.compare tbody td {
+  position: relative;
+  background: #fff;
+  color: #41627f;
+  font-weight: 700;
+  overflow: hidden;
+}
+.compare tbody td:first-child {
+  background: #7f8a93;
+  color: #ffffff;
+  font-weight: 900;
+  text-align: left;
+  padding-left: 18px;
+  font-size: 19px;
+  line-height: 1.45;
+}
+.compare tbody td:nth-child(4) {
+  background: #fff7f7;
+  border-left: 5px solid #b6302e;
+  border-right: 5px solid #b6302e;
+}
+.compare tbody tr:last-child td:nth-child(4) {
+  border-bottom: 5px solid #b6302e;
+}
+.cell-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  line-height: 1.65;
+}
+.cell-symbol {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  font-size: 132px;
+  font-weight: 900;
+  line-height: 1;
+  opacity: 0.34;
+  pointer-events: none;
+  z-index: 0;
+  letter-spacing: -0.08em;
+}
+.cell-symbol.good {
+  color: #0f7a3f;
+}
+.cell-symbol.mid {
+  color: #b16f05;
+}
+.cell-symbol.bad {
+  color: #c43b35;
+}
+.cell-copy strong {
+  font-size: 15px;
+  color: #2b4562;
+}
+.cell-copy span {
+  font-size: 14px;
+  color: #4f6985;
+}
+.cell-points {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  justify-items: start;
+  text-align: left;
+}
+.cell-points li {
+  position: relative;
+  padding-left: 12px;
+  font-size: 13px;
+  color: #4f6985;
+  line-height: 1.55;
+}
+.cell-points li::before {
+  content: "・";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #7a92ac;
+}
+.compare tbody td:nth-child(4) .cell-copy strong {
+  color: #203b57;
+}
+.app-lead {
+  margin: 0 auto 18px;
+  color: #234b72;
+  font-size: 28px;
+  font-weight: 900;
+  text-align: center;
+}
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 24px;
+}
+.feature-card {
+  padding: 18px 14px 16px;
+  border-radius: 18px;
+  border: 1px solid #dce9f3;
+  background: #fff;
+  text-align: center;
+  box-shadow: 0 8px 18px rgba(95, 137, 173, 0.08);
+}
+.icon-box {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 12px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #f4fbff 0%, #eaf4ff 100%);
+  box-shadow: inset 0 0 0 1px rgba(123, 181, 226, 0.15);
+}
+.icon-box::before,
+.icon-box::after {
+  content: "";
+  position: absolute;
+}
+.icon-attendance::before {
+  left: 22px;
+  top: 18px;
+  width: 40px;
+  height: 48px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 3px solid #20aa5d;
+}
+.icon-attendance::after {
+  left: 31px;
+  top: 34px;
+  width: 20px;
+  height: 10px;
+  border-left: 5px solid #20aa5d;
+  border-bottom: 5px solid #20aa5d;
+  transform: rotate(-45deg);
+}
+.icon-team::before {
+  left: 18px;
+  top: 18px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #f0c59f;
+  box-shadow: 26px 0 0 #f0c59f;
+}
+.icon-team::after {
+  left: 13px;
+  top: 39px;
+  width: 30px;
+  height: 18px;
+  border-radius: 16px 16px 10px 10px;
+  background: #34b468;
+  box-shadow: 28px 0 0 #4e8fe8;
+}
+.icon-money::before {
+  left: 17px;
+  top: 24px;
+  width: 50px;
+  height: 34px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffe38a 0%, #f0bd38 100%);
+  box-shadow: 0 10px 0 -4px rgba(237, 197, 79, 0.8);
+}
+.icon-money::after {
+  left: 34px;
+  top: 32px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 4px rgba(37, 171, 95, 0.95);
+}
+.icon-car::before {
+  left: 18px;
+  top: 34px;
+  width: 48px;
+  height: 20px;
+  border-radius: 10px 14px 8px 8px;
+  background: #2db261;
+}
+.icon-car::after {
+  left: 26px;
+  top: 24px;
+  width: 30px;
+  height: 16px;
+  border-radius: 10px 10px 4px 4px;
+  background: #2db261;
+  box-shadow:
+    -10px 26px 0 -4px #32485f,
+    26px 26px 0 -4px #32485f;
+}
+.icon-random::before {
+  left: 21px;
+  top: 20px;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 4px solid #20aa5d;
+}
+.icon-random::after {
+  left: 37px;
+  top: 30px;
+  width: 10px;
+  height: 22px;
+  border-right: 4px solid #20aa5d;
+  border-bottom: 4px solid #20aa5d;
+  transform: rotate(45deg);
+}
+.icon-analytics::before {
+  left: 21px;
+  bottom: 20px;
+  width: 10px;
+  height: 24px;
+  border-radius: 4px;
+  background: #79a9ff;
+  box-shadow: 16px -10px 0 #20aa5d, 32px -4px 0 #f0bd38;
+}
+.icon-analytics::after {
+  left: 18px;
+  bottom: 18px;
+  width: 48px;
+  height: 3px;
+  background: #9bb6cd;
+}
+.icon-copy::before {
+  left: 26px;
+  top: 20px;
+  width: 30px;
+  height: 38px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 3px solid #20aa5d;
+}
+.icon-copy::after {
+  left: 18px;
+  top: 28px;
+  width: 30px;
+  height: 38px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 3px solid #7bb5e1;
+}
+.icon-mobile::before {
+  left: 28px;
+  top: 14px;
+  width: 28px;
+  height: 50px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 3px solid #20aa5d;
+}
+.icon-mobile::after {
+  left: 37px;
+  top: 24px;
+  width: 10px;
+  height: 18px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #7cc4ff 0%, #c9e8ff 100%);
+  box-shadow: 0 26px 0 -23px #20aa5d;
+}
+.feature-card h3 {
+  margin: 0 0 8px;
+  color: #274c70;
+  font-size: 18px;
+}
+.feature-card p {
+  margin: 0;
+  color: #597591;
+  font-size: 14px;
+  line-height: 1.75;
+}
+.fit-title {
+  margin: 0 0 16px;
+  color: #284f74;
+  font-size: 28px;
+  font-weight: 900;
+  text-align: center;
+}
+.audience-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+}
+.audience-card {
+  text-align: center;
+}
+.audience-visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #dff3ff 0%, #edf7ff 100%);
+  box-shadow: inset 0 0 0 1px rgba(130, 184, 228, 0.28);
+}
+.audience-visual .ball {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 50%, #fff 0 34%, transparent 35%),
+    conic-gradient(from 0deg, #1e4368 0 20%, #fff 20% 40%, #1e4368 40% 60%, #fff 60% 80%, #1e4368 80% 100%);
+}
+.audience-visual.sports {
+  background: radial-gradient(circle at 30% 25%, #f1fff4 0%, #d9f4df 58%, #bfe8ca 100%);
+}
+.audience-visual.club {
+  background: radial-gradient(circle at 30% 25%, #eef7ff 0%, #dceeff 58%, #c5dcff 100%);
+}
+.audience-visual.pta {
+  background: radial-gradient(circle at 30% 25%, #fff5e8 0%, #ffe6c5 58%, #ffd39e 100%);
+}
+.audience-visual.lesson {
+  background: radial-gradient(circle at 30% 25%, #fff0f3 0%, #ffd7df 58%, #ffbcc9 100%);
+}
+.audience-visual.event {
+  background: radial-gradient(circle at 30% 25%, #fff4ea 0%, #ffe0c7 58%, #ffc89c 100%);
+}
+.ball::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  box-shadow: inset -6px -8px 0 rgba(255, 255, 255, 0.3);
+}
+.club-emblem,
+.pta-emblem,
+.lesson-emblem,
+.event-emblem {
+  position: relative;
+  width: 56px;
+  height: 56px;
+}
+.club-emblem::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 6px;
+  width: 40px;
+  height: 44px;
+  border-radius: 10px 10px 14px 14px;
+  background:
+    linear-gradient(90deg, #4e8fe8 0 28%, #ffffff 28% 38%, #4e8fe8 38% 48%, #ffffff 48% 58%, #4e8fe8 58% 100%);
+  border: 3px solid #2b5f99;
+}
+.club-emblem::after {
+  content: "";
+  position: absolute;
+  left: 19px;
+  top: 0;
+  width: 18px;
+  height: 12px;
+  border-radius: 0 0 8px 8px;
+  background: #2b5f99;
+}
+.club-emblem .badge {
+  position: absolute;
+  right: 2px;
+  bottom: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #ffcf47;
+  border: 3px solid #ffffff;
+}
+.pta-emblem::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 10px;
+  width: 42px;
+  height: 32px;
+  border-radius: 6px;
+  background: #fffdf7;
+  border: 3px solid #d88a48;
+  transform: rotate(-8deg);
+}
+.pta-emblem::after {
+  content: "";
+  position: absolute;
+  left: 22px;
+  top: 12px;
+  width: 3px;
+  height: 29px;
+  background: #d88a48;
+  transform: rotate(-8deg);
+}
+.pta-emblem .family,
+.lesson-emblem .note,
+.event-emblem .spark,
+.event-emblem .tie {
+  position: absolute;
+  display: block;
+}
+.pta-emblem .family {
+  left: 13px;
+  bottom: 2px;
+  width: 32px;
+  height: 18px;
+  background:
+    radial-gradient(circle at 8px 4px, #f0c59f 0 5px, transparent 6px),
+    radial-gradient(circle at 24px 4px, #f0c59f 0 5px, transparent 6px),
+    linear-gradient(90deg, #f2a661 0 45%, #7eb1ff 45% 100%);
+  border-radius: 10px 10px 8px 8px;
+}
+.lesson-emblem::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  width: 36px;
+  height: 42px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 3px solid #e98a96;
+}
+.lesson-emblem::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  top: 0;
+  width: 20px;
+  height: 10px;
+  border-radius: 8px 8px 0 0;
+  background: #f26f7e;
+}
+.lesson-emblem .note {
+  left: 17px;
+  top: 18px;
+  width: 22px;
+  height: 18px;
+  background:
+    linear-gradient(180deg, #e98a96 0 2px, transparent 2px 7px, #e98a96 7px 9px, transparent 9px 14px, #e98a96 14px 16px, transparent 16px 100%);
+}
+.event-emblem::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 8px;
+  width: 24px;
+  height: 18px;
+  border-radius: 999px 999px 12px 12px;
+  background: #5a3d31;
+}
+.event-emblem::after {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 24px;
+  width: 34px;
+  height: 24px;
+  border-radius: 14px 14px 8px 8px;
+  background: #d9914f;
+}
+.event-emblem .tie {
+  left: 23px;
+  top: 26px;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 13px solid #ffffff;
+}
+.event-emblem .tie::after {
+  content: "";
+  position: absolute;
+  left: -3px;
+  top: -2px;
+  width: 6px;
+  height: 15px;
+  background: #ffffff;
+}
+.event-emblem .spark {
+  left: 40px;
+  top: 10px;
+  width: 14px;
+  height: 14px;
+  background: #ffcf47;
+  clip-path: polygon(50% 0%, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0% 50%, 38% 38%);
+}
+.audience-card p {
+  margin: 0;
+  color: #355775;
+  font-size: 15px;
+  font-weight: 800;
+}
+.summary-copy {
+  max-width: 760px;
+  margin: 0 auto;
+  color: #4d6b86;
+  font-size: 16px;
+  line-height: 1.95;
+  text-align: center;
+}
+.closing {
+  padding: 38px 34px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fcff 100%);
+  border: 1px solid rgba(110, 171, 222, 0.18);
+  text-align: center;
+}
+.closing h2 {
+  margin: 0 0 18px;
+  color: #264c71;
+  font-size: 34px;
+  line-height: 1.35;
+}
+.closing h2 .accent {
+  color: #21b05e;
+}
+.closing p {
+  max-width: 760px;
+  margin: 0 auto;
+  color: #4f6e89;
+  font-size: 16px;
+  line-height: 1.95;
+}
+.closing-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+}
+.hero,
+.problem-panel,
+.result-bar,
+.panel,
+.closing {
+  will-change: transform, opacity, filter;
+}
+.reveal-section {
+  opacity: 0;
+  transform: translateY(72px) scale(0.97);
+  filter: blur(10px);
+  transition:
+    opacity 0.95s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.95s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.95s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal-section.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+}
+.reveal-section:nth-of-type(2) { transition-delay: 0.04s; }
+.reveal-section:nth-of-type(3) { transition-delay: 0.08s; }
+.reveal-section:nth-of-type(4) { transition-delay: 0.12s; }
+.reveal-section:nth-of-type(5) { transition-delay: 0.16s; }
+.reveal-section:nth-of-type(6) { transition-delay: 0.2s; }
+.reveal-section:nth-of-type(7) { transition-delay: 0.24s; }
+@media (max-width: 900px) {
+  .hero-grid,
+  .feature-grid,
+  .audience-row,
+  .problem-grid {
+    grid-template-columns: 1fr;
+  }
+  .hero-copy p {
+    max-width: none;
+  }
+  .phone {
+    transform: none;
+  }
+}
+@media (max-width: 720px) {
+  .hero,
+  .panel,
+  .closing {
+    padding: 22px 18px;
+    border-radius: 22px;
+  }
+  .hero-copy h1 {
+    font-size: 38px;
+  }
+  .hero-copy p,
+  .intro-copy,
+  .summary-copy,
+  .closing p,
+  .feature-card p {
+    font-size: 15px;
+  }
+  .problem-title,
+  .section-title,
+  .fit-title,
+  .closing h2,
+  .app-lead {
+    font-size: 24px;
+  }
+  .problem-panel {
+    padding: 24px 18px;
+  }
+  .result-bar {
+    padding: 10px 28px 4px;
+  }
+  .result-top {
+  }
+  .primary-cta,
+  .secondary-cta {
+    min-height: 66px;
+    padding: 0 30px;
+    font-size: 20px;
+  }
+  .feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .audience-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-section {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<article class="lp-shell">
+  <section class="hero reveal-section">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <h1>出欠管理を、<br><span class="accent">もっとラク</span>に。</h1>
+        <p>
+          LINEや手作業はもう不要。<br>
+          簡単に管理できる出欠アプリです。
+        </p>
+        <div class="hero-actions">
+          <a href="{{ url_for('index') }}" class="primary-cta">無料で使ってみる</a>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <div class="phone" aria-hidden="true">
+          <span class="phone-depth"></span>
+          <span class="phone-side"></span>
+          <span class="phone-side left-top"></span>
+          <span class="phone-side left-bottom"></span>
+          <div class="screen">
+            <div class="screen-head">出欠ボード+</div>
+            <div class="screen-subhead">イベント詳細</div>
+            <div class="event-card">
+              <p class="event-title">4/10 練習試合<br>vs グリーンFC</p>
+              <div class="event-meta">09:00 集合 / 市民グラウンドA<br>回答締切 4/8 18:00</div>
+              <div class="status-pills">
+                <span class="pill green">出席 12</span>
+                <span class="pill orange">未回答 3</span>
+              </div>
+            </div>
+            <div class="member-row">
+              <div class="avatar"></div>
+              <div>回答状況</div>
+            </div>
+            <div class="status-card">
+              <div class="status-row">
+                <span class="status-left"><span class="mark green"></span>出席</span>
+                <span class="status-count">12名</span>
+              </div>
+              <div class="status-row">
+                <span class="status-left"><span class="mark absent red"></span>欠席</span>
+                <span class="status-count">4名</span>
+              </div>
+              <div class="status-row">
+                <span class="status-left"><span class="mark pending blue"></span>未定・未回答</span>
+                <span class="status-count">3名</span>
+              </div>
+            </div>
+            <div class="mini-panels">
+              <div class="mini-panel">
+                <div class="mini-label">配車</div>
+                <div class="mini-value">あと1台必要</div>
+              </div>
+              <div class="mini-panel">
+                <div class="mini-label">集金</div>
+                <div class="mini-value">10 / 16 人 完了</div>
+              </div>
+            </div>
+            <div class="screen-footer">未回答メンバーにまとめて共有</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="problem-panel reveal-section">
+    <h2 class="problem-title">こんな悩みありませんか?</h2>
+    <div class="problem-grid">
+      <div class="problem-group">
+        <p class="problem-group-title">出欠管理の悩み</p>
+        <div class="check-item">LINEで返信が埋もれる</div>
+        <div class="check-item">誰が未回答か分からない</div>
+        <div class="check-item">集計が毎回面倒になる</div>
+      </div>
+      <div class="problem-group">
+        <p class="problem-group-title">当日の運営の悩み</p>
+        <div class="check-item">当日誰が来るか分からない</div>
+        <div class="check-item">チーム分けや役割決めが大変</div>
+        <div class="check-item">配車や持ち物確認で混乱する</div>
+      </div>
+      <div class="problem-group">
+        <p class="problem-group-title">集金まわりの悩み</p>
+        <div class="check-item">集金状況の確認が大変</div>
+        <div class="check-item">無料ツールが使いにくい</div>
+        <div class="check-item">紙メモ管理で抜け漏れが出る</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result-bar reveal-section">
+    <div class="result-top">
+      <span class="brush">出欠管理は出欠ボード＋が</span>
+    </div>
+    <span class="result-main">オススメ<span class="bang">!!</span></span>
+  </section>
+
+  <section class="panel reveal-section">
+    <h2 class="section-title">出欠管理の方法を比較</h2>
+    <p class="intro-copy">
+      出欠管理は、やり方を変えるだけでかなりラクになります。
+      LINEは手軽ですが、返信が流れると管理が難しくなります。
+      エクセルは記録しやすい一方で、スマホでの回答や共有に手間がかかります。
+      その点、出欠ボード＋なら、誰が未回答か分かり、
+      ワンタップ回答と自動集計でチーム 出欠管理をまとめて効率化できます。
+    </p>
+    <div class="compare-wrap" style="margin-top:18px;">
+      <table class="compare">
+        <thead>
+          <tr>
+            <th>項目</th>
+            <th>LINE</th>
+            <th>エクセル</th>
+            <th>出欠ボード＋</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>出欠管理</td>
+            <td>
+              <span class="cell-symbol bad">×</span>
+              <div class="cell-copy">
+                <ul class="cell-points">
+                  <li>返信が流れやすい</li>
+                  <li>未回答者を追いにくい</li>
+                  <li>集計が手作業になる</li>
+                </ul>
+              </div>
+            </td>
+            <td>
+              <span class="cell-symbol mid">△</span>
+              <div class="cell-copy">
+                <ul class="cell-points">
+                  <li>表にすると見やすい</li>
+                  <li>共有と更新に手間がかかる</li>
+                  <li>スマホ回答に弱い</li>
+                </ul>
+              </div>
+            </td>
+            <td>
+              <span class="cell-symbol good">○</span>
+              <div class="cell-copy">
+                <strong>未回答者が分かる</strong>
+                <ul class="cell-points">
+                  <li>ワンタップで回答できる</li>
+                  <li>自動で集計できる</li>
+                  <li>管理が一つにまとまる</li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>当日の運営</td>
+            <td>
+              <span class="cell-symbol bad">×</span>
+              <div class="cell-copy">
+                <ul class="cell-points">
+                  <li>直前変更を追いにくい</li>
+                  <li>役割分担が見えにくい</li>
+                  <li>配車調整に弱い</li>
+                </ul>
+              </div>
+            </td>
+            <td>
+              <span class="cell-symbol bad">×</span>
+              <div class="cell-copy">
+                <ul class="cell-points">
+                  <li>共有や更新に手間がかかる</li>
+                  <li>当日修正が面倒</li>
+                  <li>役割確認が分散しやすい</li>
+                </ul>
+              </div>
+            </td>
+            <td>
+              <span class="cell-symbol good">○</span>
+              <div class="cell-copy">
+                <strong>配車や役割決めに対応</strong>
+                <ul class="cell-points">
+                  <li>参加者をすぐ確認できる</li>
+                  <li>当日の段取りを整理しやすい</li>
+                  <li>チーム分けにも使いやすい</li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>集金管理</td>
+            <td>
+              <span class="cell-symbol bad">×</span>
+              <div class="cell-copy">
+                <ul class="cell-points">
+                  <li>やり取りが分散しやすい</li>
+                  <li>入金確認が埋もれやすい</li>
+                  <li>記録を残しにくい</li>
+                </ul>
+              </div>
+            </td>
+            <td>
+              <span class="cell-symbol mid">△</span>
+              <div class="cell-copy">
+                <ul class="cell-points">
+                  <li>管理はしやすい</li>
+                  <li>転記や更新が必要になる</li>
+                  <li>出欠と別管理になりやすい</li>
+                </ul>
+              </div>
+            </td>
+            <td>
+              <span class="cell-symbol good">○</span>
+              <div class="cell-copy">
+                <strong>出欠と一緒に確認できる</strong>
+                <ul class="cell-points">
+                  <li>集金状況をまとめて見られる</li>
+                  <li>確認漏れを減らしやすい</li>
+                  <li>当日の受付もラクになる</li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel reveal-section">
+    <p class="app-lead">便利な出欠管理アプリ「<span class="accent">出欠ボード＋</span>」</p>
+    <div class="feature-grid">
+      <article class="feature-card">
+        <div class="icon-box icon-attendance"></div>
+        <h3>出欠管理</h3>
+        <p>出席、欠席、未定を整理しやすく、未回答者の確認もスムーズです。</p>
+      </article>
+      <article class="feature-card">
+        <div class="icon-box icon-team"></div>
+        <h3>チーム分け</h3>
+        <p>参加者が決まったあと、そのまま班分けや試合編成まで進められます。</p>
+      </article>
+      <article class="feature-card">
+        <div class="icon-box icon-money"></div>
+        <h3>集金管理</h3>
+        <p>参加費や会費の確認を出欠とあわせて見られるので管理がラクです。</p>
+      </article>
+      <article class="feature-card">
+        <div class="icon-box icon-car"></div>
+        <h3>配車調整</h3>
+        <p>送迎や遠征の車出しを整理しやすく、当日の混乱を減らせます。</p>
+      </article>
+      <article class="feature-card">
+        <div class="icon-box icon-random"></div>
+        <h3>代表者ランダム抽出</h3>
+        <p>司会や当番を公平に決めやすく、役割決めの負担を減らせます。</p>
+      </article>
+      <article class="feature-card">
+        <div class="icon-box icon-analytics"></div>
+        <h3>メンバー分析</h3>
+        <p>参加傾向を見返しやすく、次の運営や声かけの参考になります。</p>
+      </article>
+      <article class="feature-card">
+        <div class="icon-box icon-copy"></div>
+        <h3>イベント登録&コピペ</h3>
+        <p>定例イベントを何度も作り直さずに済み、準備時間を短くできます。</p>
+      </article>
+      <article class="feature-card">
+        <div class="icon-box icon-mobile"></div>
+        <h3>ログイン不要でスマホ対応</h3>
+        <p>メンバーはすぐ回答でき、シンプルでおしゃれなUIで迷いにくいです。</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="panel reveal-section">
+    <h2 class="fit-title">こんな方におすすめ</h2>
+    <div class="audience-row">
+      <div class="audience-card">
+        <div class="audience-visual sports"><div class="ball"></div></div>
+        <p>スポーツチーム</p>
+      </div>
+      <div class="audience-card">
+        <div class="audience-visual club">
+          <div class="club-emblem"><span class="badge"></span></div>
+        </div>
+        <p>部活動</p>
+      </div>
+      <div class="audience-card">
+        <div class="audience-visual pta">
+          <div class="pta-emblem"><span class="family"></span></div>
+        </div>
+        <p>PTA</p>
+      </div>
+      <div class="audience-card">
+        <div class="audience-visual lesson">
+          <div class="lesson-emblem"><span class="note"></span></div>
+        </div>
+        <p>習い事</p>
+      </div>
+      <div class="audience-card">
+        <div class="audience-visual event">
+          <div class="event-emblem"><span class="tie"></span><span class="spark"></span></div>
+        </div>
+        <p>イベント幹事</p>
+      </div>
+    </div>
+    <p class="summary-copy" style="margin-top:18px;">
+      サッカー、野球、部活動のチーム運営はもちろん、
+      PTA、習い事、BBQや遊びの予定をまとめる友達グループにも向いています。
+      出欠確認から集金、当日の役割調整まで、ばらばらだった管理を一つに寄せられます。
+    </p>
+  </section>
+
+  <section class="closing reveal-section">
+    <h2>出欠管理、これで<span class="accent">ラクラク!</span></h2>
+    <p>
+      出欠管理は、仕組みを変えるだけで効率化できます。
+      専用アプリを使えば、返信確認、集計、当日の調整までのストレスを大きく減らせます。
+      まずは使ってみて、自分たちの運営がどれだけ軽くなるか試してみてください。
+    </p>
+    <div class="closing-actions">
+      <a href="{{ url_for('index') }}" class="primary-cta">今すぐ無料で始める</a>
+    </div>
+  </section>
+</article>
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  const sections = Array.from(document.querySelectorAll('.reveal-section'));
+  if (!sections.length) return;
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    sections.forEach((section) => section.classList.add('is-visible'));
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-visible');
+      observer.unobserve(entry.target);
+    });
+  }, {
+    threshold: 0.18,
+    rootMargin: '0px 0px -8% 0px'
+  });
+
+  sections.forEach((section) => observer.observe(section));
+})();
+</script>
+{% endblock %}
