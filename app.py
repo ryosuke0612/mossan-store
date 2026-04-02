@@ -7,8 +7,10 @@ import secrets
 import sqlite3
 import hashlib
 import hmac
+import smtplib
 import time
 from datetime import date, datetime, timedelta
+from email.message import EmailMessage
 from functools import wraps
 from pathlib import Path
 from urllib import error as urllib_error
@@ -212,10 +214,78 @@ def parse_email_allowlist(raw_value):
     return {entry.strip().lower() for entry in normalized.split(",") if "@" in entry}
 
 
+def is_valid_email(value):
+    normalized = (value or "").strip()
+    return "@" in normalized and "." in normalized.split("@")[-1]
+
+
+def is_contact_email_configured():
+    return all(
+        (
+            CONTACT_FORM_TO_EMAIL,
+            CONTACT_FORM_FROM_EMAIL,
+            SMTP_HOST,
+            SMTP_USERNAME,
+            SMTP_PASSWORD,
+        )
+    )
+
+
+def send_contact_form_email(*, name, email, subject, message, remote_addr="", user_agent=""):
+    if not is_contact_email_configured():
+        raise RuntimeError("Contact email is not configured.")
+
+    mail = EmailMessage()
+    mail["Subject"] = f"[Mossan Store] {subject}"
+    mail["From"] = CONTACT_FORM_FROM_EMAIL
+    mail["To"] = CONTACT_FORM_TO_EMAIL
+    mail["Reply-To"] = email
+    mail.set_content(
+        "\n".join(
+            [
+                "Mossan Store の問い合わせフォームから新しいメッセージが届きました。",
+                "",
+                f"お名前: {name}",
+                f"メールアドレス: {email}",
+                f"件名: {subject}",
+                "",
+                "内容:",
+                message,
+                "",
+                f"送信日時: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                f"IP: {remote_addr or '-'}",
+                f"User-Agent: {user_agent or '-'}",
+            ]
+        )
+    )
+
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as smtp:
+        if SMTP_USE_TLS:
+            smtp.starttls()
+        smtp.login(SMTP_USERNAME, SMTP_PASSWORD)
+        smtp.send_message(mail)
+
+
+def build_contact_page_context(*, status="", error_message="", prefill=None):
+    return {
+        "contact_status": status,
+        "contact_error_message": error_message,
+        "contact_prefill": prefill or {},
+        "contact_email_enabled": is_contact_email_configured(),
+    }
+
+
 SITE_ADMIN_EMAILS = parse_email_allowlist(os.environ.get("SITE_ADMIN_EMAILS", ""))
 bootstrap_admin_email = os.environ.get("ADMIN_BOOTSTRAP_EMAIL", "").strip().lower()
 if "@" in bootstrap_admin_email:
     SITE_ADMIN_EMAILS.add(bootstrap_admin_email)
+CONTACT_FORM_TO_EMAIL = os.environ.get("CONTACT_FORM_TO_EMAIL", "").strip()
+CONTACT_FORM_FROM_EMAIL = os.environ.get("CONTACT_FORM_FROM_EMAIL", "").strip()
+SMTP_HOST = os.environ.get("SMTP_HOST", "").strip()
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "587").strip() or "587")
+SMTP_USERNAME = os.environ.get("SMTP_USERNAME", "").strip()
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "").strip()
+SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "1").strip().lower() not in {"0", "false", "no", "off"}
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "").strip()
 STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY", "").strip()
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "").strip()
@@ -1976,6 +2046,56 @@ def portal_get_teams_for_admin(admin_id):
     teams = rows_to_dict(c.fetchall())
     conn.close()
     return teams
+
+
+def build_admin_dashboard_team_guides(teams):
+    if not teams:
+        return []
+
+    team_ids = [team.get("id") for team in teams if team.get("id") is not None]
+    if not team_ids:
+        return [dict(team) for team in teams]
+
+    placeholders = ",".join("?" for _ in team_ids)
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(
+        f"""
+        SELECT team_id, COUNT(1) AS cnt
+        FROM portal_members
+        WHERE is_active=1 AND team_id IN ({placeholders})
+        GROUP BY team_id
+        """,
+        team_ids,
+    )
+    member_counts = {row["team_id"]: row["cnt"] for row in c.fetchall()}
+    c.execute(
+        f"""
+        SELECT team_id, COUNT(1) AS cnt
+        FROM portal_events
+        WHERE team_id IN ({placeholders})
+        GROUP BY team_id
+        """,
+        team_ids,
+    )
+    event_counts = {row["team_id"]: row["cnt"] for row in c.fetchall()}
+    conn.close()
+
+    guided_teams = []
+    for team in teams:
+        guided_team = dict(team)
+        team_id = guided_team.get("id")
+        member_count = member_counts.get(team_id, 0)
+        event_count = event_counts.get(team_id, 0)
+        has_public_content = member_count > 0 or event_count > 0
+        guided_team["member_count"] = member_count
+        guided_team["event_count"] = event_count
+        guided_team["has_public_content"] = has_public_content
+        guided_team["highlight_member_setup"] = not has_public_content
+        guided_team["highlight_event_setup"] = not has_public_content
+        guided_team["highlight_member_url_copy"] = has_public_content
+        guided_teams.append(guided_team)
+    return guided_teams
 
 
 def portal_get_team_by_public_id(public_id):
@@ -8155,7 +8275,76 @@ def build_event_list_csv_response(user_id, month="all"):
 
 @app.route("/")
 def home():
-    return render_template("home.html")
+    status = request.args.get("contact_status", "").strip().lower()
+    if status not in {"sent"}:
+        status = ""
+    return render_template("home.html", **build_contact_page_context(status=status))
+
+
+@app.route("/contact", methods=["POST"])
+def contact_submit():
+    name = request.form.get("name", "").strip()
+    email = request.form.get("email", "").strip()
+    subject = request.form.get("subject", "").strip()
+    message = request.form.get("message", "").strip()
+    prefill = {
+        "name": name,
+        "email": email,
+        "subject": subject,
+        "message": message,
+    }
+
+    if not name:
+        error_message = "お名前を入力してください。"
+    elif not is_valid_email(email):
+        error_message = "返信先のメールアドレスを正しく入力してください。"
+    elif not subject:
+        error_message = "件名を入力してください。"
+    elif len(subject) > 120:
+        error_message = "件名は120文字以内で入力してください。"
+    elif not message:
+        error_message = "ご相談内容を入力してください。"
+    elif len(message) > 3000:
+        error_message = "ご相談内容は3000文字以内で入力してください。"
+    elif not is_contact_email_configured():
+        error_message = "問い合わせメール設定がまだ完了していません。"
+    else:
+        error_message = ""
+
+    if error_message:
+        return (
+            render_template(
+                "home.html",
+                **build_contact_page_context(
+                    error_message=error_message,
+                    prefill=prefill,
+                ),
+            ),
+            400,
+        )
+
+    try:
+        send_contact_form_email(
+            name=name,
+            email=email,
+            subject=subject,
+            message=message,
+            remote_addr=request.headers.get("X-Forwarded-For", request.remote_addr or ""),
+            user_agent=request.headers.get("User-Agent", ""),
+        )
+    except Exception:
+        return (
+            render_template(
+                "home.html",
+                **build_contact_page_context(
+                    error_message="送信に失敗しました。時間をおいて再度お試しください。",
+                    prefill=prefill,
+                ),
+            ),
+            502,
+        )
+
+    return redirect(url_for("home", contact_status="sent"))
 
 
 @app.route("/apps/attendance/app/description")
@@ -8248,11 +8437,13 @@ def admin_dashboard():
             teams = get_teams_for_admin(session["admin_id"])
             can_create_team = can_admin_create_team(admin, len(teams))
 
+    guided_teams = build_admin_dashboard_team_guides(teams)
     return render_template(
         "admin_dashboard_cards_v2.html",
         admin_email=session.get("admin_email", ""),
-        teams=teams,
+        teams=guided_teams,
         can_create_team=can_create_team,
+        highlight_create_team=not guided_teams and can_create_team,
         admin_plan_requests_enabled=ADMIN_PLAN_REQUESTS_ENABLED,
         team_limit_message=get_plan_restriction_message(PLAN_FEATURE_TEAM_CREATE),
         free_team_limit=ADMIN_FREE_TEAM_LIMIT,

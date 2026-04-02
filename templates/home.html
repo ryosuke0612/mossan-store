@@ -97,6 +97,16 @@ body {
   gap: 12px;
   margin-top: 34px;
 }
+.hero-support {
+  margin-top: 18px;
+}
+.hero-support-link {
+  color: var(--ink-700);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(83, 66, 49, 0.24);
+}
 .hero-btn {
   display: inline-flex;
   align-items: center;
@@ -241,6 +251,86 @@ body {
   min-height: 320px;
   background: linear-gradient(180deg, rgba(255, 250, 245, 0.38) 0%, rgba(234, 217, 192, 0.95) 100%);
 }
+.contact-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 460px);
+  gap: 26px;
+  align-items: start;
+}
+.contact-panel,
+.contact-form {
+  padding: 28px;
+  border-radius: 28px;
+  background: rgba(255, 250, 244, 0.76);
+  border: 1px solid rgba(96, 75, 51, 0.08);
+  box-shadow: var(--shadow);
+}
+.contact-panel p {
+  margin: 14px 0 0;
+  color: var(--ink-700);
+  line-height: 1.8;
+}
+.contact-points {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+}
+.contact-point {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(241, 228, 208, 0.66);
+  color: var(--ink-900);
+  font-weight: 700;
+}
+.contact-form form {
+  display: grid;
+  gap: 14px;
+}
+.contact-form label {
+  display: grid;
+  gap: 7px;
+  color: var(--ink-900);
+  font-size: 14px;
+  font-weight: 700;
+}
+.contact-form input,
+.contact-form textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid rgba(96, 75, 51, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 252, 248, 0.94);
+  color: var(--ink-900);
+  font: inherit;
+}
+.contact-form textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+.contact-form button {
+  width: fit-content;
+}
+.contact-note {
+  margin: 0 0 14px;
+  color: var(--ink-700);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.contact-alert {
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.contact-alert.success {
+  background: rgba(225, 244, 229, 0.92);
+  color: #275237;
+}
+.contact-alert.error {
+  background: rgba(255, 237, 234, 0.94);
+  color: #7d3428;
+}
 .blog-meta {
   color: var(--sand-500);
   font-size: 12px;
@@ -262,7 +352,8 @@ body {
     padding: 122px 0 72px;
   }
   .hero-grid,
-  .section-head {
+  .section-head,
+  .contact-grid {
     grid-template-columns: 1fr;
     display: grid;
   }
@@ -292,6 +383,7 @@ body {
 <a href="#concept">Concept</a>
 <a href="#products">Product</a>
 <a href="#blog">Blog</a>
+<a href="#contact">質問・相談</a>
 <a href="{{ url_for('apps_list') }}">アプリ一覧</a>
 {% endblock %}
 
@@ -310,6 +402,9 @@ body {
           <a href="{{ url_for('apps_list') }}" class="hero-btn primary">Productを見る</a>
           <a href="{{ url_for('blog_index') }}" class="hero-btn secondary">Blogを見る</a>
         </div>
+        <p class="hero-support">
+          <a href="#contact" class="hero-support-link">質問・相談はこちら</a>
+        </p>
       </div>
     </div>
   </section>
@@ -383,6 +478,58 @@ body {
       </article>
     </div>
   </section>
+
+  <section class="home-section section-block reveal" id="contact">
+    <div class="section-head">
+      <div>
+        <p class="section-kicker">Contact</p>
+        <h2 class="section-title">導入前の質問や相談も受けられます。</h2>
+        <p class="section-copy">気になることを送っていただければ、指定のメールアドレスで受け取れるようにしています。</p>
+      </div>
+    </div>
+    <div class="contact-grid">
+      <article class="contact-panel">
+        <h3>こんな内容を送れます</h3>
+        <p>導入前の確認、運営に合うアプリの相談、機能の問い合わせなど、気軽な内容で大丈夫です。</p>
+        <div class="contact-points">
+          <div class="contact-point">どのアプリが合うか相談したい</div>
+          <div class="contact-point">イベント運営に使えるか確認したい</div>
+          <div class="contact-point">導入や改善の相談をしたい</div>
+        </div>
+      </article>
+      <article class="contact-form">
+        <h3>質問フォーム</h3>
+        {% if contact_status == "sent" %}
+        <p class="contact-alert success">お問い合わせを送信しました。内容を確認してご連絡します。</p>
+        {% endif %}
+        {% if contact_error_message %}
+        <p class="contact-alert error">{{ contact_error_message }}</p>
+        {% endif %}
+        {% if not contact_email_enabled %}
+        <p class="contact-note">現在はメール送信設定が未完了のため、SMTP設定を入れると送信できるようになります。</p>
+        {% endif %}
+        <form method="post" action="{{ url_for('contact_submit') }}">
+          <label for="contact-name">
+            お名前
+            <input id="contact-name" name="name" type="text" maxlength="80" required value="{{ contact_prefill.get('name', '') }}">
+          </label>
+          <label for="contact-email">
+            メールアドレス
+            <input id="contact-email" name="email" type="email" maxlength="160" required value="{{ contact_prefill.get('email', '') }}">
+          </label>
+          <label for="contact-subject">
+            件名
+            <input id="contact-subject" name="subject" type="text" maxlength="120" required value="{{ contact_prefill.get('subject', '') }}">
+          </label>
+          <label for="contact-message">
+            ご相談内容
+            <textarea id="contact-message" name="message" maxlength="3000" required>{{ contact_prefill.get('message', '') }}</textarea>
+          </label>
+          <button type="submit" class="hero-btn primary">送信する</button>
+        </form>
+      </article>
+    </div>
+  </section>
 </div>
 {% endblock %}
 
@@ -400,6 +547,14 @@ body {
     }, { threshold: 0.14, rootMargin: '0px 0px -8% 0px' });
 
     revealTargets.forEach((target) => observer.observe(target));
+  }
+
+  const contactSection = document.getElementById('contact');
+  const hasContactFeedback =
+    new URLSearchParams(window.location.search).get('contact_status') ||
+    document.querySelector('.contact-alert.error');
+  if (hasContactFeedback && contactSection) {
+    contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 })();
 </script>

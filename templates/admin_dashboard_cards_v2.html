@@ -132,6 +132,11 @@
   flex-wrap: nowrap;
   min-width: 0;
 }
+.member-url-stack {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+}
 .member-page-btn {
   flex: 0 1 auto;
   display: inline-flex;
@@ -155,6 +160,13 @@
 }
 .member-page-btn:hover {
   color: #ffffff;
+}
+.member-url-note {
+  color: rgba(255, 240, 243, 0.84);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
 }
 .copy-url-btn {
   flex: 0 0 auto;
@@ -517,6 +529,66 @@
   width: 100%;
   margin-top: auto;
 }
+@keyframes dashboardGuidePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 0 rgba(255, 197, 84, 0),
+      0 10px 18px rgba(0, 0, 0, 0.18);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow:
+      0 0 0 10px rgba(255, 197, 84, 0),
+      0 0 18px rgba(255, 197, 84, 0.34),
+      0 10px 18px rgba(0, 0, 0, 0.22);
+  }
+}
+@keyframes dashboardGuideGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 rgba(255, 197, 84, 0),
+      inset 0 0 0 rgba(255, 197, 84, 0);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(255, 197, 84, 0.18),
+      inset 0 0 0 1px rgba(255, 216, 128, 0.36);
+  }
+}
+.guide-card {
+  border-color: rgba(255, 209, 102, 0.42);
+  background:
+    linear-gradient(180deg, rgba(255, 209, 102, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+  animation: dashboardGuideGlow 2.4s ease-in-out infinite;
+}
+.guide-target {
+  position: relative;
+  z-index: 0;
+  animation: dashboardGuidePulse 2.4s ease-in-out infinite;
+}
+.guide-target::before {
+  box-shadow:
+    0 0 0 1px rgba(255, 237, 184, 0.35),
+    0 0 0 7px rgba(255, 197, 84, 0.12);
+}
+.guide-target.guide-copy {
+  border-radius: 16px;
+}
+.guide-copy {
+  padding: 6px 8px;
+  border-radius: 14px;
+}
+.guide-copy .member-page-btn,
+.guide-copy .copy-url-btn {
+  color: #fff8ea;
+}
+.guide-copy .member-page-btn {
+  text-shadow: 0 0 10px rgba(255, 209, 102, 0.18);
+}
+.guide-copy .copy-url-btn {
+  filter: drop-shadow(0 0 8px rgba(255, 209, 102, 0.38));
+}
 .fancy-admin-btn::before,
 .fancy-admin-btn::after {
   content: "";
@@ -580,6 +652,9 @@
     font-size: 15px;
     padding: 0;
   }
+  .member-url-note {
+    font-size: 10px;
+  }
   .member-url-wrap {
     gap: 4px;
   }
@@ -628,6 +703,9 @@
     letter-spacing: clamp(0.01em, 0.04vw, 0.03em);
     transform: translateX(-50%);
   }
+  .guide-copy {
+    padding: 4px 6px;
+  }
 }
 </style>
 {% endblock %}
@@ -674,7 +752,7 @@
           {% endif %}
         </div>
         {% endif %}
-        <button class="btn fancy-admin-btn maroon create-team-btn" type="submit" {% if not can_create_team %}disabled{% endif %}>チームを作成する</button>
+        <button class="btn fancy-admin-btn maroon create-team-btn{% if highlight_create_team %} guide-target{% endif %}" type="submit" {% if not can_create_team %}disabled{% endif %}>チームを作成する</button>
       </form>
     </section>
   </div>
@@ -684,7 +762,7 @@
     {% if teams %}
     <div class="team-cards">
       {% for team in teams %}
-      <article class="team-card">
+      <article class="team-card{% if team['highlight_member_setup'] or team['highlight_event_setup'] or team['highlight_member_url_copy'] %} guide-card{% endif %}">
         <div class="team-meta">
           <div class="team-meta-item">
             <label>チーム名</label>
@@ -702,31 +780,34 @@
           </div>
           <div class="team-meta-item">
             <label>メンバー用URL</label>
-            <div class="member-url-wrap">
-              <a class="member-page-btn" href="{{ url_for('member_team_page', public_id=team['public_id']) }}">
-                メンバー出欠登録ページ
-              </a>
-              <button
-                class="btn secondary copy-url-btn"
-                type="button"
-                data-copy-url="{{ url_for('member_team_page', public_id=team['public_id']) }}"
-                aria-label="URLをコピー"
-                title="URLをコピー"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <rect x="9" y="9" width="10" height="10" rx="2"></rect>
-                  <path d="M7 15H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1"></path>
-                </svg>
-              </button>
-              <span class="copy-feedback" aria-live="polite"></span>
+            <div class="member-url-stack">
+              <div class="member-url-wrap{% if team['highlight_member_url_copy'] %} guide-copy guide-target{% endif %}">
+                <a class="member-page-btn" href="{{ url_for('member_team_page', public_id=team['public_id']) }}">
+                  メンバー出欠登録ページ
+                </a>
+                <button
+                  class="btn secondary copy-url-btn"
+                  type="button"
+                  data-copy-url="{{ url_for('member_team_page', public_id=team['public_id']) }}"
+                  aria-label="URLをコピー"
+                  title="URLをコピー"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <rect x="9" y="9" width="10" height="10" rx="2"></rect>
+                    <path d="M7 15H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+                <span class="copy-feedback" aria-live="polite"></span>
+              </div>
+              <div class="member-url-note">管理者画面はメンバーには公開されません</div>
             </div>
           </div>
           <div class="team-meta-item">
             <div class="team-manage-actions">
-              <a class="fancy-admin-btn gold" href="{{ url_for('admin_team_members', team_id=team['id']) }}">
+              <a class="fancy-admin-btn gold{% if team['highlight_member_setup'] %} guide-target{% endif %}" href="{{ url_for('admin_team_members', team_id=team['id']) }}">
                 メンバー管理
               </a>
-              <a class="fancy-admin-btn rose" href="{{ url_for('admin_team_events', team_id=team['id']) }}">
+              <a class="fancy-admin-btn rose{% if team['highlight_event_setup'] %} guide-target{% endif %}" href="{{ url_for('admin_team_events', team_id=team['id']) }}">
                 イベント管理
               </a>
             </div>
