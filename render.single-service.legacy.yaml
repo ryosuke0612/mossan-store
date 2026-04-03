@@ -1,8 +1,7 @@
 services:
   - type: web
-    name: mossan-store-web
+    name: soccer-app
     runtime: python
-    rootDir: services/store-web
     plan: starter
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
@@ -15,31 +14,10 @@ services:
         value: "true"
       - key: SECRET_KEY
         generateValue: true
-      - key: ATTENDANCE_APP_BASE_URL
-        sync: false
-
-  - type: web
-    name: mossan-attendance-app
-    runtime: python
-    rootDir: services/attendance-app
-    plan: starter
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
-    healthCheckPath: /admin/login
-    autoDeploy: true
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.12.8
-      - key: RENDER
-        value: "true"
-      - key: SECRET_KEY
-        generateValue: true
-      - key: ATTENDANCE_APP_BASE_URL
-        sync: false
-      - key: STRIPE_REDIRECT_BASE_URL
-        sync: false
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: soccer-app-db
+          property: connectionString
       - key: SITE_ADMIN_EMAILS
         sync: false
       - key: ADMIN_BOOTSTRAP_EMAIL
@@ -52,9 +30,15 @@ services:
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
+      - key: STRIPE_REDIRECT_BASE_URL
+        sync: false
       - key: STRIPE_CONNECT_TIMEOUT_SECONDS
         value: "10"
       - key: STRIPE_REQUEST_TIMEOUT_SECONDS
         value: "30"
       - key: STRIPE_WEBHOOK_TOLERANCE_SECONDS
         value: "300"
+
+databases:
+  - name: soccer-app-db
+    plan: starter

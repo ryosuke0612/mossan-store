@@ -1,0 +1,206 @@
+﻿{% extends "admin_base_clean.html" %}
+
+{% block title %}サイト運営者ページ | Mossan Store{% endblock %}
+
+{% block header_nav_items %}
+<a href="{{ url_for('admin_dashboard') }}">ダッシュボード</a>
+{% if session.get('is_site_admin') %}
+<a href="{{ url_for('site_admin_dashboard') }}">サイト運営者ページ</a>
+{% endif %}
+{% if session.get('admin_id') %}
+<a href="{{ url_for('admin_logout') }}">ログアウト</a>
+{% else %}
+<a href="{{ url_for('admin_login_entry') }}">管理者ログイン</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
+<style>
+  .dashboard-reggae-title {
+    font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+    letter-spacing: 0.04em;
+    color: #ead7b3;
+  }
+
+  .dashboard-reggae-heading {
+    font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+    letter-spacing: 0.04em;
+    color: #ead7b3;
+  }
+
+  .admin-total-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 10px;
+    padding: 6px 12px;
+    border: 1px solid rgba(234, 215, 179, 0.45);
+    border-radius: 999px;
+    color: #ead7b3;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    vertical-align: middle;
+    background: rgba(234, 215, 179, 0.08);
+  }
+  .admin-list-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    background: #11151b;
+  }
+
+  .admin-list-table th,
+  .admin-list-table td {
+    white-space: nowrap;
+    width: 1%;
+    border: 1px solid #2f3946;
+    color: #e5e7eb;
+  }
+
+  .admin-list-table thead th {
+    border-color: #2f6d44;
+    background: linear-gradient(180deg, #3b8f5f 0%, #2a6d48 100%);
+    color: #f2fff6;
+    font-weight: 700;
+  }
+
+  .admin-list-table tbody td {
+    background: #11151b;
+  }
+
+  .admin-list-table tbody tr:hover td {
+    background: #1b222c;
+  }
+
+  .admin-list-table .extend-cell form,
+  .admin-list-table .delete-cell form {
+    margin: 0;
+  }
+
+  .admin-list-table .extend-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .meta-text {
+    display: block;
+    margin-top: 4px;
+    color: #a6b2c1;
+    font-size: 12px;
+    white-space: normal;
+  }
+
+  .status-text {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .status-text.free { color: #7fb0ff; }
+  .status-text.paid { color: #7edb96; }
+  .status-text.expired { color: #ffd4ad; }
+  .status-text.suspended { color: #ff9a9a; }
+
+  .account-state {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .account-state.active {
+    color: #7edb96;
+  }
+
+  .account-state.suspended {
+    color: #ff8d8d;
+  }
+
+  .detail-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 88px;
+    padding: 8px 12px;
+    border: 1px solid #355043;
+    border-radius: 10px;
+    color: #e5f7ec;
+    background: #173122;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .detail-link:hover {
+    background: #214631;
+  }
+</style>
+
+<h1 class="page-title dashboard-reggae-title">サイト運営者ページ</h1>
+
+<section class="panel">
+  <h2 class="dashboard-reggae-heading" style="margin-top: 0;">
+    登録済み管理者一覧
+    <span class="admin-total-badge">合計 {{ admin_rows|length }} 人</span>
+  </h2>
+  <p style="margin-top: 0; color: var(--muted);">
+    一覧では管理者の状態を確認し、詳細ページでチーム内訳や課金情報、削除操作までまとめて行えます。
+  </p>
+  <p style="margin-top: -4px;">
+    <a class="detail-link" href="{{ url_for('site_admin_plan_requests') }}">有料プラン申請一覧を見る{% if pending_plan_request_count %}（未処理 {{ pending_plan_request_count }}件）{% endif %}</a>
+  </p>
+
+  {% if error_message %}
+  <div class="notice error">{{ error_message }}</div>
+  {% endif %}
+  {% if success_message %}
+  <div class="notice success">{{ success_message }}</div>
+  {% endif %}
+
+  {% if admin_rows %}
+  <div class="table-wrap">
+    <table class="admin-list-table">
+      <thead>
+        <tr>
+          <th>詳細</th>
+          <th>メールアドレス</th>
+          <th>利用開始日</th>
+          <th>有効期限</th>
+          <th>最終ログイン日</th>
+          <th>作成チーム数</th>
+          <th>ステータス</th>
+          <th>利用停止 / 再開</th>
+          <th>累計課金額</th>
+        </tr>
+      </thead>
+        <tbody>
+          {% for row in admin_rows %}
+        <tr>
+          <td>
+            <a class="detail-link" href="{{ url_for('site_admin_admin_detail', admin_id=row['id']) }}">詳細を見る</a>
+          </td>
+          <td>{{ row["email"] }}</td>
+          <td>{{ row["start_date"] }}</td>
+          <td>
+            {{ row["expiry_date"] }}
+            <span class="meta-text">{% if row["remaining_days_text"] not in ["-", "無期限"] and "期限切れ" not in row["remaining_days_text"] %}残り{% endif %}{{ row["remaining_days_text"] }}</span>
+          </td>
+          <td>{{ row["last_login_date"] }}</td>
+          <td>{{ row["team_count"] }}チーム</td>
+          <td><span class="status-text {{ row['status_code'] }}">{{ row["status_text"] }}</span></td>
+          <td><span class="account-state {{ row['account_status'] }}">{{ row["account_status_text"] }}</span></td>
+          <td>{{ row["total_billing_amount_text"] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="notice success">登録済みの管理者はまだいません。</div>
+  {% endif %}
+</section>
+{% endblock %}

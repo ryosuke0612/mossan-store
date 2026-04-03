@@ -1,0 +1,122 @@
+{% extends "attendance_base.html" %}
+
+{% block title %}邂｡逅・・ヨ繝・・ | Mossan Store{% endblock %}
+
+{% block content %}
+<style>
+  .dashboard-action-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 41px;
+    padding: 10px 14px;
+    border-radius: 4px;
+    border: 1px solid #4a4f55;
+    color: #eef2f6;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.32);
+    background:
+      repeating-linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.05) 0 3px,
+        rgba(0, 0, 0, 0.08) 3px 6px
+      ),
+      linear-gradient(180deg, #5f666e 0%, #3d434a 100%);
+  }
+  .dashboard-action-btn:hover {
+    filter: brightness(1.06) contrast(1.04);
+  }
+  .dashboard-action-btn::before,
+  .dashboard-action-btn::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(22, 24, 27, 0.8);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transform: translateY(-50%);
+  }
+  .dashboard-action-btn::before { left: 8px; }
+  .dashboard-action-btn::after { right: 8px; }
+  .dashboard-action-btn.events {
+    border-color: #555d66;
+    color: #f4f8fc;
+    background:
+      repeating-linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.05) 0 3px,
+        rgba(0, 0, 0, 0.08) 3px 6px
+      ),
+      linear-gradient(180deg, #66707a 0%, #454c55 100%);
+  }
+  .dashboard-action-btn.members {
+    border-color: #2f5b3f;
+    color: #e9ffef;
+    background:
+      repeating-linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.06) 0 3px,
+        rgba(0, 0, 0, 0.08) 3px 6px
+      ),
+      linear-gradient(180deg, #2f7a4f 0%, #205838 100%);
+  }
+</style>
+<h1 class="page-title">邂｡逅・・ヨ繝・・</h1>
+
+<section class="panel">
+  <div class="grid-2">
+    <div>
+      <label>繝ｭ繧ｰ繧､繝ｳ荳ｭ縺ｮ邂｡逅・・/label>
+      <div>{{ admin_email }}</div>
+    </div>
+    <div>
+      <label>邂｡逅・メ繝ｼ繝謨ｰ</label>
+      <div>{{ teams|length }}</div>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2 style="margin-top: 0;">邂｡逅・Γ繝九Η繝ｼ</h2>
+  <div class="btn-row">
+    <a class="btn dashboard-action-btn events" href="{{ url_for('admin_events') }}">繧､繝吶Φ繝育ｮ｡逅・∈</a>
+    <a class="btn dashboard-action-btn members" href="{{ url_for('admin_team_settings') }}">繝√・繝險ｭ螳壹・繝｡繝ｳ繝舌・邂｡逅・∈</a>
+    <a class="btn secondary" href="{{ url_for('admin_logout') }}">繝ｭ繧ｰ繧｢繧ｦ繝・/a>
+  </div>
+</section>
+
+<section class="panel">
+  <h2 style="margin-top: 0;">邂｡逅・メ繝ｼ繝</h2>
+  {% if teams %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>繝√・繝蜷・/th>
+          <th>蜈ｬ髢紀D</th>
+          <th>繝｡繝ｳ繝舌・逕ｨURL</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for team in teams %}
+        <tr>
+          <td>{{ team["name"] }}</td>
+          <td>{{ team["public_id"] }}</td>
+          <td>/team/{{ team["public_id"] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="notice success">
+    縺ｾ縺邂｡逅・メ繝ｼ繝縺ｯ縺ゅｊ縺ｾ縺帙ｓ縲よｬ｡縺ｮ谿ｵ髫弱〒繝√・繝菴懈・縺ｨ險ｭ螳壽峩譁ｰ繧偵％縺薙∈霑ｽ蜉縺励※縺・″縺ｾ縺吶・  </div>
+  {% endif %}
+</section>
+{% endblock %}
+

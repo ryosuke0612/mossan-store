@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Mossan Store | ブログ一覧{% endblock %}
+{% block head_extra %}
+<meta name="description" content="運営の工夫や便利なアプリづくりに関する読みものをまとめたブログ一覧です。">
+<style>
+.blog-shell {
+  display: grid;
+  gap: 28px;
+}
+.blog-hero {
+  padding: 18px 0 6px;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 8px 14px;
+  border: 1px solid rgba(115, 179, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(9, 19, 35, 0.68);
+  color: #96c5ff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.eyebrow::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #5df4c5;
+  box-shadow: 0 0 14px rgba(93, 244, 197, 0.9);
+}
+.hero-title {
+  margin: 0;
+  font-size: clamp(34px, 5vw, 58px);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+.hero-copy {
+  max-width: 760px;
+  margin: 18px 0 0;
+  color: #c7d5ea;
+  font-size: 18px;
+  line-height: 1.9;
+}
+.section-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #8ebcf8;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.feature-card,
+.article-card,
+.nav-card {
+  padding: 26px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(13, 20, 36, 0.82) 0%, rgba(8, 14, 26, 0.92) 100%);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+}
+.feature-card h2,
+.article-card h2,
+.nav-card h2 {
+  margin: 0 0 12px;
+  font-size: 28px;
+}
+.feature-card p,
+.article-card p,
+.nav-card p {
+  margin: 0;
+  color: #c3d2e7;
+  line-height: 1.85;
+}
+.blog-grid,
+.nav-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.article-tag {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(125, 211, 252, 0.08);
+  color: #8dd9f8;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.point-list {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0 0;
+}
+.point {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #d7e4f3;
+  line-height: 1.75;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+}
+.home-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 211, 252, 0.5);
+  background: linear-gradient(135deg, #4ea7ff 0%, #68f0cc 100%);
+  color: #06111f;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 900;
+  box-shadow: 0 14px 28px rgba(31, 102, 170, 0.24);
+}
+.home-btn.secondary {
+  background: rgba(11, 19, 34, 0.62);
+  color: #eaf2ff;
+  border-color: rgba(234, 242, 255, 0.18);
+  box-shadow: none;
+}
+@media (max-width: 960px) {
+  .blog-grid,
+  .nav-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 720px) {
+  .hero-copy,
+  .feature-card p,
+  .article-card p,
+  .nav-card p {
+    font-size: 16px;
+  }
+  .feature-card,
+  .article-card,
+  .nav-card {
+    padding: 22px;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="blog-shell">
+  <section class="blog-hero">
+    <div class="eyebrow">Journal</div>
+    <h1 class="hero-title">便利さの背景にある工夫を、<br>読みものとして。</h1>
+    <p class="hero-copy">
+      アプリを作るときに考えていること、運営で見えてきた課題、
+      そして「どうすればもっと使いやすくなるか」を整理して残していく場所です。
+      いま公開している読みものの入口をまとめています。
+    </p>
+  </section>
+
+  <section>
+    <p class="section-title">Overview</p>
+    <article class="feature-card">
+      <h2>ブログでは、使い方だけでなく考え方も扱います</h2>
+      <p>
+        単なるお知らせではなく、なぜその課題に向き合ったのか、
+        どんな不便を減らしたいのか、どこを工夫したのかまで伝わる内容を目指しています。
+      </p>
+      <div class="point-list">
+        <div class="point">現場や日常の困りごとを、どう整理して形にしていくかを言葉にします。</div>
+        <div class="point">今あるアプリの背景だけでなく、これから広がるテーマも見えるようにしていきます。</div>
+      </div>
+    </article>
+  </section>
+
+  <section>
+    <p class="section-title">Articles</p>
+    <div class="blog-grid">
+      <article class="article-card">
+        <div class="article-tag">Sports</div>
+        <h2>スポーツイベントの出欠管理について</h2>
+        <p>
+          試合や練習の出欠確認で起きやすい手間を整理し、
+          どんな導線なら運営しやすくなるかを考えた記事です。
+        </p>
+        <div class="actions">
+          <a href="{{ url_for('blog_sports_attendance') }}" class="home-btn">記事を読む</a>
+        </div>
+      </article>
+      <article class="article-card">
+        <div class="article-tag">PTA</div>
+        <h2>PTAイベントの出欠管理について</h2>
+        <p>
+          地域や学校のイベント運営で感じやすい連絡負荷や確認の難しさを、
+          もう少し軽くするための視点をまとめています。
+        </p>
+        <div class="actions">
+          <a href="{{ url_for('blog_pta_attendance') }}" class="home-btn">記事を読む</a>
+        </div>
+      </article>
+      <article class="article-card">
+        <div class="article-tag">Guide</div>
+        <h2>出欠管理を効率化する方法</h2>
+        <p>
+          LINEやエクセルとの違いを比べながら、
+          出欠管理アプリで手間を減らす考え方を整理した記事です。
+        </p>
+        <div class="actions">
+          <a href="{{ url_for('blog_attendance_management_app') }}" class="home-btn">記事を読む</a>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <p class="section-title">Next Step</p>
+    <div class="nav-grid">
+      <article class="nav-card">
+        <h2>アプリ一覧を見る</h2>
+        <p>読みものだけでなく、実際に公開しているアプリや構想中の方向もあわせて確認できます。</p>
+        <div class="actions">
+          <a href="{{ url_for('apps_list') }}" class="home-btn secondary">アプリ一覧へ</a>
+        </div>
+      </article>
+      <article class="nav-card">
+        <h2>ホームへ戻る</h2>
+        <p>この場所全体のコンセプトや、これからどんな方向へ広げていくかを見直せます。</p>
+        <div class="actions">
+          <a href="{{ url_for('home') }}" class="home-btn secondary">ホームを見る</a>
+        </div>
+      </article>
+    </div>
+  </section>
+</div>
+{% endblock %}

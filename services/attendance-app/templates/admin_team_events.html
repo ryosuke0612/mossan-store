@@ -1,0 +1,638 @@
+﻿{% extends "admin_base_clean.html" %}
+
+{% block title %}イベント管理 | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
+<style>
+.dashboard-reggae-heading {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.02em;
+  color: #ead7b3;
+}
+.dashboard-reggae-title {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.04em;
+  color: #ead7b3;
+}
+.dashboard-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: -8px 0 18px;
+  font-size: 14px;
+  color: #b7c0cd;
+}
+.dashboard-breadcrumbs a {
+  color: #d7dde6;
+  text-decoration: none;
+}
+.dashboard-breadcrumbs a:hover {
+  color: #ffb0b0;
+  text-decoration: underline;
+}
+.dashboard-breadcrumbs .current {
+  color: #edf9f1;
+}
+.dashboard-breadcrumb-separator {
+  color: #8b95a5;
+}
+.month-tabs {
+  --month-tab-width: 112px;
+  --month-tab-gap: 10px;
+  display: flex;
+  overflow: hidden;
+  width: calc(var(--month-tab-width) * 3 + var(--month-tab-gap) * 2);
+  max-width: calc(var(--month-tab-width) * 3 + var(--month-tab-gap) * 2);
+  margin-bottom: 0;
+  align-items: flex-end;
+}
+.month-tabs-track {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--month-tab-gap);
+  will-change: transform;
+  transition: transform 0.28s ease;
+}
+.month-tab {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--month-tab-width);
+  min-width: var(--month-tab-width);
+  max-width: var(--month-tab-width);
+  padding: 11px 14px;
+  font-size: 1.12rem;
+  line-height: 1.1;
+  border-radius: 6px 6px 0 0;
+  border: 1px solid #2f3640;
+  background:
+    repeating-linear-gradient(
+      -12deg,
+      rgba(255, 255, 255, 0.04) 0 2px,
+      rgba(0, 0, 0, 0.18) 2px 4px
+    ),
+    linear-gradient(180deg, #2d333b 0%, #1b2026 100%);
+  color: #d7dde6;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
+}
+.month-tab.active {
+  border-color: #2f6d44;
+  background:
+    repeating-linear-gradient(
+      -12deg,
+      rgba(255, 255, 255, 0.05) 0 2px,
+      rgba(0, 0, 0, 0.18) 2px 4px
+    ),
+    linear-gradient(180deg, #2f7a4f 0%, #1f5a3a 100%);
+  color: #edf9f1;
+  box-shadow: 0 10px 16px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+.month-tab:hover {
+  filter: brightness(1.06) contrast(1.04);
+}
+.month-tab:focus-visible {
+  outline: 2px solid #6ac18d;
+  outline-offset: 2px;
+}
+.month-pane {
+  display: none;
+}
+.month-pane.active {
+  display: block;
+}
+.month-pane .table-wrap {
+  margin-top: 0;
+}
+.month-pane .table-wrap .events-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  border-radius: 0;
+  overflow: visible;
+  background: #11151b;
+}
+.events-table thead th {
+  border: 1px solid #2f6d44;
+  background:
+    linear-gradient(180deg, #3b8f5f 0%, #2a6d48 100%);
+  color: #f2fff6;
+  font-weight: 700;
+  text-shadow: none;
+  box-shadow: none;
+}
+.events-table thead th:first-child {
+  border-top-left-radius: 0;
+}
+.events-table thead th:last-child {
+  border-top-right-radius: 0;
+}
+.events-table tbody td {
+  border: 1px solid #2f3946;
+  background: #11151b;
+  color: #e5e7eb;
+}
+.events-table tbody tr:hover td {
+  background: #1b222c;
+}
+.events-table .col-select {
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+}
+.events-table .col-date {
+  width: 150px;
+}
+.events-table .col-time {
+  width: 140px;
+}
+.events-table .col-transport {
+  width: 116px;
+  min-width: 116px;
+}
+.events-table .inline-check {
+  width: auto;
+}
+.bulk-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.bulk-buttons .btn:disabled {
+  background: transparent !important;
+  border-color: #3a3a3a !important;
+  color: #666 !important;
+  cursor: not-allowed;
+}
+.bulk-buttons .btn.bulk-edit {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #fff;
+}
+.bulk-buttons .btn.bulk-duplicate {
+  background: #15803d;
+  border-color: #15803d;
+  color: #fff;
+}
+.time-split {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+.time-split > select {
+  width: 100%;
+  min-width: 0;
+}
+.grid-3 > .field,
+.grid-2 > .field {
+  min-width: 0;
+}
+.time-split-sep {
+  color: #bbb;
+  font-weight: 700;
+}
+.js-date-picker {
+  color-scheme: dark;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  display: block;
+}
+.grid-3 > .field:first-child .js-date-picker {
+  width: calc(100% - 50px);
+}
+.js-date-picker::-webkit-calendar-picker-indicator {
+  display: none;
+  -webkit-appearance: none;
+}
+.crimson-action-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 41px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  border: 1px solid #8a1f35;
+  color: #fff0f3;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.32);
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #b12b4b 0%, #7b1e35 100%);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+.crimson-action-btn::before,
+.crimson-action-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(22, 24, 27, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.crimson-action-btn::before {
+  left: 8px;
+}
+.crimson-action-btn::after {
+  right: 8px;
+}
+.crimson-action-btn:hover {
+  filter: brightness(1.06) contrast(1.04);
+}
+.crimson-action-btn:active {
+  transform: translateY(0);
+}
+.bulk-buttons .btn.fancy-bulk-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.28);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+.bulk-buttons .btn.fancy-bulk-btn::before,
+.bulk-buttons .btn.fancy-bulk-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(22, 24, 27, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.bulk-buttons .btn.fancy-bulk-btn::before {
+  left: 8px;
+}
+.bulk-buttons .btn.fancy-bulk-btn::after {
+  right: 8px;
+}
+.bulk-buttons .btn.fancy-bulk-btn:hover {
+  filter: brightness(1.06) contrast(1.04);
+}
+.bulk-buttons .btn.fancy-bulk-btn:active {
+  transform: translateY(0);
+}
+.bulk-buttons .btn.bulk-edit.fancy-bulk-btn {
+  border-color: #1e40af;
+  color: #eef4ff;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+}
+.bulk-buttons .btn.bulk-duplicate.fancy-bulk-btn {
+  border-color: #166534;
+  color: #eefff3;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #16a34a 0%, #15803d 100%);
+}
+.bulk-buttons .btn.danger.fancy-bulk-btn {
+  border-color: #8a1f35;
+  color: #fff0f3;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06) 0 3px,
+      rgba(0, 0, 0, 0.08) 3px 6px
+    ),
+    linear-gradient(180deg, #b12b4b 0%, #7b1e35 100%);
+}
+@media (max-width: 640px) {
+  .js-date-picker {
+    font-size: 13px;
+    padding: 7px 8px;
+  }
+  .time-split {
+    gap: 6px;
+  }
+  .grid-3,
+  .grid-2 {
+    gap: 12px;
+  }
+  .grid-3 > .field input,
+  .grid-3 > .field select,
+  .grid-2 > .field input,
+  .grid-2 > .field select {
+    min-width: 0;
+  }
+  .month-tabs {
+    width: 100%;
+    max-width: 100%;
+    --month-tab-gap: 4px;
+    --month-tab-width: calc((100% - (var(--month-tab-gap) * 2)) / 3);
+  }
+  .month-tab {
+    width: var(--month-tab-width);
+    min-width: var(--month-tab-width);
+    max-width: var(--month-tab-width);
+    padding: 8px 4px;
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title dashboard-reggae-title">イベント管理</h1>
+<nav class="dashboard-breadcrumbs" aria-label="パンくず">
+  <a href="{{ url_for('admin_dashboard') }}">ダッシュボード</a>
+  <span class="dashboard-breadcrumb-separator" aria-hidden="true">＞</span>
+  <span class="current" aria-current="page">イベント管理</span>
+</nav>
+
+<section class="panel">
+  {% if error_message %}
+  <div class="notice error">{{ error_message }}</div>
+  {% endif %}
+  {% if success_message %}
+  <div class="notice success">{{ success_message }}</div>
+  {% endif %}
+
+  <h2 class="dashboard-reggae-heading" style="margin-top:0;">イベント登録</h2>
+  <form method="POST" id="event-editor-form">
+    <input type="hidden" name="action" value="{% if editing_event %}update_event{% else %}add_event{% endif %}">
+    <input type="hidden" name="month" id="editor-month" value="{{ selected_month }}">
+    <input type="hidden" name="editing_event_id" value="{{ editing_event_id or '' }}">
+    {% set default_start = editing_event['start_time'] if editing_event else '12:00' %}
+    {% set default_end = editing_event['end_time'] if editing_event else '12:00' %}
+    {% set start_hour = default_start[0:2] %}
+    {% set start_minute = default_start[3:5] %}
+    {% set end_hour = default_end[0:2] %}
+    {% set end_minute = default_end[3:5] %}
+    <div class="grid-3">
+      <div class="field">
+        <label>日付</label>
+        <input class="js-date-picker" type="date" name="date" value="{{ editing_event['date'] if editing_event else '' }}" required>
+      </div>
+      <div class="field">
+        <label>開始時刻</label>
+        <div class="time-split">
+          <select name="start_time_hour" required>
+            {% for hour in range(24) %}
+            {% set hour_text = '%02d'|format(hour) %}
+            <option value="{{ hour_text }}" {% if hour_text == start_hour %}selected{% endif %}>{{ hour_text }}時</option>
+            {% endfor %}
+          </select>
+          <span class="time-split-sep">:</span>
+          <select name="start_time_minute" required>
+            {% for minute in range(0, 60, 10) %}
+            {% set minute_text = '%02d'|format(minute) %}
+            <option value="{{ minute_text }}" {% if minute_text == start_minute %}selected{% endif %}>{{ minute_text }}分</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>終了時刻</label>
+        <div class="time-split">
+          <select name="end_time_hour" required>
+            {% for hour in range(24) %}
+            {% set hour_text = '%02d'|format(hour) %}
+            <option value="{{ hour_text }}" {% if hour_text == end_hour %}selected{% endif %}>{{ hour_text }}時</option>
+            {% endfor %}
+          </select>
+          <span class="time-split-sep">:</span>
+          <select name="end_time_minute" required>
+            {% for minute in range(0, 60, 10) %}
+            {% set minute_text = '%02d'|format(minute) %}
+            <option value="{{ minute_text }}" {% if minute_text == end_minute %}selected{% endif %}>{{ minute_text }}分</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label>内容</label>
+        <input type="text" name="opponent" value="{{ editing_event['opponent'] if editing_event else '' }}" placeholder="イベントを入力" required>
+      </div>
+      <div class="field">
+        <label>場所</label>
+        <input type="text" name="place" value="{{ editing_event['place'] if editing_event else '' }}" placeholder="グラウンド名など" required>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn crimson-action-btn" type="submit">{% if editing_event %}更新する{% else %}登録する{% endif %}</button>
+      {% if editing_event %}
+      <a class="btn secondary" href="{{ url_for('admin_team_events', team_id=team['id'], month=selected_month) }}">編集を解除</a>
+      {% endif %}
+    </div>
+  </form>
+</section>
+
+<section class="panel">
+  <h2 class="dashboard-reggae-heading" style="margin-top:0;">登録済みイベント</h2>
+
+  <form method="POST" id="event-list-form">
+    <input type="hidden" name="month" id="list-month" value="{{ selected_month }}">
+    <input type="hidden" name="selected_event_ids" id="selected-event-ids" value="">
+
+    <div class="bulk-buttons">
+      <button type="submit" name="action" value="start_edit" class="btn bulk-edit fancy-bulk-btn event-bulk-btn" disabled>編集</button>
+      <button type="submit" name="action" value="duplicate_event" class="btn bulk-duplicate fancy-bulk-btn event-bulk-btn" disabled>複製</button>
+      <button type="submit" name="action" value="delete_event" class="btn danger fancy-bulk-btn event-bulk-btn" disabled onclick="return confirm('選択したイベントを削除しますか？');">削除</button>
+    </div>
+
+    {% if months %}
+    <div class="month-tabs">
+      <div class="month-tabs-track">
+      {% for month in months %}
+      <button type="button" class="month-tab {% if month == selected_month %}active{% endif %}" data-month="{{ month }}">{{ month }}</button>
+      {% endfor %}
+      </div>
+    </div>
+
+    {% for month in months %}
+    <div class="month-pane {% if month == selected_month %}active{% endif %}" data-pane="{{ month }}">
+      {% set events = month_data.get(month, []) %}
+      {% if events %}
+      <div class="table-wrap">
+        <table class="events-table">
+          <thead>
+            <tr>
+              <th class="col-select">選択</th>
+              <th class="col-date">日付</th>
+              <th class="col-time">時間</th>
+              <th>内容</th>
+              <th>場所</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for event in events %}
+            <tr>
+              <td class="col-select">
+                <input class="inline-check event-select" type="checkbox" data-event-id="{{ event['id'] }}">
+              </td>
+              <td class="col-date">{{ event['date_label'] }}</td>
+              <td class="col-time">{{ event['start_time'] }} - {{ event['end_time'] }}</td>
+              <td>{{ event['opponent'] }}</td>
+              <td>{{ event['place'] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="notice" style="margin-bottom:0;">この月のイベントはありません。</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="notice" style="margin-bottom:0;">イベントはまだ登録されていません。</div>
+    {% endif %}
+  </form>
+</section>
+
+<div class="btn-row" style="margin-top:16px;">
+  <a class="btn secondary" href="{{ url_for('admin_dashboard') }}">ダッシュボードに戻る</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const tabs = document.querySelectorAll('.month-tab');
+  const panes = document.querySelectorAll('.month-pane');
+  const tabsContainer = document.querySelector('.month-tabs');
+  const tabsTrack = document.querySelector('.month-tabs-track');
+  const tabList = Array.from(tabs);
+  const selectedEventIdsInput = document.getElementById('selected-event-ids');
+  const listMonthInput = document.getElementById('list-month');
+  const editorMonthInput = document.getElementById('editor-month');
+  const eventChecks = document.querySelectorAll('.event-select');
+  const editButton = document.querySelector('button[name="action"][value="start_edit"]');
+  const duplicateButton = document.querySelector('button[name="action"][value="duplicate_event"]');
+  const deleteButton = document.querySelector('button[name="action"][value="delete_event"]');
+  const dateInputs = document.querySelectorAll('.js-date-picker');
+
+  const slideTabsForMonth = (month, { isInitial = false } = {}) => {
+    if (!tabsContainer || !tabsTrack) return;
+    const currentIndex = tabList.findIndex((tab) => tab.dataset.month === month);
+    if (currentIndex < 0) return;
+
+    const anchorIndex = currentIndex === 0 ? 0 : currentIndex - 1;
+    const anchorTab = tabList[anchorIndex];
+    if (!anchorTab) return;
+
+    const targetLeft = anchorTab.offsetLeft;
+    const maxSlide = Math.max(0, tabsTrack.scrollWidth - tabsContainer.clientWidth);
+    const clampedLeft = Math.min(Math.max(0, targetLeft), maxSlide);
+
+    if (isInitial) {
+      tabsTrack.style.transition = 'none';
+      tabsTrack.style.transform = `translateX(${-clampedLeft}px)`;
+      requestAnimationFrame(() => {
+        tabsTrack.style.transition = '';
+      });
+      return;
+    }
+
+    tabsTrack.style.transform = `translateX(${-clampedLeft}px)`;
+  };
+
+  const activateMonth = (month, options = {}) => {
+    tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.month === month));
+    panes.forEach((pane) => pane.classList.toggle('active', pane.dataset.pane === month));
+    slideTabsForMonth(month, options);
+    if (listMonthInput) listMonthInput.value = month;
+    if (editorMonthInput) editorMonthInput.value = month;
+    clearSelection();
+  };
+
+  const updateSelectedIds = () => {
+    const checkedIds = Array.from(eventChecks)
+      .filter((check) => check.checked)
+      .map((check) => (check.dataset.eventId || '').trim())
+      .filter((id) => id !== '');
+    if (selectedEventIdsInput) {
+      selectedEventIdsInput.value = checkedIds.join(',');
+    }
+    return checkedIds.length;
+  };
+
+  const updateBulkButtons = () => {
+    const selectedCount = updateSelectedIds();
+    if (editButton) editButton.disabled = selectedCount !== 1;
+    if (duplicateButton) duplicateButton.disabled = selectedCount < 1;
+    if (deleteButton) deleteButton.disabled = selectedCount < 1;
+  };
+
+  const clearSelection = () => {
+    eventChecks.forEach((check) => {
+      check.checked = false;
+    });
+    if (selectedEventIdsInput) selectedEventIdsInput.value = '';
+    updateBulkButtons();
+  };
+
+  eventChecks.forEach((check) => {
+    check.addEventListener('change', () => {
+      updateBulkButtons();
+    });
+  });
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => activateMonth(tab.dataset.month));
+  });
+
+  dateInputs.forEach((input) => {
+    const openPicker = () => {
+      if (typeof input.showPicker === 'function') {
+        input.showPicker();
+      }
+    };
+    input.addEventListener('click', openPicker);
+    input.addEventListener('focus', openPicker);
+  });
+
+  if (tabs.length) {
+    const activeTab = Array.from(tabs).find((tab) => tab.classList.contains('active')) || tabs[0];
+    activateMonth(activeTab.dataset.month, { isInitial: true });
+  } else {
+    updateBulkButtons();
+  }
+})();
+</script>
+{% endblock %}

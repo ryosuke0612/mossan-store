@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.pyc.*
+
+.codex_local/
+
+.env
+.env.local
+
+*.db
+*.db-journal
+tmp_*
+
+backups/
+
+.DS_Store
+Thumbs.db

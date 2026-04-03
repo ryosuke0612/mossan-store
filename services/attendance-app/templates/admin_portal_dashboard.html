@@ -1,0 +1,88 @@
+{% extends "admin_base.html" %}
+
+{% block title %}ダッシュボード | Mossan Store{% endblock %}
+
+{% block content %}
+<h1 class="page-title">ダッシュボード</h1>
+
+<section class="panel">
+  <div class="grid-2">
+    <div>
+      <label>ログイン中のメールアドレス</label>
+      <div>{{ admin_email }}</div>
+    </div>
+    <div>
+      <label>管理チーム数</label>
+      <div>{{ teams|length }}</div>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2 style="margin-top: 0;">管理メニュー</h2>
+  <div class="btn-row">
+    <a class="btn" href="{{ url_for('admin_team_settings') }}">チーム設定とメンバー管理</a>
+    <a class="btn" href="{{ url_for('admin_events') }}">イベント管理</a>
+  </div>
+</section>
+
+<section class="panel">
+  <h2 style="margin-top: 0;">管理チーム一覧</h2>
+  {% if teams %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>チーム名</th>
+          <th>公開ID</th>
+          <th>メンバー用URL</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for team in teams %}
+        <tr>
+          <td>{{ team["name"] }}</td>
+          <td>{{ team["public_id"] }}</td>
+          <td><a href="{{ url_for('member_team_page', public_id=team['public_id']) }}">/team/{{ team["public_id"] }}</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="notice success">
+    まだチームがありません。まずはチーム設定ページからチームを作成してください。
+  </div>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2 style="margin-top: 0;">最近のイベント</h2>
+  {% if events %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>日付</th>
+          <th>イベント名</th>
+          <th>チームID</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for event in events %}
+        <tr>
+          <td>{{ event["date"] }}</td>
+          <td>{{ event["opponent"] }}</td>
+          <td>{{ event["team_id"] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="notice success">
+    まだイベントは登録されていません。
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

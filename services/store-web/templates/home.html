@@ -1,0 +1,561 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Mossan Store | シンプルに整える。{% endblock %}
+
+{% block meta_description %}出欠管理、シフト管理、掲示板など、日々の運営をシンプルに整えるアプリを届ける Mossan Store のトップページです。{% endblock %}
+
+{% block meta_title %}Mossan Store | シンプルに整える。{% endblock %}
+
+{% block og_description %}出欠管理をはじめ、日々の運営をシンプルに整えるアプリや読みものを紹介しています。{% endblock %}
+
+{% block twitter_title %}Mossan Store | シンプルに整える。{% endblock %}
+
+{% block twitter_description %}出欠管理をはじめ、日々の運営をシンプルに整えるアプリや読みものを紹介しています。{% endblock %}
+
+{% block head_extra %}
+<style>
+:root {
+  --sand-50: #f3e8d9;
+  --sand-100: #e8d8c1;
+  --sand-200: #d9c1a0;
+  --sand-300: #c7a780;
+  --sand-500: #8d6845;
+  --ink-700: #4a392c;
+  --ink-900: #241b14;
+  --line: rgba(83, 66, 49, 0.12);
+  --shadow: 0 18px 40px rgba(88, 69, 46, 0.08);
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  padding-top: 0;
+  padding-bottom: 0;
+  background:
+    radial-gradient(circle at top left, rgba(210, 184, 149, 0.58), transparent 28%),
+    linear-gradient(180deg, #f0e1cd 0%, #e8d5bc 52%, #dfc7a7 100%);
+  color: var(--ink-900);
+}
+.page-wrap {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+.home-shell {
+  width: 100%;
+}
+.home-section {
+  width: min(1200px, 92%);
+  margin: 0 auto;
+}
+.hero {
+  padding: 140px 0 96px;
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 980px);
+  gap: 20px;
+  align-items: center;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  color: var(--sand-500);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 1px;
+  background: rgba(166, 135, 97, 0.6);
+}
+.hero h1,
+.section-title {
+  margin: 0;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+}
+.hero h1 {
+  font-size: clamp(46px, 7vw, 92px);
+}
+.hero p,
+.section-copy {
+  margin: 22px 0 0;
+  color: var(--ink-700);
+  font-size: clamp(16px, 1.9vw, 21px);
+  line-height: 1.9;
+}
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 34px;
+}
+.hero-support {
+  margin-top: 18px;
+}
+.hero-support-link {
+  color: var(--ink-700);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(83, 66, 49, 0.24);
+}
+.hero-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  padding: 0 22px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.hero-btn.primary {
+  background: var(--ink-900);
+  color: #f8f3ed;
+}
+.hero-btn.secondary {
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--ink-900);
+  border-color: var(--line);
+}
+.hero-btn:hover {
+  transform: translateY(-1px);
+}
+.section-block {
+  padding: 42px 0 88px;
+}
+.section-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+.section-kicker {
+  margin: 0 0 10px;
+  color: var(--sand-500);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.section-title {
+  font-size: clamp(34px, 4.6vw, 64px);
+}
+.section-link {
+  color: var(--ink-700);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+}
+.carousel {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(280px, 380px);
+  gap: 18px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  scroll-snap-type: x proximity;
+}
+.carousel::-webkit-scrollbar {
+  height: 8px;
+}
+.carousel::-webkit-scrollbar-thumb {
+  background: rgba(92, 74, 52, 0.18);
+  border-radius: 999px;
+}
+.card {
+  scroll-snap-align: start;
+  min-height: 360px;
+  padding: 28px;
+  border-radius: 28px;
+  background: rgba(255, 250, 244, 0.76);
+  border: 1px solid rgba(96, 75, 51, 0.08);
+  box-shadow: var(--shadow);
+}
+.card h3 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+.card p {
+  margin: 14px 0 0;
+  color: var(--ink-700);
+  line-height: 1.8;
+}
+.card-link {
+  display: inline-flex;
+  margin-top: 20px;
+  color: var(--ink-900);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+}
+.product-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: end;
+  background: linear-gradient(180deg, rgba(255, 248, 241, 0.3) 0%, rgba(235, 217, 190, 0.96) 100%);
+}
+.product-visual {
+  position: relative;
+  flex: 1;
+  margin-bottom: 24px;
+  border-radius: 24px;
+  background: linear-gradient(145deg, #ead8c2 0%, #d8bd9c 100%);
+  overflow: hidden;
+}
+.product-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  padding: 24px;
+  filter: drop-shadow(0 16px 24px rgba(71, 54, 35, 0.14));
+}
+.product-visual::before,
+.product-visual::after {
+  content: "";
+  position: absolute;
+  border-radius: 24px;
+  pointer-events: none;
+}
+.product-visual::before {
+  inset: 20px 46px 58px 46px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(96, 75, 51, 0.08);
+}
+.product-visual::after {
+  inset: 56px 76px 24px 76px;
+  background: linear-gradient(180deg, rgba(213, 194, 167, 0.42), rgba(255, 255, 255, 0));
+}
+.product-tone-2 .product-visual {
+  background: linear-gradient(145deg, #e6d2b8 0%, #cfaf89 100%);
+}
+.product-tone-3 .product-visual {
+  background: linear-gradient(145deg, #e1ccb0 0%, #caa57b 100%);
+}
+.blog-card {
+  min-height: 320px;
+  background: linear-gradient(180deg, rgba(255, 250, 245, 0.38) 0%, rgba(234, 217, 192, 0.95) 100%);
+}
+.contact-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 460px);
+  gap: 26px;
+  align-items: start;
+}
+.contact-panel,
+.contact-form {
+  padding: 28px;
+  border-radius: 28px;
+  background: rgba(255, 250, 244, 0.76);
+  border: 1px solid rgba(96, 75, 51, 0.08);
+  box-shadow: var(--shadow);
+}
+.contact-panel p {
+  margin: 14px 0 0;
+  color: var(--ink-700);
+  line-height: 1.8;
+}
+.contact-points {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+}
+.contact-point {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(241, 228, 208, 0.66);
+  color: var(--ink-900);
+  font-weight: 700;
+}
+.contact-form form {
+  display: grid;
+  gap: 14px;
+}
+.contact-form label {
+  display: grid;
+  gap: 7px;
+  color: var(--ink-900);
+  font-size: 14px;
+  font-weight: 700;
+}
+.contact-form input,
+.contact-form textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid rgba(96, 75, 51, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 252, 248, 0.94);
+  color: var(--ink-900);
+  font: inherit;
+}
+.contact-form textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+.contact-form button {
+  width: fit-content;
+}
+.contact-note {
+  margin: 0 0 14px;
+  color: var(--ink-700);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.contact-alert {
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.contact-alert.success {
+  background: rgba(225, 244, 229, 0.92);
+  color: #275237;
+}
+.contact-alert.error {
+  background: rgba(255, 237, 234, 0.94);
+  color: #7d3428;
+}
+.blog-meta {
+  color: var(--sand-500);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (max-width: 980px) {
+  .hero {
+    padding: 122px 0 72px;
+  }
+  .hero-grid,
+  .section-head,
+  .contact-grid {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+}
+@media (max-width: 720px) {
+  .home-section {
+    width: min(1200px, 94%);
+  }
+  .hero-actions {
+    flex-direction: column;
+  }
+  .hero-btn {
+    width: 100%;
+  }
+  .carousel {
+    grid-auto-columns: minmax(250px, 86vw);
+  }
+  .card {
+    min-height: 300px;
+    padding: 24px;
+  }
+}
+</style>
+{% endblock %}
+
+{% block header_nav_items %}
+<a href="#concept">Concept</a>
+<a href="#products">Product</a>
+<a href="#blog">Blog</a>
+<a href="#contact">質問・相談</a>
+<a href="{{ url_for('apps_list') }}">アプリ一覧</a>
+{% endblock %}
+
+{% block content %}
+<div class="home-shell">
+  <section class="home-section hero reveal" id="concept">
+    <div class="hero-grid">
+      <div>
+        <p class="eyebrow">Mossan Store</p>
+        <h1>日々の困りごとを、<br>アプリで解決する。</h1>
+        <p>
+          日々の運営や連絡で生まれる小さな負担を、
+          シンプルなアプリで整えていくためのサイトです。
+        </p>
+        <div class="hero-actions">
+          <a href="{{ url_for('apps_list') }}" class="hero-btn primary">Productを見る</a>
+          <a href="{{ url_for('blog_index') }}" class="hero-btn secondary">Blogを見る</a>
+        </div>
+        <p class="hero-support">
+          <a href="#contact" class="hero-support-link">質問・相談はこちら</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section section-block reveal" id="products">
+    <div class="section-head">
+      <div>
+        <p class="section-kicker">Product</p>
+        <h2 class="section-title">使いながら、静かに整える。</h2>
+        <p class="section-copy">カードを横に眺めながら、今の運営に合うプロダクトを見つけられる構成です。</p>
+      </div>
+      <a href="{{ url_for('apps_list') }}" class="section-link">すべて見る</a>
+    </div>
+    <div class="carousel">
+      <article class="card product-card">
+        <div class="product-visual">
+          <img src="{{ url_for('static', filename='images/gorilla-full.png') }}" alt="出欠ボードのイメージ">
+        </div>
+        <h3>出欠ボード+</h3>
+        <p>チームやイベントの出欠確認を、すっきり整えるためのプロダクトです。</p>
+        <a href="{{ url_for('attendance_description') }}" class="card-link">詳しく見る</a>
+      </article>
+      <article class="card product-card product-tone-2">
+        <div class="product-visual"></div>
+        <h3>Shift</h3>
+        <p>担当や割り振りを見やすく整理して、共有しやすくするためのアプリです。</p>
+        <a href="{{ url_for('shift_app') }}" class="card-link">詳しく見る</a>
+      </article>
+      <article class="card product-card product-tone-3">
+        <div class="product-visual"></div>
+        <h3>Noticeboard</h3>
+        <p>伝えることを、必要な人にわかりやすく届けるための掲示板アプリです。</p>
+        <a href="{{ url_for('noticeboard_app') }}" class="card-link">詳しく見る</a>
+      </article>
+      <article class="card product-card">
+        <div class="product-visual"></div>
+        <h3>QR Code</h3>
+        <p>使いたい場面ですぐ使える、シンプルなユーティリティです。</p>
+        <a href="{{ url_for('qrcode_app') }}" class="card-link">詳しく見る</a>
+      </article>
+    </div>
+  </section>
+
+  <section class="home-section section-block reveal" id="blog">
+    <div class="section-head">
+      <div>
+        <p class="section-kicker">Blog</p>
+        <h2 class="section-title">困りごとの背景も、言葉で整える。</h2>
+        <p class="section-copy">課題の見え方や考え方を、読みものとしてまとめています。</p>
+      </div>
+      <a href="{{ url_for('blog_index') }}" class="section-link">記事一覧へ</a>
+    </div>
+    <div class="carousel">
+      <article class="card blog-card">
+        <p class="blog-meta">Sports Attendance</p>
+        <h3>スポーツチームの出欠管理をわかりやすく。</h3>
+        <p>出欠確認をもっとスムーズにするための考え方を、わかりやすくまとめた記事です。</p>
+        <a href="{{ url_for('blog_sports_attendance') }}" class="card-link">記事を読む</a>
+      </article>
+      <article class="card blog-card">
+        <p class="blog-meta">PTA Attendance</p>
+        <h3>PTAイベントの出欠管理をシンプルに。</h3>
+        <p>人手の多いイベントで混線しやすい連絡や確認を、整理していくための内容です。</p>
+        <a href="{{ url_for('blog_pta_attendance') }}" class="card-link">記事を読む</a>
+      </article>
+      <article class="card blog-card">
+        <p class="blog-meta">Journal</p>
+        <h3>このサイトで大事にしていること。</h3>
+        <p>日々の困りごとを、シンプルなアプリで整えていくための考え方をまとめています。</p>
+        <a href="{{ url_for('blog_index') }}" class="card-link">一覧を見る</a>
+      </article>
+    </div>
+  </section>
+
+  <section class="home-section section-block reveal" id="contact">
+    <div class="section-head">
+      <div>
+        <p class="section-kicker">Contact</p>
+        <h2 class="section-title">導入前の質問や相談も受けられます。</h2>
+        <p class="section-copy">気になることを送っていただければ、指定のメールアドレスで受け取れるようにしています。</p>
+      </div>
+    </div>
+    <div class="contact-grid">
+      <article class="contact-panel">
+        <h3>こんな内容を送れます</h3>
+        <p>導入前の確認、運営に合うアプリの相談、機能の問い合わせなど、気軽な内容で大丈夫です。</p>
+        <div class="contact-points">
+          <div class="contact-point">どのアプリが合うか相談したい</div>
+          <div class="contact-point">イベント運営に使えるか確認したい</div>
+          <div class="contact-point">導入や改善の相談をしたい</div>
+        </div>
+      </article>
+      <article class="contact-form">
+        <h3>質問フォーム</h3>
+        {% if contact_status == "sent" %}
+        <p class="contact-alert success">お問い合わせを送信しました。内容を確認してご連絡します。</p>
+        {% endif %}
+        {% if contact_error_message %}
+        <p class="contact-alert error">{{ contact_error_message }}</p>
+        {% endif %}
+        {% if not contact_email_enabled %}
+        <p class="contact-note">現在はメール送信設定が未完了のため、SMTP設定を入れると送信できるようになります。</p>
+        {% endif %}
+        <form method="post" action="{{ url_for('contact_submit') }}">
+          <label for="contact-name">
+            お名前
+            <input id="contact-name" name="name" type="text" maxlength="80" required value="{{ contact_prefill.get('name', '') }}">
+          </label>
+          <label for="contact-email">
+            メールアドレス
+            <input id="contact-email" name="email" type="email" maxlength="160" required value="{{ contact_prefill.get('email', '') }}">
+          </label>
+          <label for="contact-subject">
+            件名
+            <input id="contact-subject" name="subject" type="text" maxlength="120" required value="{{ contact_prefill.get('subject', '') }}">
+          </label>
+          <label for="contact-message">
+            ご相談内容
+            <textarea id="contact-message" name="message" maxlength="3000" required>{{ contact_prefill.get('message', '') }}</textarea>
+          </label>
+          <button type="submit" class="hero-btn primary">送信する</button>
+        </form>
+      </article>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const revealTargets = document.querySelectorAll('.reveal');
+  if (revealTargets.length) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+        }
+      });
+    }, { threshold: 0.14, rootMargin: '0px 0px -8% 0px' });
+
+    revealTargets.forEach((target) => observer.observe(target));
+  }
+
+  const contactSection = document.getElementById('contact');
+  const hasContactFeedback =
+    new URLSearchParams(window.location.search).get('contact_status') ||
+    document.querySelector('.contact-alert.error');
+  if (hasContactFeedback && contactSection) {
+    contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+})();
+</script>
+{% endblock %}

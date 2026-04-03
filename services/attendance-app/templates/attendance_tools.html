@@ -1,0 +1,159 @@
+﻿{% extends "attendance_base.html" %}
+
+{% block title %}参加者ツール | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
+<style>
+.dashboard-reggae-title { font-family: 'Reggae One', 'Noto Sans JP', sans-serif; letter-spacing: 0.04em; color: #ead7b3; }
+.tag { display: inline-block; padding: 3px 8px; border: 1px solid #666; border-radius: 999px; font-size: 12px; margin-right: 6px; }
+.small-note { color: #c8c8c8; font-size: 13px; }
+.team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.team-card { border: 1px solid #3b3b3b; border-radius: 10px; padding: 10px; background: #0e0e0e; }
+.team-name { font-weight: 700; margin-bottom: 8px; }
+.member-list { margin: 0; padding: 0; list-style: none; }
+.member-list li { margin: 0 0 4px; }
+.big-pick { font-size: clamp(26px, 6vw, 48px); font-weight: 900; }
+.pick-list { margin: 12px 0 0; padding-left: 1.2em; }
+.pick-list li { margin-bottom: 8px; }
+.result-box { border: 1px solid #3b3b3b; border-radius: 10px; padding: 12px; background: #0e0e0e; }
+.copy-area { width: 100%; min-height: 90px; }
+.qr-wrap img { width: 200px; max-width: 60vw; border-radius: 10px; background: #fff; padding: 6px; }
+.tool-form { display: grid; gap: 8px; }
+.inline-submit-row { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; }
+.inline-submit-row select { width: 96px; margin: 0; }
+.inline-submit-label { font-size: 16px; font-weight: 800; letter-spacing: 0.04em; }
+.inline-submit-row .btn { white-space: nowrap; }
+.inline-submit-row .fancy-maroon-btn { flex: 1 1 auto; min-width: 0; }
+.fancy-maroon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 41px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  border: 1px solid #78172d;
+  color: #ffe9ee;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.32);
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.05) 0 3px,
+      rgba(0, 0, 0, 0.1) 3px 6px
+    ),
+    linear-gradient(180deg, #9d1f3c 0%, #681328 100%);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+.fancy-maroon-btn::before,
+.fancy-maroon-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(22, 24, 27, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.fancy-maroon-btn::before {
+  left: 8px;
+}
+.fancy-maroon-btn::after {
+  right: 8px;
+}
+.fancy-maroon-btn:hover {
+  filter: brightness(1.06) contrast(1.04);
+}
+.fancy-maroon-btn:active {
+  transform: translateY(0);
+}
+@media (max-width: 520px) {
+  .inline-submit-row {
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+  .inline-submit-row select { width: 72px; padding: 8px 8px; font-size: 14px; }
+  .inline-submit-label { font-size: 14px; letter-spacing: 0; }
+  .inline-submit-row .fancy-maroon-btn { padding: 8px 10px; font-size: 13px; }
+}
+</style>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const storageKey = "attendance-tools-scroll:" + window.location.pathname;
+  const savedPosition = window.sessionStorage.getItem(storageKey);
+  if (savedPosition !== null) {
+    window.scrollTo(0, Number(savedPosition));
+    window.sessionStorage.removeItem(storageKey);
+  }
+  document.querySelectorAll("form[data-preserve-scroll='true']").forEach(function (form) {
+    form.addEventListener("submit", function () {
+      window.sessionStorage.setItem(storageKey, String(window.scrollY));
+    });
+  });
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title dashboard-reggae-title">参加者ツール</h1>
+{% if tool_message %}<div class="notice success">{{ tool_message }}</div>{% endif %}
+
+<section class="panel">
+  {% set attendee_count = effective_attendees|length %}
+  {% set max_team_option = [[attendee_count, 2]|max, 9]|min %}
+  {% set max_pick_option = [[attendee_count, 1]|max, 9]|min %}
+  <div class="grid-2">
+    <form method="post" action="{{ url_for('attendance_check_team_split', match_id=match['id']) }}" class="tool-form" data-preserve-scroll="true">
+      <div class="inline-submit-row">
+        <span class="inline-submit-label">チーム数：</span>
+        <select name="team_count">
+          {% for count in range(2, max_team_option + 1) %}
+          <option value="{{ count }}" {% if count == selected_team_count %}selected{% endif %}>{{ count }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn fancy-maroon-btn">チーム分け</button>
+      </div>
+    </form>
+    <form method="post" action="{{ url_for('attendance_check_random_pick', match_id=match['id']) }}" class="tool-form" data-preserve-scroll="true">
+      <div class="inline-submit-row">
+        <span class="inline-submit-label">代表者数：</span>
+        <select name="pick_count">
+          {% for count in range(1, max_pick_option + 1) %}
+          <option value="{{ count }}" {% if count == selected_pick_count %}selected{% endif %}>{{ count }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn fancy-maroon-btn">代表者選出</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+{% if team_result %}
+<section class="panel">
+  <h2>チーム分け結果</h2>
+  <div class="team-grid">{% for team in team_result %}<div class="team-card"><div class="team-name">{{ team.name }}</div><ul class="member-list">{% for name in team.members %}<li>{{ loop.index }}. {{ name }}</li>{% endfor %}</ul></div>{% endfor %}</div>
+</section>
+{% endif %}
+
+{% if random_pick %}
+<section class="panel">
+  <h2>代表者選出結果</h2>
+  <div class="team-grid">
+    <div class="team-card">
+      <div class="team-name">代表者 {{ random_pick|length }}人</div>
+      <ul class="member-list">{% for picked_name in random_pick %}<li>{{ loop.index }}. {{ picked_name }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<div class="btn-row" style="margin-top:16px;"><a href="{{ url_for('attendance_check', match_id=match['id']) }}" class="btn secondary">出欠確認へ戻る</a></div>
+{% endblock %}

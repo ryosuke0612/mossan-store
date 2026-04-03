@@ -1,0 +1,143 @@
+{% extends "attendance_base.html" %}
+
+{% block title %}配車割り当て | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
+<style>
+.dashboard-reggae-title { font-family: 'Reggae One', 'Noto Sans JP', sans-serif; letter-spacing: 0.04em; color: #ead7b3; }
+.small-note { color: #c8c8c8; font-size: 13px; }
+.team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.team-card { border: 1px solid #3b3b3b; border-radius: 10px; padding: 10px; background: #0e0e0e; }
+.team-header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.team-name { font-weight: 700; margin: 0; }
+.assignment-form { display: grid; gap: 12px; }
+.driver-meta { margin: 0; white-space: nowrap; font-size: 14px; }
+.assignment-section-title { margin: 0 0 8px; font-size: 14px; color: #ead7b3; }
+.assignment-list { display: grid; gap: 8px; }
+.assignment-item {
+  display: grid;
+  gap: 6px;
+}
+.assignment-select {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+.assignment-empty {
+  color: #8d96a0;
+  font-size: 13px;
+}
+@media (max-width: 640px) {
+  .team-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const storageKey = "attendance-transport-scroll:" + window.location.pathname;
+  const savedPosition = window.sessionStorage.getItem(storageKey);
+  if (savedPosition !== null) {
+    window.scrollTo(0, Number(savedPosition));
+    window.sessionStorage.removeItem(storageKey);
+  }
+  document.querySelectorAll("form[data-preserve-scroll='true']").forEach(function (form) {
+    form.addEventListener("submit", function () {
+      window.sessionStorage.setItem(storageKey, String(window.scrollY));
+    });
+  });
+
+  const assignmentForm = document.getElementById("transport-assignment-form");
+  if (!assignmentForm) {
+    return;
+  }
+
+  const submitForm = function () {
+    window.sessionStorage.setItem(storageKey, String(window.scrollY));
+    assignmentForm.requestSubmit();
+  };
+
+  assignmentForm.querySelectorAll(".transport-seat-select").forEach(function (select) {
+    select.addEventListener("change", function () {
+      const selectedPassenger = select.value || "";
+      if (selectedPassenger) {
+        assignmentForm.querySelectorAll(".transport-seat-select").forEach(function (peer) {
+          if (peer !== select && peer.value === selectedPassenger) {
+            peer.value = "";
+          }
+        });
+      }
+      submitForm();
+    });
+  });
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title dashboard-reggae-title">配車割り当て</h1>
+{% if tool_message %}<div class="notice">{{ tool_message }}</div>{% endif %}
+
+<section class="panel">
+  <div>{{ match["date_label"] }} {{ match["start_time"] }}〜{{ match["end_time"] }}</div>
+  <div>{{ match["opponent"] }} @ {{ match["place"] }}</div>
+</section>
+
+<section class="panel">
+  {% if transport_driver_cards %}
+  <form
+    id="transport-assignment-form"
+    method="post"
+    action="{{ url_for('public_attendance_tools_save_transport_assignments', public_id=public_id, match_id=match['id']) }}"
+    class="assignment-form"
+    data-preserve-scroll="true"
+  >
+    <div class="team-grid">
+      {% for driver in transport_driver_cards %}
+      <div class="team-card">
+        <div class="team-header">
+          <div class="team-name">{{ driver["member_name"] }}</div>
+          <div class="driver-meta">空き {{ driver["remaining_seats"] }} / {{ driver["seats_available"] }}席</div>
+        </div>
+        {% if driver["note"] %}<div class="small-note" style="margin-bottom:10px;">{{ driver["note"] }}</div>{% endif %}
+
+        {% if transport_passenger_rows %}
+        <div class="assignment-section-title">この車に乗せるメンバー</div>
+        <div class="assignment-list">
+          {% for seat_index in range(driver["seats_available"]) %}
+          {% set assigned_passenger = driver["assigned_passengers"][seat_index] if seat_index < (driver["assigned_passengers"]|length) else "" %}
+          <div class="assignment-item">
+            <input type="hidden" name="driver_name" value="{{ driver['member_name'] }}">
+            <select name="passenger_name" class="transport-seat-select assignment-select">
+              <option value=""></option>
+              {% for row in transport_passenger_rows %}
+              <option value="{{ row['member_name'] }}" {% if assigned_passenger == row['member_name'] %}selected{% endif %}>
+                {{ row["member_name"] }}{% if row["assigned_driver"] and row["member_name"] != assigned_passenger %}（割当済み）{% endif %}{% if row["note"] %} - {{ row["note"] }}{% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="assignment-empty">乗車希望メンバーはいません。</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </form>
+  {% elif transport_passenger_rows %}
+  <div class="notice">運転するメンバーがいないため、まだ割り当てできません。</div>
+  {% else %}
+  <div class="notice">乗車希望メンバーはいません。</div>
+  {% endif %}
+</section>
+
+<div class="btn-row" style="margin-top:16px;">
+  <a href="{{ url_for('public_attendance_tools', public_id=public_id, match_id=match['id']) }}" class="btn secondary">参加者ツールへ</a>
+  <a href="{{ url_for('public_attendance_check', public_id=public_id, match_id=match['id']) }}" class="btn secondary">出欠確認へ戻る</a>
+</div>
+{% endblock %}

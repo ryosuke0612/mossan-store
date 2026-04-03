@@ -1,0 +1,509 @@
+﻿{% extends "admin_base_clean.html" %}
+
+{% block title %}集金管理 | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
+<style>
+.page-wrap,
+.page-wrap * {
+  font-family: "07YasashisaGothic", "やさしさゴシック", "Noto Sans JP", sans-serif;
+}
+.page-title {
+  font-family: "07YasashisaGothic", "やさしさゴシック", "Noto Sans JP", sans-serif;
+  letter-spacing: 0;
+}
+.dashboard-reggae-heading {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.02em;
+  color: #ead7b3;
+}
+.dashboard-reggae-title {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.04em;
+  color: #ead7b3;
+}
+.dashboard-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: -8px 0 18px;
+  font-size: 14px;
+  color: #b7c0cd;
+}
+.dashboard-breadcrumbs a {
+  color: #d7dde6;
+  text-decoration: none;
+}
+.dashboard-breadcrumbs a:hover {
+  color: #ffb0b0;
+  text-decoration: underline;
+}
+.dashboard-breadcrumbs .current {
+  color: #edf9f1;
+}
+.dashboard-breadcrumb-separator {
+  color: #8b95a5;
+}
+.toolbar-stack {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.toolbar-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.action-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 41px;
+  min-height: 41px;
+  padding: 10px 14px;
+  line-height: 1;
+  border-radius: 4px;
+  border: 1px solid #4a4f55;
+  color: #eef2f6;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.32);
+}
+.action-pill::before,
+.action-pill::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(22, 24, 27, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transform: translateY(-50%);
+}
+.action-pill::before {
+  left: 8px;
+}
+.action-pill::after {
+  right: 8px;
+}
+.action-pill.bulk-detail {
+  background:
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.05) 0 3px, rgba(0,0,0,0.08) 3px 6px),
+    linear-gradient(180deg, #4b5563 0%, #374151 100%);
+  border-color: #4b5563;
+  color: #eef2f7;
+}
+.action-pill.bulk-edit {
+  background:
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.05) 0 3px, rgba(0,0,0,0.08) 3px 6px),
+    linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+  border-color: #1d4ed8;
+  color: #eef4ff;
+}
+.action-pill.bulk-duplicate {
+  background:
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.05) 0 3px, rgba(0,0,0,0.08) 3px 6px),
+    linear-gradient(180deg, #22c55e 0%, #15803d 100%);
+  border-color: #15803d;
+  color: #eefff3;
+}
+.action-pill.danger {
+  background:
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.05) 0 3px, rgba(0,0,0,0.08) 3px 6px),
+    linear-gradient(180deg, #ec4899 0%, #be185d 100%);
+  border-color: #be185d;
+  color: #fff1f7;
+}
+.action-pill:disabled {
+  background: transparent !important;
+  border-color: #3a3a3a !important;
+  color: #666 !important;
+}
+.attendance-table-wrap {
+  overflow-x: auto;
+}
+.events-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+  background: #11151b;
+  border-collapse: collapse;
+}
+.events-table thead th {
+  border: 1px solid #2f6d44;
+  background: linear-gradient(180deg, #3b8f5f 0%, #2a6d48 100%);
+  color: #f2fff6;
+  padding: 8px 6px;
+  text-align: center;
+  vertical-align: middle;
+}
+.events-table tbody td {
+  border: 1px solid #2f3946;
+  background: #11151b;
+  color: #e5e7eb;
+  text-align: center;
+  vertical-align: middle;
+  padding: 10px 8px;
+}
+.events-table tbody tr:hover td {
+  background: #1b222c;
+}
+.events-table .col-select {
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+  text-align: center;
+}
+.events-table td.col-select {
+  padding-left: 0;
+  padding-right: 0;
+  text-align: center;
+}
+.inline-check {
+  display: block;
+  width: 16px;
+  margin-left: auto;
+  margin-right: auto;
+  float: none;
+}
+.events-table .col-event {
+  width: auto;
+  min-width: 220px;
+  text-align: left;
+}
+.events-table .col-summary {
+  width: 132px;
+  min-width: 132px;
+  max-width: 132px;
+}
+.event-lines,
+.summary-lines {
+  line-height: 1.4;
+}
+.event-lines {
+  text-align: left;
+}
+.event-lines > div:first-child {
+  font-weight: 700;
+}
+.event-lines > div:last-child {
+  color: #c8d0db;
+  font-size: 13px;
+}
+.summary-head-marks,
+.summary-values {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  text-align: center;
+}
+.collection-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+.plain-page-link {
+  color: #e5e7eb;
+  text-decoration: none;
+  font-size: 22px;
+  line-height: 1;
+}
+.plain-page-link:hover {
+  color: #ffffff;
+}
+.page-indicator {
+  color: #d1d5db;
+}
+.crimson-action-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 41px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  border: 1px solid #8a1f35;
+  color: #fff0f3;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 5px 12px rgba(0, 0, 0, 0.32);
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0 3px, rgba(0, 0, 0, 0.08) 3px 6px),
+    linear-gradient(180deg, #b12b4b 0%, #7b1e35 100%);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+.crimson-action-btn::before,
+.crimson-action-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(22, 24, 27, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.crimson-action-btn::before {
+  left: 8px;
+}
+.crimson-action-btn::after {
+  right: 8px;
+}
+.crimson-action-btn:hover {
+  filter: brightness(1.06) contrast(1.04);
+}
+.crimson-action-btn:active {
+  transform: translateY(0);
+}
+@media (max-width: 760px) {
+  .toolbar-row {
+    align-items: stretch;
+  }
+  .action-pill {
+    height: 36px;
+    min-height: 36px;
+    padding: 8px 10px;
+    font-size: 14px;
+    letter-spacing: 0;
+    white-space: nowrap;
+  }
+  .action-pill::before,
+  .action-pill::after,
+  .crimson-action-btn::before,
+  .crimson-action-btn::after {
+    display: none;
+  }
+  .events-table .col-summary {
+    width: 108px;
+    min-width: 108px;
+    max-width: 108px;
+  }
+  .events-table td.col-select {
+    text-align: center;
+  }
+  .events-table td.col-select .inline-check {
+    display: block;
+    width: 16px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title dashboard-reggae-title">集金管理</h1>
+<nav class="dashboard-breadcrumbs" aria-label="パンくず">
+  <a href="{{ url_for('admin_dashboard') }}">ダッシュボード</a>
+  <span class="dashboard-breadcrumb-separator" aria-hidden="true">＞</span>
+  <span class="current" aria-current="page">集金管理</span>
+</nav>
+
+<section class="panel">
+  {% if error_message %}
+  <div class="notice error">{{ error_message }}</div>
+  {% endif %}
+  {% if success_message %}
+  <div class="notice success">{{ success_message }}</div>
+  {% endif %}
+
+  <h2 class="dashboard-reggae-heading" style="margin-top:0;">集金イベント登録</h2>
+  <form method="POST" id="collection-editor-form">
+    <input type="hidden" name="action" value="{% if editing_collection %}update_collection{% else %}create_collection{% endif %}">
+    <input type="hidden" name="page" value="{{ page }}">
+    <input type="hidden" name="scroll_y" class="js-scroll-y" value="{{ scroll_y }}">
+    <input type="hidden" name="editing_collection_id" value="{{ editing_collection_id or '' }}">
+    <input type="hidden" name="target_mode" id="target-mode-input" value="all_active">
+    <input type="hidden" name="collection_date" value="{{ editing_collection['collection_date'] if editing_collection else '' }}">
+    <div class="grid-2">
+      <div class="field">
+        <label>集金イベント名</label>
+        <input type="text" name="title" value="{{ editing_collection['title'] if editing_collection else '' }}" placeholder="例: 4月会費" required>
+      </div>
+      <div class="field">
+        <label>金額</label>
+        <input type="number" min="0" step="1" name="amount" value="{{ editing_collection['amount'] if editing_collection else '' }}" placeholder="2000" required>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label>備考</label>
+        <input type="text" name="note" value="{{ editing_collection['note'] if editing_collection else '' }}" placeholder="任意">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn crimson-action-btn" type="submit">{% if editing_collection %}更新する{% else %}登録する{% endif %}</button>
+      {% if editing_collection %}
+      <a class="btn secondary" href="{{ url_for('admin_team_collections', team_id=team['id'], page=page, scroll_y=scroll_y) }}">編集を解除</a>
+      {% endif %}
+    </div>
+  </form>
+</section>
+
+<section class="panel">
+  <h2 class="dashboard-reggae-heading" style="margin-top:0;">登録済み集金イベント</h2>
+
+  <div class="toolbar-stack">
+    <div class="toolbar-row">
+      <button form="collection-list-form" type="submit" name="action" value="open_detail" id="detail-button" class="btn action-pill bulk-detail" disabled>詳細確認</button>
+      <button form="collection-list-form" type="submit" name="action" value="start_edit" id="edit-button" class="btn action-pill bulk-edit" disabled>編集</button>
+      <button form="collection-list-form" type="submit" name="action" value="duplicate_collection" id="duplicate-button" class="btn action-pill bulk-duplicate" disabled>複製</button>
+      <button form="collection-list-form" type="submit" name="action" value="delete_collection" id="delete-button" class="btn action-pill danger" disabled onclick="return confirm('選択した集金イベントを削除しますか？');">削除</button>
+    </div>
+  </div>
+
+  <form method="POST" id="collection-list-form">
+    <input type="hidden" name="page" value="{{ page }}">
+    <input type="hidden" name="scroll_y" class="js-scroll-y" value="{{ scroll_y }}">
+    <input type="hidden" name="selected_collection_ids" id="selected-collection-ids" value="">
+  </form>
+
+  {% if collection_rows %}
+  <div class="table-wrap attendance-table-wrap">
+    <table class="events-table">
+      <thead>
+        <tr>
+          <th class="col-select">選択</th>
+          <th class="col-event">イベント名・金額</th>
+          <th class="col-summary">
+            <div class="summary-head-marks">
+              <span>○</span>
+              <span>×</span>
+              <span>ー</span>
+            </div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in collection_rows %}
+        <tr>
+          <td class="col-select">
+            <input form="collection-list-form" class="inline-check collection-select" type="checkbox" data-collection-id="{{ row['id'] }}">
+          </td>
+          <td class="col-event">
+            <div class="event-lines">
+              <div>{{ row["title"] }}</div>
+              <div>{{ row["collection_date_label"] }} / {{ row["amount_label"] }} / {{ row["note"] or "備考なし" }}</div>
+            </div>
+          </td>
+          <td class="col-summary">
+            <div class="summary-lines">
+              <div class="summary-values">
+                <span>{{ row["summary"]["collected_count"] }}</span>
+                <span>{{ row["summary"]["pending_count"] }}</span>
+                <span>{{ row["summary"]["exempt_count"] }}</span>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="notice" style="margin-bottom:0;">集金イベントはまだ登録されていません。</div>
+  {% endif %}
+
+  {% if total_pages > 1 %}
+  <div class="collection-pagination">
+    {% if page > 1 %}
+    <a class="collection-page-link plain-page-link" href="{{ url_for('admin_team_collections', team_id=team['id'], page=page-1, scroll_y=scroll_y) }}">&#9664;</a>
+    {% endif %}
+    <span class="page-indicator">{{ page }} / {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a class="collection-page-link plain-page-link" href="{{ url_for('admin_team_collections', team_id=team['id'], page=page+1, scroll_y=scroll_y) }}">&#9654;</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+
+<div class="btn-row" style="margin-top:16px;">
+  <a class="btn secondary" href="{{ url_for('admin_dashboard') }}">ダッシュボードに戻る</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(() => {
+  const scrollParam = {{ scroll_y|tojson }};
+  const selectedCollectionIdsInput = document.getElementById('selected-collection-ids');
+  const scrollInputs = Array.from(document.querySelectorAll('.js-scroll-y'));
+  const paginationLinks = document.querySelectorAll('.collection-page-link');
+  const collectionChecks = document.querySelectorAll('.collection-select');
+  const editButton = document.getElementById('edit-button');
+  const detailButton = document.getElementById('detail-button');
+  const duplicateButton = document.getElementById('duplicate-button');
+  const deleteButton = document.getElementById('delete-button');
+  const listForm = document.getElementById('collection-list-form');
+  const editorForm = document.getElementById('collection-editor-form');
+
+  const syncScrollValue = () => {
+    const currentValue = String(window.scrollY || 0);
+    scrollInputs.forEach((input) => {
+      input.value = currentValue;
+    });
+  };
+
+  const restoreScrollPosition = () => {
+    if (!scrollParam) return;
+    window.requestAnimationFrame(() => {
+      window.scrollTo(0, Number(scrollParam) || 0);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('scroll_y');
+      window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+    });
+  };
+
+  const updateSelectedIds = () => {
+    const checkedIds = Array.from(collectionChecks)
+      .filter((check) => check.checked)
+      .map((check) => (check.dataset.collectionId || '').trim())
+      .filter((id) => id !== '');
+    if (selectedCollectionIdsInput) {
+      selectedCollectionIdsInput.value = checkedIds.join(',');
+    }
+    return checkedIds.length;
+  };
+
+  const updateBulkButtons = () => {
+    const selectedCount = updateSelectedIds();
+    if (editButton) editButton.disabled = selectedCount !== 1;
+    if (detailButton) detailButton.disabled = selectedCount !== 1;
+    if (duplicateButton) duplicateButton.disabled = selectedCount < 1;
+    if (deleteButton) deleteButton.disabled = selectedCount < 1;
+  };
+
+  collectionChecks.forEach((check) => {
+    check.addEventListener('change', updateBulkButtons);
+  });
+
+  paginationLinks.forEach((link) => {
+    link.addEventListener('click', syncScrollValue);
+  });
+
+  [listForm, editorForm].forEach((form) => {
+    if (!form) return;
+    form.addEventListener('submit', syncScrollValue);
+  });
+
+  updateBulkButtons();
+  restoreScrollPosition();
+})();
+</script>
+{% endblock %}
+
+

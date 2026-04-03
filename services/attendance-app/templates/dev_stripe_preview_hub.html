@@ -1,0 +1,111 @@
+{% extends "admin_base_clean.html" %}
+
+{% block title %}Stripeプレビュー | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<style>
+.preview-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.preview-card {
+  padding: 18px;
+  border: 1px solid #31404f;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(19, 25, 33, 0.96) 0%, rgba(13, 18, 24, 0.98) 100%);
+}
+
+.preview-card h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.preview-card p {
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+
+.preview-link-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.preview-link {
+  display: block;
+  padding: 12px 14px;
+  border: 1px solid #445669;
+  border-radius: 12px;
+  color: #eef4fb;
+  text-decoration: none;
+  background: rgba(27, 38, 50, 0.8);
+}
+
+.preview-link strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.preview-link span {
+  color: #c4d0db;
+  font-size: 14px;
+}
+
+.url-list code {
+  display: block;
+  margin-top: 8px;
+  white-space: pre-wrap;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Stripeプレビュー</h1>
+
+<section class="panel" style="max-width: 1080px;">
+  <div class="notice">
+    ローカル表示確認専用のハブです。ここから管理者側とサイト運営者側の各シナリオへ移動できます。実決済、実申請、実承認、Stripe再確認はこの導線では実行されません。
+  </div>
+
+  <div class="preview-grid">
+    <div class="preview-card">
+      <h2>管理者側プレビュー</h2>
+      <p>決済前、決済完了未申請、承認待ち、承認済み履歴をシナリオ単位で確認できます。</p>
+      <div class="preview-link-list">
+        {% for link in admin_preview_links %}
+        <a class="preview-link" href="{{ link['url'] }}">
+          <strong>{{ link['label'] }}</strong>
+          <span>{{ link['title'] }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="preview-card">
+      <h2>サイト運営者側プレビュー</h2>
+      <p>承認可能な Stripe pending、承認不可な legacy PayPay pending、承認済み Stripe 履歴を分けて確認できます。</p>
+      <div class="preview-link-list">
+        {% for link in site_admin_preview_links %}
+        <a class="preview-link" href="{{ link['url'] }}">
+          <strong>{{ link['label'] }}</strong>
+          <span>{{ link['title'] }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="field url-list" style="margin-top: 18px;">
+    <label>ローカル確認URL</label>
+    <code>/dev/stripe-preview</code>
+    {% for link in admin_preview_links %}
+    <code>{{ link['url'] }}</code>
+    {% endfor %}
+    {% for link in site_admin_preview_links %}
+    <code>{{ link['url'] }}</code>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

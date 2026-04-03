@@ -1,0 +1,207 @@
+{% extends "attendance_base.html" %}
+
+{% block title %}出欠登録 | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<style>
+.attendance-table-wrap {
+  overflow-x: hidden;
+}
+.attendance-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+.attendance-table th,
+.attendance-table td {
+  padding: 8px;
+  font-size: 13px;
+  vertical-align: top;
+}
+.attendance-table .event-cell {
+  width: 34%;
+  text-align: left;
+}
+.attendance-table .member-col,
+.attendance-table .status-cell {
+  min-width: 0;
+}
+.event-lines {
+  line-height: 1.45;
+  word-break: break-word;
+}
+.status-select {
+  width: 100%;
+  min-width: 0;
+  font-size: 13px;
+  padding: 8px 10px;
+}
+.status-select.join {
+  border-color: #ff4b4b;
+  color: #ffd3d3;
+}
+.status-select.absent {
+  border-color: #a22626;
+  color: #ffd6d6;
+}
+.status-select.undecided {
+  border-color: #c77900;
+  color: #ffdca6;
+}
+.cell-form {
+  margin: 0;
+}
+@media (max-width: 900px) {
+  .attendance-table,
+  .attendance-table thead,
+  .attendance-table tbody,
+  .attendance-table tr,
+  .attendance-table th,
+  .attendance-table td {
+    display: block;
+    width: 100%;
+  }
+  .attendance-table thead {
+    display: none;
+  }
+  .attendance-table tr {
+    border: 1px solid #2f2f2f;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    padding: 8px;
+    background: #111;
+  }
+  .attendance-table td {
+    border: none;
+    padding: 6px 0;
+  }
+  .attendance-table .event-cell {
+    width: 100%;
+    border-bottom: 1px solid #2a2a2a;
+    margin-bottom: 6px;
+    padding-bottom: 8px;
+  }
+  .attendance-table .status-cell {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 8px;
+    align-items: center;
+  }
+  .attendance-table .status-cell::before {
+    content: attr(data-label);
+    color: #b8b8b8;
+    font-size: 12px;
+    word-break: break-word;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">出欠登録</h1>
+
+{% if error_message %}
+<section class="panel">
+  <div class="notice error" style="margin-bottom:0;">{{ error_message }}</div>
+</section>
+{% endif %}
+
+<section class="panel">
+  <form method="GET" class="grid-3" style="align-items:end;">
+    <div class="field" style="margin:0;">
+      <label>メンバー</label>
+      <select name="name">
+        <option value="">全員表示</option>
+        {% for member_name in member_options %}
+        <option value="{{ member_name }}" {% if name == member_name %}selected{% endif %}>{{ member_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field" style="margin:0;">
+      <label>月</label>
+      <select name="month">
+        {% for m in months %}
+        <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field" style="margin:0;">
+      <label>&nbsp;</label>
+      <button class="btn" type="submit">表示</button>
+    </div>
+  </form>
+</section>
+
+{% if matches %}
+<section class="panel">
+  {% if not display_member_names %}
+  <div class="notice" style="margin-bottom:0;">登録済みメンバーがいません。</div>
+  {% else %}
+  <div class="table-wrap attendance-table-wrap">
+    <table class="attendance-table">
+      <thead>
+        <tr>
+          <th class="event-cell">日付 / イベント</th>
+          {% for member_name in display_member_names %}
+          <th class="member-col">{{ member_name }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for match in matches %}
+        <tr>
+          <td class="event-cell">
+            <div class="event-lines">
+              <div>{{ match["date_label"] }} {{ match["start_time"] }} - {{ match["end_time"] }}</div>
+              <div>{{ match["opponent"] }} @ {{ match["place"] }}</div>
+            </div>
+          </td>
+          {% for member_name in display_member_names %}
+          {% set current_status = attendance_dict.get((match['id'], member_name), '') %}
+          <td class="status-cell" data-label="{{ member_name }}">
+            <form method="POST" class="cell-form attendance-select-form">
+              <input type="hidden" name="name" value="{{ member_name }}">
+              <input type="hidden" name="filter_name" value="{{ name }}">
+              <input type="hidden" name="month" value="{{ selected_month }}">
+              <input type="hidden" name="match_id" value="{{ match['id'] }}">
+              <select name="status" class="status-select {% if current_status == '参加' %}join{% elif current_status == '不参加' %}absent{% elif current_status == '未定' %}undecided{% endif %}" onchange="this.form.submit()">
+                <option value="参加" {% if current_status == '参加' %}selected{% endif %}>参加</option>
+                <option value="不参加" {% if current_status == '不参加' %}selected{% endif %}>不参加</option>
+                <option value="未定" {% if current_status == '未定' or not current_status %}selected{% endif %}>未定</option>
+              </select>
+            </form>
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+{% elif selected_month %}
+<section class="panel">
+  <div class="notice" style="margin-bottom:0;">選択した月のイベントはありません。</div>
+</section>
+{% endif %}
+
+<div class="btn-row" style="margin-top:16px;">
+  <a href="{{ url_for('index') }}{% if selected_month %}?month={{ selected_month }}{% endif %}" class="btn secondary">戻る</a>
+</div>
+
+<script>
+(() => {
+  const storageKey = `attendance-scroll:${location.pathname}:${location.search}`;
+  const savedY = sessionStorage.getItem(storageKey);
+  if (savedY !== null) {
+    sessionStorage.removeItem(storageKey);
+    window.scrollTo(0, Number(savedY) || 0);
+  }
+  document.querySelectorAll(".attendance-select-form").forEach((form) => {
+    form.addEventListener("submit", () => {
+      sessionStorage.setItem(storageKey, String(window.scrollY));
+    });
+  });
+})();
+</script>
+{% endblock %}

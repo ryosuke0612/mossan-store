@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}PTAイベントでの出欠管理の困りごと | Mossan Store{% endblock %}
+{% block head_extra %}
+<meta name="description" content="PTAイベントの出欠管理で起こる連絡混在や集計負担の課題を整理し、運営を安定化する解決策を紹介します。">
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">PTAイベントでの出欠管理の困りごと</h1>
+
+<section class="panel">
+  <h2 style="margin-top:0;">よくある困りごと</h2>
+  <ul>
+    <li>連絡網・メール・チャットが混在し、回答状況の確認に時間がかかる</li>
+    <li>担当者が手作業で集計するため、記入ミスや更新漏れが起こる</li>
+    <li>急な変更時に最新情報が行き渡らず、当日の運営負担が増える</li>
+  </ul>
+</section>
+
+<section class="panel">
+  <h2 style="margin-top:0;">解決策</h2>
+  <p>
+    PTA行事ごとに出欠フォームを固定し、回答を一元管理すると、
+    役員間の引き継ぎや最新状況の共有がスムーズになります。
+    履歴を月別で残せば、次年度の準備にも再利用できます。
+  </p>
+  <div class="btn-row">
+    <a href="{{ url_for('index') }}" class="btn">出欠管理アプリを開く</a>
+    <a href="{{ url_for('attendance_description') }}" class="btn secondary">Attendance紹介を見る</a>
+    <a href="{{ url_for('blog_index') }}" class="btn secondary">記事一覧に戻る</a>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "attendance_base.html" %}
+
+{% block title %}新規登録 | Mossan Store{% endblock %}
+
+{% block content %}
+<h1 class="page-title">新規登録</h1>
+<div class="panel" style="max-width:520px;">
+  {% if error_message %}
+  <div class="notice error">{{ error_message }}</div>
+  {% endif %}
+
+  <form method="POST" action="{{ url_for('register') }}">
+    <div class="field">
+      <label>チーム名</label>
+      <input type="text" name="team_name" required>
+    </div>
+    <div class="field">
+      <label>パスワード（6文字以上）</label>
+      <input type="password" name="password" minlength="6" required>
+    </div>
+    <div class="btn-row">
+      <button class="btn" type="submit">登録する</button>
+      <a class="btn secondary" href="{{ url_for('login') }}">ログインへ</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+﻿{% extends "attendance_base.html" %}
+
+{% block title %}チーム分け共有 | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<style>
+.share-title {
+  font-size: clamp(28px, 6vw, 44px);
+  margin: 0 0 12px;
+}
+.share-meta {
+  color: #d0d0d0;
+  margin-bottom: 12px;
+}
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+}
+.team-card {
+  border: 1px solid #3b3b3b;
+  border-radius: 12px;
+  padding: 14px;
+  background: #0e0e0e;
+}
+.team-name {
+  font-size: clamp(22px, 5vw, 30px);
+  font-weight: 900;
+  margin-bottom: 10px;
+}
+.member-list {
+  margin: 0;
+  padding-left: 20px;
+}
+.member-list li {
+  margin-bottom: 6px;
+  font-size: clamp(18px, 3.8vw, 24px);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <h1 class="share-title">チーム分け結果</h1>
+  <div class="share-meta">共有ID: {{ share_id }} / 作成: {{ created_at }}</div>
+  {% if teams %}
+  <div class="team-grid">
+    {% for team in teams %}
+    <div class="team-card">
+      <div class="team-name">{{ team.name }}</div>
+      <ol class="member-list">
+        {% for name in team.members %}
+        <li>{{ name }}</li>
+        {% endfor %}
+      </ol>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p>共有できるチーム分け結果がありません。</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,259 @@
+﻿{% extends "admin_base_clean.html" %}
+
+{% block title %}有料プラン監査履歴 | Mossan Store{% endblock %}
+
+{% block header_nav_items %}
+<a href="{{ url_for('admin_dashboard') }}">ダッシュボード</a>
+{% if session.get('is_site_admin') %}
+<a href="{{ url_for('site_admin_dashboard') }}">サイト運営者ページ</a>
+{% endif %}
+{% if session.get('admin_id') %}
+<a href="{{ url_for('admin_logout') }}">ログアウト</a>
+{% else %}
+<a href="{{ url_for('admin_login_entry') }}">管理者ログイン</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
+<style>
+  .dashboard-reggae-title {
+    font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+    letter-spacing: 0.04em;
+    color: #ead7b3;
+  }
+
+  .request-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    background: #11151b;
+  }
+
+  .request-table th,
+  .request-table td {
+    padding: 10px 12px;
+    border: 1px solid #2f3946;
+    color: #e5e7eb;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .request-table thead th {
+    background: linear-gradient(180deg, #3b8f5f 0%, #2a6d48 100%);
+    color: #f2fff6;
+  }
+
+  .request-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 76px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .request-status.pending { background: rgba(206, 156, 46, 0.18); color: #ffe29d; }
+  .request-status.approved { background: rgba(53, 142, 86, 0.18); color: #c8f0d2; }
+  .request-status.rejected { background: rgba(151, 56, 56, 0.18); color: #ffc5c5; }
+
+  .action-form {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .detail-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 88px;
+    padding: 8px 12px;
+    border: 1px solid #355043;
+    border-radius: 10px;
+    color: #e5f7ec;
+    background: #173122;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .back-link {
+    display: inline-flex;
+    margin-bottom: 18px;
+    color: #cfe5d7;
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .sub-note {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .preview-banner {
+    margin-bottom: 18px;
+    padding: 16px 18px;
+    border: 1px solid #3d5a4d;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(24, 49, 37, 0.95) 0%, rgba(14, 28, 21, 0.98) 100%);
+  }
+
+  .preview-banner h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+  }
+
+  .preview-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 14px 0 0;
+  }
+
+  .preview-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid #527862;
+    color: #e5f7ec;
+    text-decoration: none;
+    font-weight: 700;
+    background: rgba(23, 49, 34, 0.78);
+  }
+
+  .preview-chip.active {
+    border-color: #d9f7e2;
+    color: #0d2316;
+    background: #d8f4df;
+  }
+
+  .preview-checks {
+    margin: 12px 0 0;
+    padding-left: 20px;
+    color: #d9e7de;
+  }
+
+  .preview-disabled-note {
+    margin-top: 6px;
+    color: #b8cabb;
+    font-size: 13px;
+  }
+</style>
+
+<h1 class="page-title dashboard-reggae-title">有料プラン監査履歴</h1>
+<a class="back-link" href="{{ preview_hub_url if preview_mode else url_for('site_admin_dashboard') }}">{% if preview_mode %}プレビューハブへ戻る{% else %}サイト運営者ページへ戻る{% endif %}</a>
+
+<section class="panel">
+  {% if preview_mode %}
+  <div class="preview-banner">
+    <h2>{{ preview_title }}</h2>
+    <div>{{ preview_summary }}</div>
+    {% if preview_checks %}
+    <ul class="preview-checks">
+      {% for item in preview_checks %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    <div class="preview-chip-row">
+      <a class="preview-chip" href="{{ preview_hub_url }}">プレビューハブへ戻る</a>
+      {% for link in preview_scenario_links %}
+      <a class="preview-chip {% if link['active'] %}active{% endif %}" href="{{ link['url'] }}">{{ link['label'] }}</a>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="notice">ローカル表示確認用プレビューです。監査表示と Stripe 再確認ボタンは表示確認専用で無効化されています。</div>
+  {% endif %}
+  <p style="margin-top: 0; color: var(--muted);">
+    要確認 {{ pending_count }} 件 / 全 {{ request_rows|length }} 件
+  </p>
+  <div class="notice">Stripe 決済の承認操作は廃止されています。Stripe API で `completed / paid` を確認できた決済だけ、自動で有料プランへ反映されます。</div>
+
+  {% if error_message %}
+  <div class="notice error">{{ error_message }}</div>
+  {% endif %}
+  {% if success_message %}
+  <div class="notice success">{{ success_message }}</div>
+  {% endif %}
+
+  {% if request_rows %}
+  <div class="table-wrap">
+    <table class="request-table">
+      <thead>
+        <tr>
+          <th>操作</th>
+          <th>記録日時</th>
+          <th>管理者メールアドレス</th>
+          <th>支払方法</th>
+          <th>支払金額</th>
+          <th>支払日</th>
+          <th>識別情報</th>
+          <th>ステータス</th>
+          <th>支払確認</th>
+          <th>最終確認日</th>
+          <th>決済状態</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in request_rows %}
+        <tr>
+          <td>
+            {% if row["payment_method"] == "stripe" %}
+            <span class="sub-note">自動反映対象</span>
+            {% if row.get("stripe_checkout_session_id") %}
+            <form method="POST" action="{{ '#' if preview_mode else url_for('admin_refresh_stripe_payment', checkout_session_id=row['stripe_checkout_session_id']) }}" style="margin-top: 8px;">
+              {% if preview_mode %}
+              <button class="btn secondary" type="button" disabled>Stripe再確認</button>
+              <div class="preview-disabled-note">{{ preview_actions_disabled_reason }}</div>
+              {% else %}
+              <button class="btn secondary" type="submit">Stripe再確認</button>
+              {% endif %}
+            </form>
+            {% endif %}
+            {% elif row["status"] == "pending" %}
+            <form class="action-form" method="POST" action="{{ '#' if preview_mode else url_for('site_admin_review_plan_request', request_id=row['id']) }}">
+              <span class="sub-note">旧決済方式のため承認不可</span>
+              {% if preview_mode %}
+              <button class="btn danger" type="button" disabled>却下</button>
+              <div class="preview-disabled-note">{{ preview_actions_disabled_reason }}</div>
+              {% else %}
+              <button class="btn danger" type="submit" name="decision" value="rejected" onclick="return confirm('この旧申請を却下しますか？');">却下</button>
+              {% endif %}
+            </form>
+            {% else %}
+            <span style="color: var(--muted);">対応済み</span>
+            {% endif %}
+          </td>
+          <td>{{ row["created_at"] }}</td>
+          <td>{{ row["admin_email"] }}</td>
+          <td>{{ row["payment_method_text"] }}</td>
+          <td>{{ row["payment_amount_text"] }}</td>
+          <td>{{ row["payment_date_text"] }}</td>
+          <td>{{ row["payment_reference"] or "-" }}</td>
+          <td><span class="request-status {{ row['status'] }}">{{ row["status_text"] }}</span></td>
+          <td>{{ row["payment_verification_status_text"] }}</td>
+          <td>{{ row["payment_verified_date"] }}</td>
+          <td>
+            {% if row["payment_method"] == "stripe" %}
+            <div>{{ row.get("stripe_status_text", "-") }}</div>
+            <div class="sub-note" style="margin-top: 8px;">承認ではなく監査用表示</div>
+            {% else %}
+            <div>旧決済方式</div>
+            <div class="sub-note" style="margin-top: 8px;">新規利用は終了済み</div>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="notice success">申請はまだありません。</div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,249 @@
+﻿{% extends "admin_base_clean.html" %}
+
+{% block title %}集金詳細 | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
+<style>
+.dashboard-reggae-title {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.04em;
+  color: #ead7b3;
+}
+.dashboard-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: -8px 0 18px;
+  font-size: 14px;
+  color: #b7c0cd;
+}
+.dashboard-breadcrumbs a {
+  color: #d7dde6;
+  text-decoration: none;
+}
+.dashboard-breadcrumbs a:hover {
+  color: #ffb0b0;
+  text-decoration: underline;
+}
+.dashboard-breadcrumbs .current {
+  color: #edf9f1;
+}
+.dashboard-breadcrumb-separator {
+  color: #8b95a5;
+}
+.attendance-table-wrap {
+  overflow-x: hidden;
+}
+.events-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+  background: #11151b;
+  border-collapse: collapse;
+}
+.events-table thead th {
+  border: 1px solid #2f6d44;
+  background: linear-gradient(180deg, #3b8f5f 0%, #2a6d48 100%);
+  color: #f2fff6;
+  padding: 8px 6px;
+  text-align: center;
+  vertical-align: middle;
+}
+.events-table tbody td {
+  border: 1px solid #2f3946;
+  background: #11151b;
+  color: #e5e7eb;
+  text-align: center;
+  vertical-align: middle;
+  padding: 10px 8px;
+}
+.events-table tbody tr:hover td {
+  background: #1b222c;
+}
+.events-table .col-member {
+  width: 40%;
+}
+.events-table .col-status {
+  width: 30%;
+}
+.events-table .col-date {
+  width: 30%;
+}
+.member-lines,
+.status-lines,
+.date-lines {
+  line-height: 1.4;
+}
+.member-lines > div:first-child {
+  font-weight: 700;
+}
+.status-select {
+  width: 100%;
+  max-width: 120px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid #3b4756;
+  border-radius: 999px;
+  background: #11151b;
+  color: #e5e7eb;
+  box-sizing: border-box;
+  text-align: center;
+}
+.status-select.collected {
+  border-color: #2f7a4f;
+  color: #d5ffe3;
+}
+.status-select.pending {
+  border-color: #a22626;
+  color: #ffd6d6;
+}
+.status-select.exempt {
+  border-color: #8a6a10;
+  color: #ffe8a3;
+}
+@media (max-width: 760px) {
+  .events-table {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+  }
+  .events-table thead th,
+  .events-table tbody td {
+    padding: 8px 4px;
+    font-size: 11px;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  .events-table .col-member {
+    width: 46%;
+  }
+  .events-table .col-status {
+    width: 26%;
+  }
+  .events-table .col-date {
+    width: 28%;
+  }
+  .status-select {
+    max-width: 100%;
+    padding: 4px 6px;
+    font-size: 10px;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title dashboard-reggae-title">集金詳細</h1>
+<nav class="dashboard-breadcrumbs" aria-label="パンくず">
+  <a href="{{ url_for('admin_dashboard') }}">ダッシュボード</a>
+  <span class="dashboard-breadcrumb-separator" aria-hidden="true">＞</span>
+  <a href="{{ url_for('admin_team_collections', team_id=team['id'], page=page, scroll_y=scroll_y) }}">集金管理</a>
+  <span class="dashboard-breadcrumb-separator" aria-hidden="true">＞</span>
+  <span class="current" aria-current="page">集金詳細</span>
+</nav>
+
+<section class="panel">
+  <div>{{ collection_event_view["collection_date_label"] }}</div>
+  <div>{{ collection_event["title"] }} / {{ collection_event_view["amount_label"] }}</div>
+  <div>{{ collection_event["note"] or "備考なし" }}</div>
+</section>
+
+<section class="panel">
+  <div class="table-wrap attendance-table-wrap">
+    <table class="events-table">
+      <thead>
+        <tr>
+          <th class="col-member">メンバー</th>
+          <th class="col-status">集金状況</th>
+          <th class="col-date">記録日付</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in member_rows %}
+        <tr data-member-id="{{ row['member_id'] }}">
+          <td class="col-member">
+            <div class="member-lines">
+              <div>{{ row["member_name"] }}</div>
+            </div>
+          </td>
+          <td class="col-status">
+            <div class="status-lines">
+              <select class="status-select {{ row['status'] }}" data-member-id="{{ row['member_id'] }}" data-current-status="{{ row['status'] }}">
+                <option value="collected" {% if row["status"] == "collected" %}selected{% endif %}>集金済</option>
+                <option value="pending" {% if row["status"] == "pending" %}selected{% endif %}>未集金</option>
+                <option value="exempt" {% if row["status"] == "exempt" %}selected{% endif %}>対象外</option>
+              </select>
+            </div>
+          </td>
+          <td class="col-date" data-collected-at>
+            <div class="date-lines">{{ row["collected_at_label"] or "-" }}</div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="btn-row" style="margin-top:12px;">
+  <a href="{{ url_for('admin_team_collections', team_id=team['id'], page=page, scroll_y=scroll_y) }}" class="btn secondary">集金管理へ戻る</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(() => {
+  const statusSelects = Array.from(document.querySelectorAll('.status-select'));
+  const statusClassMap = {
+    collected: 'collected',
+    pending: 'pending',
+    exempt: 'exempt',
+  };
+
+  const updateSelectClass = (select) => {
+    select.classList.remove('collected', 'pending', 'exempt');
+    select.classList.add(statusClassMap[select.value] || 'pending');
+  };
+
+  statusSelects.forEach((select) => {
+    updateSelectClass(select);
+    select.addEventListener('change', async () => {
+      const memberId = (select.dataset.memberId || '').trim();
+      const previousStatus = (select.dataset.currentStatus || 'pending').trim();
+      const nextStatus = select.value;
+      const row = select.closest('tr');
+      const collectedAtCell = row ? row.querySelector('[data-collected-at] .date-lines') : null;
+
+      updateSelectClass(select);
+
+      try {
+        const response = await fetch(`/admin/api/teams/{{ team['id'] }}/collections/{{ collection_event['id'] }}/members/${memberId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: nextStatus }),
+        });
+        if (!response.ok) throw new Error('save_failed');
+        const payload = await response.json();
+        const savedStatus = payload?.member?.status || nextStatus;
+        select.value = savedStatus;
+        select.dataset.currentStatus = savedStatus;
+        updateSelectClass(select);
+        if (collectedAtCell) {
+          collectedAtCell.textContent = payload?.member?.collected_at_label || '-';
+        }
+      } catch (error) {
+        select.value = previousStatus;
+        updateSelectClass(select);
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}
+

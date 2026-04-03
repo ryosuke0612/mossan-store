@@ -1,0 +1,30 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Attendance | Mossan Store{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Attendance</h1>
+
+<section class="panel">
+  <h2 style="margin-top:0;">アプリ説明</h2>
+  <p>
+    Attendance は、サッカーチーム向けのイベント管理・出欠管理アプリです。
+    イベント登録、メンバーごとの出欠入力、月次での確認とCSV出力に対応しています。
+  </p>
+  <ul style="margin:0; padding-left:20px;">
+    <li>イベント登録・編集・複製・削除</li>
+    <li>メンバー別の出欠管理（参加・不参加・未定）</li>
+    <li>月単位での一覧確認とCSVエクスポート</li>
+  </ul>
+</section>
+
+<section class="panel">
+  <h2 style="margin-top:0;">利用を開始</h2>
+  <div class="btn-row">
+    <a href="{{ url_for('index') }}" class="btn">Attendance アプリ本体へ</a>
+    {% if not session.get('user_id') %}
+    <a href="{{ url_for('login', next=url_for('index')) }}" class="btn secondary">ログイン</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

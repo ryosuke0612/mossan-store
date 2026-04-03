@@ -1,0 +1,36 @@
+{% extends "attendance_base.html" %}
+
+{% block title %}メンバー用ページ | Mossan Store{% endblock %}
+
+{% block content %}
+<h1 class="page-title">メンバー用ページ</h1>
+
+<section class="panel" style="max-width: 820px;">
+  {% if team %}
+  <p>公開IDに対応するチームページの入口です。</p>
+  <div class="grid-2">
+    <div>
+      <label>チーム名</label>
+      <div>{{ team["name"] }}</div>
+    </div>
+    <div>
+      <label>公開ID</label>
+      <div>{{ team["public_id"] }}</div>
+    </div>
+  </div>
+  <p style="margin-top: 16px;">
+    今後このページに、イベント一覧、名前選択、出欠登録、メンバー全体の出欠確認を追加していきます。
+  </p>
+  {% else %}
+  <div class="notice error">
+    該当するチームが見つかりません。公開URLまたは公開IDを確認してください。
+  </div>
+  <p>将来的にはこの画面を公開チームページの共通エラー表示として利用できます。</p>
+  {% endif %}
+
+  <div class="btn-row" style="margin-top: 18px;">
+    <a class="btn secondary" href="{{ url_for('attendance_description') }}">アプリ説明へ</a>
+    <a class="btn secondary" href="{{ url_for('home') }}">トップへ戻る</a>
+  </div>
+</section>
+{% endblock %}

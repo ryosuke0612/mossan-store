@@ -1,0 +1,36 @@
+﻿{% extends "attendance_base.html" %}
+
+{% block title %}管理者ログイン | Mossan Store{% endblock %}
+
+{% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
+<style>
+.dashboard-reggae-title {
+  font-family: 'Reggae One', 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.04em;
+  color: #ead7b3;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title dashboard-reggae-title">管理者ログイン</h1>
+
+<section class="panel" style="max-width: 720px;">
+  <p>
+    ここは管理者用のログイン入口です。今後この画面に、メールアドレス入力と
+    マジックリンク送信機能を追加していきます。
+  </p>
+
+  <div class="notice success">
+    現在は役割分離の土台のみを追加しています。認証処理は次の段階で実装します。
+  </div>
+
+  <div class="btn-row">
+    <a class="btn" href="{{ url_for('attendance_description') }}">出欠管理アプリの説明へ</a>
+    <a class="btn secondary" href="{{ url_for('home') }}">トップへ戻る</a>
+  </div>
+</section>
+{% endblock %}

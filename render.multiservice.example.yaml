@@ -1,3 +1,6 @@
+# Reference copy of the active multi-service Render layout.
+# Use `render.yaml` for the actual deployment definition.
+
 services:
   - type: web
     name: mossan-store-web

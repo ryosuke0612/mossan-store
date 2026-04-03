@@ -1,0 +1,30 @@
+{% extends "attendance_base.html" %}
+
+{% block title %}管理者ログイン | Mossan Store{% endblock %}
+
+{% block content %}
+<h1 class="page-title">管理者ログイン</h1>
+
+<section class="panel" style="max-width: 720px;">
+  {% if error_message %}
+  <div class="notice error">{{ error_message }}</div>
+  {% endif %}
+
+  <p>
+    この段階では、管理者用のメールアドレスを使って管理画面へ入る最小構成を用意しています。
+    後続でマジックリンク方式へ発展させやすいように、管理者セッションは `admin` 側で分離しています。
+  </p>
+
+  <form method="POST" action="{{ url_for('admin_login_entry') }}">
+    <input type="hidden" name="next" value="{{ next_url }}">
+    <div class="field">
+      <label>メールアドレス</label>
+      <input type="email" name="email" placeholder="admin@example.com" required>
+    </div>
+    <div class="btn-row">
+      <button class="btn" type="submit">管理画面へ進む</button>
+      <a class="btn secondary" href="{{ url_for('attendance_description') }}">アプリ説明へ</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
