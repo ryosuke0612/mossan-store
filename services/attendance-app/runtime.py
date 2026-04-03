@@ -13,9 +13,15 @@ from datetime import date, datetime, timedelta
 from email.message import EmailMessage
 from functools import wraps
 from pathlib import Path
+import sys
 from urllib import error as urllib_error
 from urllib import request as urllib_request
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+SERVICE_ROOT = Path(__file__).resolve().parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from flask import Flask, Response, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -28,7 +34,6 @@ from service_modules.legacy_attendance_routes import register_legacy_attendance_
 from service_modules.public_attendance_tool_routes import register_public_attendance_tool_routes
 from service_modules.public_team_core_routes import register_public_team_core_routes
 from service_modules.site_admin_routes import register_site_admin_routes
-from service_modules.store_web_routes import register_store_web_routes
 from shared.db_runtime import (
     DBConnection,
     DBCursor,
@@ -64,11 +69,22 @@ except ImportError:
     Psycopg3Error = None
     dict_row = None
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder=str(SERVICE_ROOT / "templates"),
+    static_folder=str(SERVICE_ROOT / "static"),
+)
 _APP_INITIALIZED = False
 
-load_default_env_files()
-RUNTIME_SETTINGS = load_runtime_settings("mossan-store")
+load_default_env_files(
+    candidate_paths=(
+        REPO_ROOT / ".env",
+        REPO_ROOT / ".env.local",
+        SERVICE_ROOT / ".env",
+        SERVICE_ROOT / ".env.local",
+    )
+)
+RUNTIME_SETTINGS = load_runtime_settings("mossan-attendance-app")
 
 app.secret_key = RUNTIME_SETTINGS.secret_key
 
@@ -8198,14 +8214,6 @@ def build_event_list_csv_response(user_id, month="all"):
     return None
 
 
-register_store_web_routes(
-    app,
-    attendance_app_base_url=os.getenv("ATTENDANCE_APP_BASE_URL", ""),
-    build_contact_page_context=build_contact_page_context,
-    is_contact_email_configured=is_contact_email_configured,
-    is_valid_email=is_valid_email,
-    send_contact_form_email=send_contact_form_email,
-)
 register_attendance_portal_routes(
     app,
     build_event_list_csv_response=build_event_list_csv_response,
@@ -8798,6 +8806,18 @@ register_legacy_attendance_routes(
     serialize_team_result=serialize_team_result,
     swap_members_in_teams=swap_members_in_teams,
 )
+
+
+@app.route("/")
+def home():
+    return redirect(url_for("admin_login_entry"))
+
+
+@app.route("/apps/attendance/app/description")
+def attendance_description():
+    return render_template("landing.html")
+
+
 def ensure_app_initialized():
     global _APP_INITIALIZED
     if _APP_INITIALIZED:

@@ -8,8 +8,16 @@ def register_store_web_routes(
     build_contact_page_context,
     is_contact_email_configured,
     is_valid_email,
+    register_attendance_proxy_routes=False,
     send_contact_form_email,
 ):
+    def _build_attendance_url(path, fallback_endpoint="attendance_description"):
+        configured_base_url = (attendance_app_base_url or "").strip().rstrip("/")
+        normalized_path = path if path.startswith("/") else f"/{path}"
+        if configured_base_url:
+            return f"{configured_base_url}{normalized_path}"
+        return url_for(fallback_endpoint)
+
     def home():
         status = request.args.get("contact_status", "").strip().lower()
         if status not in {"sent"}:
@@ -87,6 +95,12 @@ def register_store_web_routes(
             return redirect(f"{configured_base_url}{request.path}")
         return render_template("landing.html")
 
+    def attendance_open():
+        return redirect(_build_attendance_url("/apps/attendance/app"))
+
+    def attendance_admin_login_entry():
+        return redirect(_build_attendance_url("/admin/login"))
+
     def apps_list():
         return render_template("apps.html")
 
@@ -145,6 +159,17 @@ Sitemap: https://mossan-store.com/sitemap.xml"""
         endpoint="attendance_description",
         view_func=attendance_description,
     )
+    if register_attendance_proxy_routes:
+        app.add_url_rule(
+            "/apps/attendance/app",
+            endpoint="index",
+            view_func=attendance_open,
+        )
+        app.add_url_rule(
+            "/admin/login",
+            endpoint="admin_login_entry",
+            view_func=attendance_admin_login_entry,
+        )
     app.add_url_rule("/apps", endpoint="apps_list", view_func=apps_list)
     app.add_url_rule("/apps/shift", endpoint="shift_app", view_func=shift_app)
     app.add_url_rule("/apps/qrcode", endpoint="qrcode_app", view_func=qrcode_app)
