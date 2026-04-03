@@ -536,9 +536,14 @@ th { background: #1b1b1b; color: #ffcbcb; }
     </button>
     <nav class="top-nav" id="top-nav">
       {% block header_nav_items %}
+      {% if is_attendance_brand %}
+      <a href="{{ url_for('attendance_description') }}">紹介ページ</a>
+      <a href="{{ url_for('admin_login_entry') }}">ログイン</a>
+      {% else %}
       <a href="{{ url_for('home') }}">ホーム</a>
-      <a href="{{ url_for('apps_list') }}">アプリ一覧</a>
-      <a href="{{ url_for('blog_index') }}">ブログ</a>
+      <a href="{{ url_for('attendance_description') }}">紹介ページ</a>
+      <a href="{{ url_for('admin_login_entry') }}">ログイン</a>
+      {% endif %}
       {% endblock %}
     </nav>
   </div>
