@@ -218,6 +218,7 @@ Recommendation:
 - moved low-risk runtime settings (`SECRET_KEY`, DB URL flags, SQLite default path, Render flags) behind a shared runtime settings helper
 - moved the remaining legacy `/apps/attendance/app/*` attendance routes into `service_modules/legacy_attendance_routes.py`, reducing direct route ownership inside the root `app.py`
 - changed the attendance app introduction page so `attendance-app` is the primary home, while `store-web` can redirect there when `ATTENDANCE_APP_BASE_URL` is configured
+- reduced the repository root `app.py` to a lightweight compatibility shim and moved the old monolith to `legacy/root_monolith_app.py`
 
 This keeps the current app runnable while making the intended split explicit.
 
