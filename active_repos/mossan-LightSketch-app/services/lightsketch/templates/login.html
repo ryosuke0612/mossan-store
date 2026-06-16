@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}ログイン | LightSketch+{% endblock %}
+
+{% block content %}
+<div class="admin-login-shell">
+<section class="panel login-panel">
+  <h1 class="login-title dashboard-reggae-title">ログイン</h1>
+
+  {% if error_message %}
+  <div class="notice notice-flash error">{{ error_message }}</div>
+  {% endif %}
+  {% if info_message %}
+  <div class="notice notice-flash success">{{ info_message }}</div>
+  {% endif %}
+
+  <form method="POST" action="{{ url_for('login') }}">
+    <input type="hidden" name="next" value="{{ next_url }}">
+    <div class="field login-field">
+      <label for="login-email">メールアドレス</label>
+      <div class="login-input-wrap">
+        <span class="login-input-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4.2-8 4.8-8-4.8V6l8 4.8L20 6v2.2Z"/></svg>
+        </span>
+        <input id="login-email" type="email" name="email" placeholder="メールアドレス" autocomplete="email" required>
+      </div>
+    </div>
+
+    <div class="field login-field">
+      <label for="login-password">パスワード</label>
+      <div class="login-input-wrap">
+        <span class="login-input-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M17 9V7A5 5 0 0 0 7 7v2H5v12h14V9h-2Zm-8 0V7a3 3 0 0 1 6 0v2H9Zm4 7.73V18h-2v-1.27a2 2 0 1 1 2 0Z"/></svg>
+        </span>
+        <input id="login-password" type="password" name="password" placeholder="パスワード" autocomplete="current-password" required>
+      </div>
+    </div>
+
+    <div class="login-form-footer">
+      <div class="login-options">
+        <label class="remember-row">
+          <input type="checkbox" name="remember" value="1" {% if remember %}checked{% endif %}>
+          <span>ログイン状態を保持</span>
+        </label>
+        <a class="login-help-link" href="{{ url_for('password_forgot') }}">パスワードをお忘れですか？</a>
+      </div>
+      <button class="admin-primary-btn login-submit-btn" type="submit">ログイン</button>
+    </div>
+  </form>
+</section>
+</div>
+{% endblock %}
+
+{% block scripts %}{% endblock %}
