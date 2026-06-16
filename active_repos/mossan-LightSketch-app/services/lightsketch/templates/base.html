@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}LightSketch+{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=M+PLUS+Rounded+1c:wght@500&family=Noto+Sans+JP:wght@400;700;900&family=Yomogi&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header mossan-product-header">
+    <div class="header-inner mossan-product-header__inner">
+      <a class="logo-area mossan-product-header__logo" href="{{ url_for('index') }}">
+        <span class="logo-text attendance-brand brand-v1 mossan-product-header__logo-text">
+          <span class="brand-main mossan-product-header__logo-main">LightSketch</span><span class="brand-plus mossan-product-header__logo-plus">+</span>
+        </span>
+      </a>
+      <nav class="top-nav mossan-product-header__nav" aria-label="ページ">
+        {% if request.endpoint not in ['login', 'password_forgot', 'password_reset'] %}
+        <a href="{{ url_for('index') }}">2Dスケッチ</a>
+        <a href="{{ url_for('viewer_3d') }}">3D配光</a>
+        {% endif %}
+        {% if session.get('admin_id') %}
+        <form method="post" action="{{ url_for('logout') }}">
+          <button type="submit">ログアウト</button>
+        </form>
+        {% else %}
+        <a href="{{ url_for('login') }}">ログイン</a>
+        {% endif %}
+        <span>お問い合わせ</span>
+      </nav>
+    </div>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+  <script>
+  (() => {
+    const notices = document.querySelectorAll('.notice-flash');
+    if (!notices.length) return;
+
+    notices.forEach((notice) => {
+      window.setTimeout(() => {
+        notice.classList.add('is-dismissing');
+        window.setTimeout(() => {
+          notice.remove();
+        }, 500);
+      }, 4000);
+    });
+  })();
+  </script>
+  {% block scripts %}
+  <script src="{{ url_for('static', filename='js/simulator.js') }}"></script>
+  {% endblock %}
+</body>
+</html>
